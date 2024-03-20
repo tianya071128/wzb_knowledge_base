@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress';
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: '知识库',
+  base: '/wzb_knowledge_base',
   // description: '个人学习知识库',
   markdown: {
     lineNumbers: true, // 代码行号
