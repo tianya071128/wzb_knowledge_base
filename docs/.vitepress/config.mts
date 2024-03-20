@@ -12,9 +12,29 @@ export default defineConfig({
   head: [['link', { rel: 'icon', href: './img/favicon.ico' }]],
   rewrites: {
     '01_前端/01_html/01_index.md': 'html/home.md',
+    '01_前端/01_html/02_全局属性.md': 'html/global.md',
   },
   themeConfig: {
     logo: './img/logo.png',
+    // 自定义上次更新的文本和日期格式
+    lastUpdated: {
+      text: '最后更新于',
+      formatOptions: {
+        dateStyle: 'full',
+        timeStyle: 'medium',
+      },
+    },
+    // 上下页链接
+    docFooter: {
+      prev: '上一页',
+      next: '下一页',
+    },
+    lightModeSwitchTitle: '切换到浅色主题',
+    darkModeSwitchTitle: '切换到深色主题',
+    outline: {
+      label: '页面导航',
+      level: [2, 3],
+    },
     // 启用搜索
     search: {
       provider: 'local',
@@ -84,6 +104,10 @@ export default defineConfig({
             {
               text: 'HTML 介绍',
               link: 'home',
+            },
+            {
+              text: '全局属性',
+              link: 'global',
             },
           ],
         },
