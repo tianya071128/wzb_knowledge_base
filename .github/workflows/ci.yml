@@ -49,10 +49,10 @@ jobs:
       - name: Upload build artifacts (上传构建产物)
         uses: actions/upload-pages-artifact@v2
         with:
-          path: './docs/.vitepress/dist'
+          path: './dist'
 
       # 9 部署 GitHub Pages
-      - name: Deploy to GitHub Pages(部署到 GitHub Pages)
-        uses: actions/deploy-pages@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Deploy to GitHub Pages(部署到 GitHub Pages)
+      #   uses: actions/deploy-pages@v2
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
