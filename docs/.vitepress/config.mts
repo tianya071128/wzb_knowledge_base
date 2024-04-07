@@ -1,4 +1,6 @@
 import { defineConfig } from 'vitepress';
+import rewrites from './config/rewrites.mts';
+import sidebar from './config/sidebar.mts';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -7,13 +9,20 @@ export default defineConfig({
   // description: '个人学习知识库',
   markdown: {
     lineNumbers: true, // 代码行号
+    image: {
+      lazyLoading: true, // 启用图片懒加载
+    },
+    container: {
+      tipLabel: '提示',
+      warningLabel: '警告',
+      dangerLabel: '危险',
+      infoLabel: '信息',
+      detailsLabel: '详细信息',
+    },
   },
   // <head> 标签中呈现的其他元素
   head: [['link', { rel: 'icon', href: './img/favicon.ico' }]],
-  rewrites: {
-    '01_前端/01_html/01_index.md': 'html/home.md',
-    '01_前端/01_html/02_全局属性.md': 'html/global.md',
-  },
+  rewrites,
   themeConfig: {
     logo: './img/logo.png',
     // 自定义上次更新的文本和日期格式
@@ -94,24 +103,6 @@ export default defineConfig({
       },
     ],
 
-    sidebar: {
-      '/html/': [
-        {
-          text: '基础标签', // 分组标题
-          collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
-          base: '/html/',
-          items: [
-            {
-              text: 'HTML 介绍',
-              link: 'home',
-            },
-            {
-              text: '全局属性',
-              link: 'global',
-            },
-          ],
-        },
-      ],
-    },
+    sidebar,
   },
 });
