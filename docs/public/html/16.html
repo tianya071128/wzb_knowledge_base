@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>溢出隐藏</title>
+    <style>
+      .container {
+        width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: 1px solid red;
+      }
+      .box {
+        display: inline-block;
+      }
+      .container2 .box {
+        display: inline;
+      }
+    </style>
+  </head>
+  <body>
+    <div>子元素使用 inline-block</div>
+    <div class="container">
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+    </div>
+
+    <div style="margin-top: 15px">子元素使用 inline</div>
+    <div class="container container2">
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+      <div class="box">测试一下</div>
+    </div>
+  </body>
+</html>

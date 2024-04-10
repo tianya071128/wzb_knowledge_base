@@ -74,9 +74,10 @@ export default defineConfig({
     nav: [
       {
         text: '基础',
+        activeMatch: `/html|css/`,
         items: [
-          { text: 'html', link: '/html/home.html' },
-          { text: 'css', link: '/css/' },
+          { text: 'html', link: '/html/home.html', activeMatch: '/html/' },
+          { text: 'css', link: '/css/home.html', activeMatch: '/css/' },
           { text: 'js', link: '/js/' },
           { text: '浏览器', link: '/browser/' },
         ],
