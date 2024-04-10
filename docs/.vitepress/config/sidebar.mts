@@ -163,6 +163,136 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/js/': [
+    {
+      text: 'ES',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/js/',
+      items: [
+        {
+          text: 'ES 基础概念',
+          link: 'home',
+        },
+        {
+          text: '内存机制-数据是如何存储的',
+          link: 'memory',
+        },
+        {
+          text: '内存机制-垃圾回收',
+          link: 'recovery',
+        },
+        {
+          text: '内存机制-内存检测和内存泄露',
+          link: 'check',
+        },
+        {
+          text: '执行机制-执行上下文、调用栈',
+          link: 'executionContext',
+        },
+        {
+          text: '执行机制-作用域、作用域链',
+          link: 'scope',
+        },
+        {
+          text: '执行机制-事件循环(evnet loop)',
+          link: 'eventloop',
+        },
+        {
+          text: 'V8编译 - 运行时环境',
+          link: 'environment',
+        },
+        {
+          text: '数据类型 - 函数和闭包',
+          link: 'function',
+        },
+      ],
+    },
+    {
+      text: 'DOM',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/js/',
+      items: [
+        {
+          text: 'DOM',
+          link: 'DOM',
+        },
+        {
+          text: '节点操作',
+          link: 'DOMAPI',
+        },
+        {
+          text: '几何位置',
+          link: 'geometry',
+        },
+        {
+          text: '事件',
+          link: 'event',
+        },
+        {
+          text: '事件类型',
+          link: 'eventType',
+        },
+      ],
+    },
+    {
+      text: 'web API',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/js/',
+      items: [
+        {
+          text: '数据存储',
+          items: [
+            {
+              text: 'cookie',
+              link: 'cookie',
+            },
+            {
+              text: 'Web Storage',
+              link: 'WebStorage',
+            },
+            {
+              text: 'IndexedDB',
+              link: 'IndexedDB',
+            },
+          ],
+        },
+        {
+          text: '二进制数据，文件',
+          items: [
+            {
+              text: 'ArrayBuffer',
+              link: 'ArrayBuffer',
+            },
+            {
+              text: 'Blob、File、FileReader',
+              link: 'File',
+            },
+            {
+              text: '文件操作',
+              link: 'operation',
+            },
+          ],
+        },
+        {
+          text: '网络请求',
+          items: [
+            {
+              text: 'XMLHttpRequest',
+              link: 'xhr',
+            },
+            {
+              text: '轮询',
+              link: 'polling',
+            },
+            {
+              text: 'WebSocket',
+              link: 'webSocket',
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export default sidebar;

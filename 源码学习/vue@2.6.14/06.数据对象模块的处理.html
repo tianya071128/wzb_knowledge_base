@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>数据对象模块的处理</title>
+    <script src="./vue.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+<script>
+  const myComponent = {
+    data() {
+      return {
+        test: 1,
+        flag: true,
+      };
+    },
+    render(h) {
+      return h(
+        'div',
+        {
+          class: {
+            test123: '123',
+          },
+          style: {
+            fontSize: '18px',
+          },
+          attrs: {
+            id: this.flag ? 'foo3' : 'foo4',
+          },
+          on: {
+            '~click': () => {
+              console.log('是否只执行一次?');
+            },
+          },
+        },
+        `这是一个子组件,${this.test}`
+      );
+    },
+  };
+
+  /**
+   * 数据对象 -- 用来描述这个元素或组件的，对应 Vnode 中的 data 属性，包含 class、attrs、events、style、dom-props、transition、directives、ref
+   *  - 核心模块(不区分平台)
+   *    - directives：指令
+   *    - ref
+   *  - web端：定义在 platforms\web\runtime\modules
+   *    - class：处理 DOM 的 class
+   *    - style：处理 DOM 的 style
+   *    - attrs：处理 DOM 的属性
+   *    - events：处理 DOM 的事件
+   *    - dom-props：处理 DOM 的特性
+   *    - transition：处理 transition 过渡的
+   *
+   * 在 Vue 内部，将 Vnode 的过程分成几个钩子：['create', 'activate', 'update', 'remove', 'destroy']，包含着 Vnode 的全周期
+   * 上述处理数据对象的模块就通过注册这些钩子来参与到 Vnode 的生命周期，用来在不同时机处理 Vnode 的数据对象
+   * 具体见 createPatchFunction(core\vdom\patch.js) 方法
+   */
+
+  /**
+   * 模块钩子的调用时机：['create', 'activate', 'update', 'remove', 'destroy']
+   *  - 注意1：这些钩子的调用位置一般都在 core\vdom\patch.js 中，因为只有这个文件才有权访问
+   *  - 注意2：这些钩子一般对于组件类型 Vnode 和 元素类型 Vnode 都需要调用，对于元素类型直接针对这个 DOM 元素操作，而对于组件类型 Vnode，则将一些模块(如 class、style)添加到组件根元素上，其他一些模块也需要做组件层面的处理(如 ref、directives)
+   *  - 'create' 钩子：在该 Vnode 渲染完，但还没有挂载的时候，调用位置见：invokeCreateHooks 方法
+   *      -- 所有模块都具有这个钩子
+   *  - 'activate'钩子：只针对组件类型 Vnode，当该 Vnode 激活时调用，组件已被挂载，调用位置见：reactivateComponent 方法
+   *      -- 只有 transition 模块具有这个钩子
+   *  - 'update' 钩子：当 Vnode 可以复用时调用，调用位置见：patchVnode 方法
+   *      -- 除了 transition 模块都具有这个钩子
+   *  - 'remove' 钩子：准备移除 DOM 时的钩子，调用位置见：removeAndInvokeRemoveHook 方法
+   *      -- 只有 transition 模块具有这个钩子
+   *  - 'destroy' 钩子：在 'remove' 钩子之后执行，此时 Vnode 已被销毁，调用位置见：invokeDestroyHook 方法
+   *      -- 只有 ref、directives 模块具有
+   */
+
+  /**
+   * class 模块：初始化或更新 DOM 的 class，具有 'create' 和 'update' 钩子 -- platforms\web\runtime\modules\class.js
+   *  1. 提取出新 Vnode 的 class，并拼接成字符串形式 - 不管是组件类型 Vnode，还是元素类型 Vnode，最终目标就是提取出全部需要作用至目标元素的 Class
+   *     1.1 对于组件类型 Vnode，处理组件类型 Vnode，如果这个组件类型 Vnode 已经实例化了，说明是更新阶段，而更新阶段的话，可能不会触发子组件的更新，只需要将变更的 class 重新赋值到组件根元素即可
+   *          -> 在这里处理的就是将组件定义时的 class 和组件根元素定义的 class 进行合并处理
+   *          -> 因为存在组件根元素又是一个组件的情况，所以就需要递归
+   *          ->    - 例如：<component1 class="class1"> -- 组件 component1 模板为 <component2 class="class2" /> -- 组件 component2 模板为 <div class="class3"></div>
+   *          ->         这样的话，就需要将这三个 class 都添加到 div 元素 DOM 上
+   *     1.2 对于元素类型 Vnode，需要额外处理根元素类型 Vnode(如果 parentNode.parent 存在的话，表示这个元素 Vnode 是一个组件的根元素)
+   *          -> 对于组件根元素 Vnode 来讲，我们需要获取到组件定义时的 class 进行合并
+   *          -> 与上述一样，我们还需要考虑组件根元素又是一个组件的情况，此时就需要递归
+   *  2. 与上一次合并的结果(缓存在 vnode.elm._prevClass)进行简单比较，如果发生改变，则直接覆盖 vnode.elm.class 的值
+   *      不需要对每项 class 进行比对处理，直接对整个 class 字符串进行更新
+   */
+
+  /**
+   * style 模块：初始化或更新 DOM 的 style，具有 'create' 和 'update' 钩子 -- platforms\web\runtime\modules\style.js
+   *  1. 将 vnode.data.staticStyle 和 vnode.data.style 规范为对象形式，因为 style 后续要遍历一个个添加
+   *  2. 合并新 Vnode 的 style 为一个对象 - 不管是组件类型 Vnode，还是元素类型 Vnode，最终目标就是提取出全部需要作用至目标元素的 Style
+   *      1. 先提取出子组件的
+   *      2. 在提取当前 Vnode
+   *      3. 在提取父组件的
+   *      4. 上述提取都是提取出对象，直接利用对象属性进行同属性覆盖，但是优先使用父组件的
+   *       -> 例如：例如：<component1 style="fontSize: 12px"> -- 组件 component1 模板为 <component2 style="fontSize: 14px" /> -- 组件 component2 模板为 <div style="fontSize: 16px"></div>
+   *          这样的话，作用到 div 元素 DOM 上就是 style="fontSize: 12px" -- 父组件优先级最高
+   *  3. 遍历新旧 style，处理需要清除的 style，添加需要新增的 style
+   *
+   *  ？？？
+   *  但是这里奇怪的是，为什么只缓存当前 Vnode 的 sytle，而没有缓存通过 getStyle 方法合并父子组件的最终 style
+   *  这样在更新阶段，即使样式没有变化，还是会通过 setProp 设置 style，虽然并没有太多影响
+   */
+
+  /**
+   * attrs 模块：初始化或更新 DOM 的 attr 属性，具有 'create' 和 'update' 钩子 -- platforms\web\runtime\modules\attrs.js
+   *  1. 从新旧的 Vnode 中提取出 attrs 属性，在编译阶段这个属性就会编译成对象
+   *  2. 直接遍历新旧 attrs，处理需要清除的属性，修改(或新增)需要的属性
+   *
+   *  注意：这里与 class、style 不同，这里不会考虑提取出当前 Vnode 的父子组件的 class、style 进行合并处理，可能会出现这样的问题(概率应该比较低)
+   *    例如：使用组件 <my-component id="flag ? 'foo1' : 'foo2'" />，组件模板 <div :id="flag ? 'foo3' : 'foo4'"></div> -- flag 都为 true
+   *     - 在组件初始化时 id 属性值是 foo1
+   *     - 如果组件中 flag 变为 false，那么 id 属性值变为 foo3 -- 此时并不会与父组件的 id 值进行比较
+   *
+   *  注意点2：不管是组件类型 Vnode，还是元素 Vnode，vnode.data.attrs 中的值就是需要作用到真实 DOM 元素上的
+   *       - 因为在组件类型 Vnode 中，如果定义的 attrs 会组件的 props，那么在创建组件类型 Vnode 时(在 core\vdom\create-component.js 的 createComponent 中)，
+   *       - 从 attrs 提取出了 prop，将会将 attrs 对应的 prop 需要从 attrs 中删除
+   *
+   */
+
+  /**
+   * evnets 模块: 初始化或更新 DOM 的事件, 具有 'create' 和 'update' 钩子 -- platforms\web\runtime\modules\evnets.js
+   *  1. 提取出新旧 Vnode.data.on 的事件集合 -- 对于组件类型 Vnode, 会在生成 Vnode 的方法中((在 core\vdom\create-component.js 的 createComponent 中)), 将作为父组件传入的事件赋值到 vnode.data.componentOption.listeners 中, 而 vnode.data.on 存放的就是作用于组件根元素的原生事件, 与元素 Vnode 一致
+   *  2. 通过 updateListeners 方法比较新旧事件集合, 添加、改变、删除事件
+   *     - 封装事件逻辑: 真实添加、移除方法在上方定义
+   *      1. 如果新事件存在, 而旧事件不存在, 并且这个新事件没有经过内部封装处理, 此时通过 createFnInvoker 方法封装一层
+   *          -> 封装的逻辑: 返回一个新函数, 这个函数的 fns 属性引用着真实调用事件, 返回的新函数内部逻辑就是取出 fns 属性引用的事件进行调用
+   *          -> 通过操作这个 fns 引用, 可以很方便的实现事件的替换
+   *      2. 当新旧事件都存在并且不相同时, 我们只需要改变封装函数 fns 引用即可
+   *
+   *     - 添加只执行一次的事件, 这实现的有点意思
+   *      1. 一开始还疑惑, 当重渲染的话, 事件引用都变了不会重新执行嘛
+   *      2. 实现原理: 当重新渲染时, 即使新旧方法引用不同, 在 updateListeners 更新事件方法内部, 只会去更改封装 fns 的引用, 此时已经通过 remove 方法删除 DOM 上的事件了, 也就不会重新触发了
+   */
+
+  /**
+   * dom-props 模块: DOM property(例如 innerHTML), 直接使用 elm[key] 方式进行操作, 具有 'create' 和 'update' 钩子 -- platforms\web\runtime\modules\dom-props.js
+   */
+
+  /**
+   * transition 模块：在 web 端用于处理 transition 组件过渡时的，见 transition 组件分析
+   * directives 模块：处理指令，见指令部分分析
+   * ref 模块：见 ref 分析
+   */
+
+  new Vue({
+    el: '#root',
+    data() {
+      return {
+        a: 1,
+        flag: true,
+      };
+    },
+    components: {
+      myComponent,
+    },
+    render(h) {
+      const { a, flag } = this;
+      return h('div', [
+        h(
+          'div',
+          {
+            class: {
+              foo: true,
+              bar: false,
+            },
+          },
+          '这个一个 div 元素'
+        ),
+        h(
+          'my-component',
+          {
+            class: {
+              foo: true,
+              bar: false,
+            },
+            // 与 `v-bind:style` 的 API 相同，
+            // 接受一个字符串、对象，或对象组成的数组
+            style: {
+              color: 'red',
+              fontSize: '14px',
+            },
+            // 普通的 HTML attribute
+            attrs: {
+              id: flag ? 'foo1' : 'foo2',
+            },
+            // 事件监听器在 `on` 内，
+            // 但不再支持如 `v-on:keyup.enter` 这样的修饰器。
+            // 需要在处理函数中手动检查 keyCode。
+            on: {
+              dbClick: () => {},
+            },
+            // 仅用于组件，用于监听原生事件，而不是组件内部使用
+            // `vm.$emit` 触发的事件。
+            nativeOn: {
+              click: () => {},
+            },
+          },
+          [h('div', '这个会当做一个插槽吗?')]
+        ),
+      ]);
+    },
+  });
+</script>

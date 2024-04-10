@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>根组件的流程</title>
+    <script src="../vue.js"></script>
+  </head>
+  <body>
+    <div id="root">
+      <div class="test" :class="['a']">{{b.c}}</div>
+      <div>{{d[0]}}</div>
+      <div>{{f.a}}</div>
+      <!-- <my-components
+        @test="console.log('测试一下')"
+        class="abs"
+      ></my-components> -->
+    </div>
+  </body>
+</html>
+
+<script>
+  /**
+   * vue 是分多平台，如 web 就区分 ssr、web等、还区分 weex
+   * 在这里主要看下 web 平台的不带编译器的，入口为 platforms/web/entry-runtime.js
+   *
+   * 首先会在 code/index.js中，会做如下工作，这些是不分平台的工作(也就是各环境都会经过这里)：
+   *   为 Vue.prototype 添加一些属性和方法 -- code/instance/index.js
+   *   为 Vue 添加静态属性和方法 -- code/index.js 的 initGlobalAPI 方法中
+   *
+   * 在 web 端不使用编译器(compiler)情况下，会通过 platforms/runtime/index.js 做一些 web 端渲染的工作
+   *  并且添加 model 和 show 全局指令 以及 添加 Transition、TransitionGroup 全局内置组件
+   *
+   * 至此，引用 Vue 就会做如上处理，之后等待使用 Vue 构造函数处理
+   */
+
+  /**
+   * 初始根组件(即通过 new 创建的组件，区别于子组件)流程：
+   *  主要在 code/instance/init.js 的 _init 方法中初始化
+   *  详见 _init 方法注解
+   */
+  /**
+   * 渲染过程：
+   *  当初始化组件完成(合并选项，初始化数据，见 _init 方法)，接下来就是渲染流程，主要是由 $mount 方法启动
+   *  $mount 是区分平台的，weex 和 web 主要是由 mountComponent(core/instance/lifecycle) 驱动，只是会在参数方面会做一些额外处理。
+   *  而在 web 端，还分为是否需要编译器，在需要编译器的情况下，还需要将 template 模板进行编译成 render 函数
+   *  暂时忽略编译器的内容，直接从 web 端不携带编译器的情况，入口在 platforms/web/runtime/index.js
+   *  具体见 mountComponent(core/instance/lifecycle) 渲染组件方法注解，可以查看 platforms/web/runtime/index.js 中调用这个方法信息
+   */
+  /**
+   * 更新过程：
+   *  当组件的依赖项变更后，就会执行 mountComponent 方法中观察的 updateComponent 方法，简单讲
+   *  就是重新执行 vm._render() 方法生成新的 vnode
+   *  接着执行 vm._update() 对比新旧 vnode，进入 diff 阶段
+   *  具体见 mountComponent(core/instance/lifecycle) 方法的 updateComponent 方法
+   */
+  /**
+   * 销毁阶段：
+   *  因为根组件需要调用 vm.$destroy() 方法进行销毁，子组件的销毁也会调用这个方法只是多了一些其他步骤，所以就不展开
+   */
+  // new Vue 后，会调用 code/instance/index.js 中 Vue 构造函数
+  new Vue({
+    el: '#root',
+    data() {
+      return {
+        a: 1,
+        b: {
+          c: 2,
+        },
+        d: [1, 2],
+        e: [
+          {
+            f: 2,
+            g: 3,
+          },
+        ],
+        f: {
+          a: 1,
+          b: {
+            c: 2,
+          },
+        },
+      };
+    },
+    props: {
+      test1: Array,
+      test2: {
+        type: Number,
+      },
+      test3: {
+        type: String,
+        default: '1',
+      },
+    },
+    watch: {
+      'f.b.c'(val, oldVal) {
+        console.log(val, oldVal);
+      },
+    },
+    created() {
+      setTimeout(() => {
+        // this.$set(this.f, 'c', 3);
+        console.log(this);
+      }, 0);
+      // this.f.b.c = 5;
+    },
+    components: {
+      myComponents: {
+        created() {
+          console.log('测试');
+        },
+        render(h) {
+          return h(
+            'div',
+            {
+              class: {
+                test123: '123',
+              },
+            },
+            '123'
+          );
+        },
+      },
+    },
+  });
+</script>
