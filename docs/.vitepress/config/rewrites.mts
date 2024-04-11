@@ -51,5 +51,6 @@ const rewrites: Record<string, string> = {
   '01_前端/03_js/21_XHR.md': 'js/xhr.md',
   '01_前端/03_js/22_轮询.md': 'js/polling.md',
   '01_前端/03_js/23_webSocket.md': 'js/webSocket.md',
+  '04_更多/01_node/01_index.md': 'node/home.md',
 };
 export default rewrites;

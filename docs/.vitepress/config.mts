@@ -102,6 +102,13 @@ export default defineConfig({
           { text: 'http2', link: '/h2/' },
         ],
       },
+      {
+        text: '其他',
+        activeMatch: `/node/`,
+        items: [
+          { text: 'Node.js', link: '/node/home.html', activeMatch: '/node/' },
+        ],
+      },
     ],
 
     sidebar,

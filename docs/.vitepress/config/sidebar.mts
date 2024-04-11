@@ -293,6 +293,19 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/node/': [
+    {
+      text: 'Node.js 基础概念',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/node/',
+      items: [
+        {
+          text: 'Node.js',
+          link: 'home',
+        },
+      ],
+    },
+  ],
 };
 
 export default sidebar;
