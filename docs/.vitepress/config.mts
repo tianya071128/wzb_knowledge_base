@@ -5,7 +5,7 @@ import sidebar from './config/sidebar.mts';
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: '知识库',
-  base: '/wzb_knowledge_base',
+  base: '/wzb_knowledge_base/',
   // description: '个人学习知识库',
   markdown: {
     lineNumbers: true, // 代码行号
@@ -74,12 +74,16 @@ export default defineConfig({
     nav: [
       {
         text: '基础',
-        activeMatch: `/html|css|js/`,
+        activeMatch: `/html|css|js|browser/`,
         items: [
           { text: 'html', link: '/html/home.html', activeMatch: '/html/' },
           { text: 'css', link: '/css/home.html', activeMatch: '/css/' },
           { text: 'js', link: '/js/home.html', activeMatch: '/js/' },
-          { text: '浏览器', link: '/browser/' },
+          {
+            text: '浏览器',
+            link: '/browser/home.html',
+            activeMatch: '/browser/',
+          },
         ],
       },
       {

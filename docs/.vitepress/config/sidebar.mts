@@ -293,6 +293,57 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/browser/': [
+    {
+      text: '浏览器渲染',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/browser/',
+      items: [
+        {
+          text: 'Chrome 基础架构',
+          link: 'home',
+        },
+        {
+          text: '导航流程：输入 URL 到页面展示',
+          link: 'navigation',
+        },
+        {
+          text: '渲染流程',
+          link: 'render',
+        },
+        {
+          text: '渲染流程 - 相关概念',
+          link: 'concept',
+        },
+      ],
+    },
+    {
+      text: '浏览器安全',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/browser/',
+      items: [
+        {
+          text: '跨站脚本攻击（XSS）',
+          link: 'xss',
+        },
+        {
+          text: '跨站请求伪造（CSRF）',
+          link: 'csrf',
+        },
+      ],
+    },
+    {
+      text: '开发者工具',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/browser/',
+      items: [
+        {
+          text: '元素(Element)',
+          link: 'element',
+        },
+      ],
+    },
+  ],
   '/node/': [
     {
       text: 'Node.js 基础概念',

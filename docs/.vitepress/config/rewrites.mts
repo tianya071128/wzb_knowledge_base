@@ -51,6 +51,13 @@ const rewrites: Record<string, string> = {
   '01_前端/03_js/21_XHR.md': 'js/xhr.md',
   '01_前端/03_js/22_轮询.md': 'js/polling.md',
   '01_前端/03_js/23_webSocket.md': 'js/webSocket.md',
+  '01_前端/04_浏览器/01_Chrome基础架构.md': 'browser/home.md',
+  '01_前端/04_浏览器/02_导航流程.md': 'browser/navigation.md',
+  '01_前端/04_浏览器/03_渲染流程.md': 'browser/render.md',
+  '01_前端/04_浏览器/04_渲染相关概念.md': 'browser/concept.md',
+  '01_前端/04_浏览器/05_跨站脚本攻击_XSS.md': 'browser/xss.md',
+  '01_前端/04_浏览器/06_跨站请求伪造_CSRF.md': 'browser/csrf.md',
+  '01_前端/04_浏览器/07_开发者工具_元素.md': 'browser/element.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
 };
 export default rewrites;
