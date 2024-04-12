@@ -354,6 +354,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'Node.js',
           link: 'home',
         },
+        {
+          text: '模块系统',
+          link: 'module',
+        },
       ],
     },
   ],

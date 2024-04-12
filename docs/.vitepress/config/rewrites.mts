@@ -59,5 +59,6 @@ const rewrites: Record<string, string> = {
   '01_前端/04_浏览器/06_跨站请求伪造_CSRF.md': 'browser/csrf.md',
   '01_前端/04_浏览器/07_开发者工具_元素.md': 'browser/element.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
+  '04_更多/01_node/02_模块系统.md': 'node/module.md',
 };
 export default rewrites;
