@@ -42,7 +42,7 @@ export default defineConfig({
     darkModeSwitchTitle: '切换到深色主题',
     outline: {
       label: '页面导航',
-      level: [2, 3],
+      level: [2, 4],
     },
     // 启用搜索
     search: {

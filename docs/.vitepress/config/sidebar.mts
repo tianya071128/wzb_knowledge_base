@@ -338,8 +338,22 @@ const sidebar: DefaultTheme.Sidebar = {
       base: '/browser/',
       items: [
         {
+          text: '键盘快捷键',
+          link: 'shortcuts',
+        },
+        {
           text: '元素(Element)',
           link: 'element',
+          items: [
+            {
+              text: '样式窗格(Style)',
+              link: 'style',
+            },
+          ],
+        },
+        {
+          text: '控制台(Console)',
+          link: 'console',
         },
       ],
     },
