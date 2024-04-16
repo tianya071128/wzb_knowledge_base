@@ -61,6 +61,9 @@ const rewrites: Record<string, string> = {
   '01_前端/04_浏览器/08_开发者工具_样式.md': 'browser/style.md',
   '01_前端/04_浏览器/09_开发者工具_键盘快捷键.md': 'browser/shortcuts.md',
   '01_前端/04_浏览器/10_开发者工具_控制台.md': 'browser/console.md',
+  '01_前端/04_浏览器/11_开发者工具_网络.md': 'browser/network.md',
+  '01_前端/04_浏览器/12_开发者工具_应用.md': 'browser/application.md',
+  '01_前端/04_浏览器/13_开发者工具_应用_PWA.md': 'browser/application/pwa.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
 };

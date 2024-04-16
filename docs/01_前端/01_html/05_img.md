@@ -71,13 +71,6 @@ imgDOM.addEventListener('load', function (e) {
 
   **注意: 如果不是同源图片, 不是执行下载操作**
 
-  ```html
-  <!-- download: 属性值为下载的文件名 -->
-  <a href="/img/logo.png" download="logo.png">
-    <img src="/img/logo.png" alt="" />
-  </a>
-  ```
-
 - 跨域图片
 
   **图片是有版权的, 如果没有授权的话, 还是要尊重原创的**

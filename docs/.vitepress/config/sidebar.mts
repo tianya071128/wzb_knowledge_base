@@ -355,6 +355,20 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '控制台(Console)',
           link: 'console',
         },
+        {
+          text: '网络(Network)',
+          link: 'network',
+        },
+        {
+          text: '应用(Application)',
+          link: 'application',
+          items: [
+            {
+              text: '调试渐进式 Web 应用',
+              link: 'application/pwa',
+            },
+          ],
+        },
       ],
     },
   ],

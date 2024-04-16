@@ -1,11 +1,13 @@
 import { defineConfig } from 'vitepress';
+import { join } from 'path';
 import rewrites from './config/rewrites.mts';
 import sidebar from './config/sidebar.mts';
 
+const baseUrl = '/wzb_knowledge_base/';
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: '知识库',
-  base: '/wzb_knowledge_base/',
+  base: baseUrl,
   // description: '个人学习知识库',
   markdown: {
     lineNumbers: true, // 代码行号
@@ -21,7 +23,7 @@ export default defineConfig({
     },
   },
   // <head> 标签中呈现的其他元素
-  head: [['link', { rel: 'icon', href: './img/favicon.ico' }]],
+  head: [['link', { rel: 'icon', href: join(baseUrl, '/img/favicon.ico') }]],
   rewrites,
   themeConfig: {
     logo: './img/logo.png',
