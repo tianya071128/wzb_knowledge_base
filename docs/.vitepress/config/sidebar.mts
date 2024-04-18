@@ -332,10 +332,28 @@ const sidebar: DefaultTheme.Sidebar = {
         },
       ],
     },
+  ],
+  '/node/': [
+    {
+      text: 'Node.js 基础概念',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/node/',
+      items: [
+        {
+          text: 'Node.js',
+          link: 'home',
+        },
+        {
+          text: '模块系统',
+          link: 'module',
+        },
+      ],
+    },
+  ],
+  '/devtools/': [
     {
       text: '开发者工具',
-      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
-      base: '/browser/',
+      base: '/devtools/',
       items: [
         {
           text: '键盘快捷键',
@@ -364,27 +382,40 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'application',
           items: [
             {
-              text: '调试渐进式 Web 应用',
+              text: '应用部分',
               link: 'application/pwa',
+            },
+            {
+              text: '存储部分',
+              link: 'application/storage',
+            },
+            {
+              text: '后台服务',
+              link: 'application/backgroundServices',
+            },
+            {
+              text: '框架',
+              link: 'application/frame',
             },
           ],
         },
-      ],
-    },
-  ],
-  '/node/': [
-    {
-      text: 'Node.js 基础概念',
-      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
-      base: '/node/',
-      items: [
         {
-          text: 'Node.js',
-          link: 'home',
-        },
-        {
-          text: '模块系统',
-          link: 'module',
+          text: '源代码(Sources)',
+          link: 'sources',
+          items: [
+            {
+              text: '查看文件',
+              link: 'sources/viewFile',
+            },
+            {
+              text: '代码段',
+              link: 'sources/snippets',
+            },
+            {
+              text: '编辑文件',
+              link: 'sources/editFile',
+            },
+          ],
         },
       ],
     },

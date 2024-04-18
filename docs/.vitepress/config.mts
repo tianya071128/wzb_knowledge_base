@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress';
-import { join } from 'path';
+import { join } from 'node:path';
 import rewrites from './config/rewrites.mts';
 import sidebar from './config/sidebar.mts';
 
@@ -110,9 +110,14 @@ export default defineConfig({
       },
       {
         text: '其他',
-        activeMatch: `/node/`,
+        activeMatch: `/node|devtools/`,
         items: [
           { text: 'Node.js', link: '/node/home.html', activeMatch: '/node/' },
+          {
+            text: '开发者工具',
+            link: '/devtools/home.html',
+            activeMatch: '/devtools/',
+          },
         ],
       },
     ],
