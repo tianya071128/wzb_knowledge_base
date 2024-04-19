@@ -333,6 +333,43 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/babel/': [
+    {
+      text: 'babel',
+      // collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      base: '/babel/',
+      items: [
+        {
+          text: 'babel 介绍',
+          link: 'home',
+        },
+        {
+          text: '配置文件',
+          link: 'configFile',
+        },
+        {
+          text: '配置选项',
+          link: 'configOptions',
+        },
+        {
+          text: '预设',
+          link: 'presets',
+        },
+        {
+          text: '官方预设：@babel/preset-env',
+          link: 'presetsEnv',
+        },
+        {
+          text: '插件',
+          link: 'plugins',
+        },
+        {
+          text: 'babel 架构',
+          link: 'framework',
+        },
+      ],
+    },
+  ],
   '/node/': [
     {
       text: 'Node.js 基础概念',
@@ -414,6 +451,18 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: '编辑文件',
               link: 'sources/editFile',
+            },
+            {
+              text: '本地替换',
+              link: 'sources/replace',
+            },
+            {
+              text: '断点',
+              link: 'sources/break',
+            },
+            {
+              text: '调试',
+              link: 'sources/debug',
             },
           ],
         },

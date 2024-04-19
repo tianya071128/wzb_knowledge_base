@@ -57,6 +57,13 @@ const rewrites: Record<string, string> = {
   '01_前端/04_浏览器/04_渲染相关概念.md': 'browser/concept.md',
   '01_前端/04_浏览器/05_跨站脚本攻击_XSS.md': 'browser/xss.md',
   '01_前端/04_浏览器/06_跨站请求伪造_CSRF.md': 'browser/csrf.md',
+  '02_工程化/05_babel/01_index.md': 'babel/home.md',
+  '02_工程化/05_babel/02_配置文件.md': 'babel/configFile.md',
+  '02_工程化/05_babel/03_配置选项.md': 'babel/configOptions.md',
+  '02_工程化/05_babel/04_预设.md': 'babel/presets.md',
+  '02_工程化/05_babel/05_preset-env预设.md': 'babel/presetsEnv.md',
+  '02_工程化/05_babel/06_插件.md': 'babel/plugins.md',
+  '02_工程化/05_babel/07_babal架构.md': 'babel/framework.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/02_开发者工具/01_index.md': 'devtools/home.md',
@@ -75,5 +82,8 @@ const rewrites: Record<string, string> = {
   '04_更多/02_开发者工具/18_源代码_查看文件.md': 'devtools/sources/viewFile.md',
   '04_更多/02_开发者工具/19_源代码_代码段.md': 'devtools/sources/snippets.md',
   '04_更多/02_开发者工具/20_源代码_编辑文件.md': 'devtools/sources/editFile.md',
+  '04_更多/02_开发者工具/21_源代码_本地替换.md': 'devtools/sources/replace.md',
+  '04_更多/02_开发者工具/22_源代码_断点.md': 'devtools/sources/break.md',
+  '04_更多/02_开发者工具/23_源代码_调试.md': 'devtools/sources/debug.md',
 };
 export default rewrites;

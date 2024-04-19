@@ -90,8 +90,9 @@ export default defineConfig({
       },
       {
         text: '工程化',
+        activeMatch: `/babel/`,
         items: [
-          { text: 'babel', link: '/babel/' },
+          { text: 'babel', link: '/babel/home.html', activeMatch: '/babel/' },
           { text: 'sass', link: '/sass/' },
           { text: 'eslint', link: '/eslint/' },
           { text: 'vscode', link: '/vscode/' },
@@ -115,7 +116,7 @@ export default defineConfig({
           { text: 'Node.js', link: '/node/home.html', activeMatch: '/node/' },
           {
             text: '开发者工具',
-            link: '/devtools/home.html',
+            link: '/devtools/shortcuts.html',
             activeMatch: '/devtools/',
           },
         ],
