@@ -1,11 +1,13 @@
 import { defineConfig } from 'vitepress';
+import { join } from 'node:path';
 import rewrites from './config/rewrites.mts';
 import sidebar from './config/sidebar.mts';
 
+const baseUrl = '/wzb_knowledge_base/';
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: '知识库',
-  base: '/wzb_knowledge_base/',
+  base: baseUrl,
   // description: '个人学习知识库',
   markdown: {
     lineNumbers: true, // 代码行号
@@ -21,7 +23,7 @@ export default defineConfig({
     },
   },
   // <head> 标签中呈现的其他元素
-  head: [['link', { rel: 'icon', href: './img/favicon.ico' }]],
+  head: [['link', { rel: 'icon', href: join(baseUrl, '/img/favicon.ico') }]],
   rewrites,
   themeConfig: {
     logo: './img/logo.png',
@@ -42,7 +44,7 @@ export default defineConfig({
     darkModeSwitchTitle: '切换到深色主题',
     outline: {
       label: '页面导航',
-      level: [2, 3],
+      level: [2, 4],
     },
     // 启用搜索
     search: {
@@ -88,10 +90,15 @@ export default defineConfig({
       },
       {
         text: '工程化',
+        activeMatch: `/babel|sass|eslint/`,
         items: [
-          { text: 'babel', link: '/babel/' },
-          { text: 'sass', link: '/sass/' },
-          { text: 'eslint', link: '/eslint/' },
+          { text: 'babel', link: '/babel/home.html', activeMatch: '/babel/' },
+          { text: 'sass', link: '/sass/home.html', activeMatch: '/sass/' },
+          {
+            text: 'eslint',
+            link: '/eslint/home.html',
+            activeMatch: '/eslint/',
+          },
           { text: 'vscode', link: '/vscode/' },
           { text: 'npm', link: '/npm/' },
           { text: 'webpack', link: '/webpack/' },
@@ -100,17 +107,23 @@ export default defineConfig({
       },
       {
         text: '网络协议',
+        activeMatch: `/http/`,
         items: [
-          { text: 'http', link: '/http/' },
+          { text: 'http', link: '/http/home.html', activeMatch: '/http/' },
           { text: 'https', link: '/https/' },
           { text: 'http2', link: '/h2/' },
         ],
       },
       {
-        text: '其他',
-        activeMatch: `/node/`,
+        text: '更多',
+        activeMatch: `/node|devtools/`,
         items: [
           { text: 'Node.js', link: '/node/home.html', activeMatch: '/node/' },
+          {
+            text: '开发者工具',
+            link: '/devtools/shortcuts.html',
+            activeMatch: '/devtools/',
+          },
         ],
       },
     ],

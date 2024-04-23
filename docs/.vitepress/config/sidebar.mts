@@ -332,14 +332,155 @@ const sidebar: DefaultTheme.Sidebar = {
         },
       ],
     },
+  ],
+  '/babel/': [
     {
-      text: '开发者工具',
-      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
-      base: '/browser/',
+      base: '/babel/',
       items: [
         {
-          text: '元素(Element)',
-          link: 'element',
+          text: 'babel 介绍',
+          link: 'home',
+        },
+        {
+          text: '配置文件',
+          link: 'configFile',
+        },
+        {
+          text: '配置选项',
+          link: 'configOptions',
+        },
+        {
+          text: '预设',
+          link: 'presets',
+        },
+        {
+          text: '官方预设：@babel/preset-env',
+          link: 'presetsEnv',
+        },
+        {
+          text: '插件',
+          link: 'plugins',
+        },
+        {
+          text: 'babel 架构',
+          link: 'framework',
+        },
+      ],
+    },
+  ],
+  '/sass/': [
+    {
+      base: '/sass/',
+      items: [
+        {
+          text: 'Sass(Scss) 介绍',
+          link: 'home',
+        },
+        {
+          text: 'CSS 功能扩展',
+          link: 'extensions',
+        },
+        {
+          text: 'SassScript',
+          link: 'sassScript',
+        },
+        {
+          text: '基础规则',
+          link: 'rules',
+        },
+        {
+          text: '流控制规则',
+          link: 'flowControl',
+        },
+        {
+          text: '混入(Mixins)',
+          link: 'mixin',
+        },
+        {
+          text: '函数(Function)',
+          link: 'function',
+        },
+        {
+          text: '扩展(Extend)',
+          link: 'extend',
+        },
+        {
+          text: '导入(Import)',
+          link: 'import',
+        },
+        {
+          text: '模块系统(Use)',
+          link: 'use',
+        },
+      ],
+    },
+  ],
+  '/eslint/': [
+    {
+      base: '/eslint/',
+      items: [
+        {
+          text: 'ESLint 介绍',
+          link: 'home',
+        },
+        {
+          text: 'ESLint 配置',
+          link: 'config',
+        },
+        {
+          text: 'ESLint 格式化程序',
+          link: 'formatters',
+        },
+        {
+          text: 'ESLint 插件',
+          link: 'plugins',
+        },
+      ],
+    },
+  ],
+  '/http/': [
+    {
+      base: '/http/',
+      items: [
+        {
+          text: 'HTTP 介绍',
+          link: 'home',
+        },
+        {
+          text: 'HTTP 请求方法',
+          link: 'method',
+        },
+        {
+          text: 'HTTP 状态码',
+          link: 'status',
+        },
+        {
+          text: 'HTTP 内容协商',
+          link: 'content',
+        },
+        {
+          text: 'HTTP 连接管理',
+          link: 'connection',
+        },
+        {
+          text: 'HTTP cookie',
+          link: 'cookie',
+        },
+        {
+          text: 'HTTP 缓存',
+          link: 'cache',
+        },
+        {
+          text: 'HTTP 传输大文件',
+          link: 'bigFile',
+        },
+        {
+          text: 'HTTP 跨域资源共享（CORS）',
+          link: 'cors',
+        },
+        {
+          text: 'HTTP 抓包分析',
+          link: 'capture',
         },
       ],
     },
@@ -357,6 +498,88 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: '模块系统',
           link: 'module',
+        },
+      ],
+    },
+  ],
+  '/devtools/': [
+    {
+      text: '开发者工具',
+      base: '/devtools/',
+      items: [
+        {
+          text: '键盘快捷键',
+          link: 'shortcuts',
+        },
+        {
+          text: '元素(Element)',
+          link: 'element',
+          items: [
+            {
+              text: '样式窗格(Style)',
+              link: 'style',
+            },
+          ],
+        },
+        {
+          text: '控制台(Console)',
+          link: 'console',
+        },
+        {
+          text: '网络(Network)',
+          link: 'network',
+        },
+        {
+          text: '应用(Application)',
+          link: 'application',
+          items: [
+            {
+              text: '应用部分',
+              link: 'application/pwa',
+            },
+            {
+              text: '存储部分',
+              link: 'application/storage',
+            },
+            {
+              text: '后台服务',
+              link: 'application/backgroundServices',
+            },
+            {
+              text: '框架',
+              link: 'application/frame',
+            },
+          ],
+        },
+        {
+          text: '源代码(Sources)',
+          link: 'sources',
+          items: [
+            {
+              text: '查看文件',
+              link: 'sources/viewFile',
+            },
+            {
+              text: '代码段',
+              link: 'sources/snippets',
+            },
+            {
+              text: '编辑文件',
+              link: 'sources/editFile',
+            },
+            {
+              text: '本地替换',
+              link: 'sources/replace',
+            },
+            {
+              text: '断点',
+              link: 'sources/break',
+            },
+            {
+              text: '调试',
+              link: 'sources/debug',
+            },
+          ],
         },
       ],
     },
