@@ -438,6 +438,53 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/http/': [
+    {
+      base: '/http/',
+      items: [
+        {
+          text: 'HTTP 介绍',
+          link: 'home',
+        },
+        {
+          text: 'HTTP 请求方法',
+          link: 'method',
+        },
+        {
+          text: 'HTTP 状态码',
+          link: 'status',
+        },
+        {
+          text: 'HTTP 内容协商',
+          link: 'content',
+        },
+        {
+          text: 'HTTP 连接管理',
+          link: 'connection',
+        },
+        {
+          text: 'HTTP cookie',
+          link: 'cookie',
+        },
+        {
+          text: 'HTTP 缓存',
+          link: 'cache',
+        },
+        {
+          text: 'HTTP 传输大文件',
+          link: 'bigFile',
+        },
+        {
+          text: 'HTTP 跨域资源共享（CORS）',
+          link: 'cors',
+        },
+        {
+          text: 'HTTP 抓包分析',
+          link: 'capture',
+        },
+      ],
+    },
+  ],
   '/node/': [
     {
       text: 'Node.js 基础概念',

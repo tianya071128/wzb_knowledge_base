@@ -107,8 +107,9 @@ export default defineConfig({
       },
       {
         text: '网络协议',
+        activeMatch: `/http/`,
         items: [
-          { text: 'http', link: '/http/' },
+          { text: 'http', link: '/http/home.html', activeMatch: '/http/' },
           { text: 'https', link: '/https/' },
           { text: 'http2', link: '/h2/' },
         ],
