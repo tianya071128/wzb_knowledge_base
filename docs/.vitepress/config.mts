@@ -90,11 +90,15 @@ export default defineConfig({
       },
       {
         text: '工程化',
-        activeMatch: `/babel/`,
+        activeMatch: `/babel|sass|eslint/`,
         items: [
           { text: 'babel', link: '/babel/home.html', activeMatch: '/babel/' },
-          { text: 'sass', link: '/sass/' },
-          { text: 'eslint', link: '/eslint/' },
+          { text: 'sass', link: '/sass/home.html', activeMatch: '/sass/' },
+          {
+            text: 'eslint',
+            link: '/eslint/home.html',
+            activeMatch: '/eslint/',
+          },
           { text: 'vscode', link: '/vscode/' },
           { text: 'npm', link: '/npm/' },
           { text: 'webpack', link: '/webpack/' },
@@ -110,7 +114,7 @@ export default defineConfig({
         ],
       },
       {
-        text: '其他',
+        text: '更多',
         activeMatch: `/node|devtools/`,
         items: [
           { text: 'Node.js', link: '/node/home.html', activeMatch: '/node/' },

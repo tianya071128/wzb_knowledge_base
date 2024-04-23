@@ -335,8 +335,6 @@ const sidebar: DefaultTheme.Sidebar = {
   ],
   '/babel/': [
     {
-      text: 'babel',
-      // collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
       base: '/babel/',
       items: [
         {
@@ -366,6 +364,76 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'babel 架构',
           link: 'framework',
+        },
+      ],
+    },
+  ],
+  '/sass/': [
+    {
+      base: '/sass/',
+      items: [
+        {
+          text: 'Sass(Scss) 介绍',
+          link: 'home',
+        },
+        {
+          text: 'CSS 功能扩展',
+          link: 'extensions',
+        },
+        {
+          text: 'SassScript',
+          link: 'sassScript',
+        },
+        {
+          text: '基础规则',
+          link: 'rules',
+        },
+        {
+          text: '流控制规则',
+          link: 'flowControl',
+        },
+        {
+          text: '混入(Mixins)',
+          link: 'mixin',
+        },
+        {
+          text: '函数(Function)',
+          link: 'function',
+        },
+        {
+          text: '扩展(Extend)',
+          link: 'extend',
+        },
+        {
+          text: '导入(Import)',
+          link: 'import',
+        },
+        {
+          text: '模块系统(Use)',
+          link: 'use',
+        },
+      ],
+    },
+  ],
+  '/eslint/': [
+    {
+      base: '/eslint/',
+      items: [
+        {
+          text: 'ESLint 介绍',
+          link: 'home',
+        },
+        {
+          text: 'ESLint 配置',
+          link: 'config',
+        },
+        {
+          text: 'ESLint 格式化程序',
+          link: 'formatters',
+        },
+        {
+          text: 'ESLint 插件',
+          link: 'plugins',
         },
       ],
     },
