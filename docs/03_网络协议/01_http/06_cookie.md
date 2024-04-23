@@ -1,14 +1,3 @@
----
-title: HTTP cookie
-date: 2021-10-21 15:00:00
-permalink: /http/cookie
-categories:
-  - 其他
-  - HTTP
-tags:
-  - null
----
-
 # Cookie
 
 HTTP 是 "无状态" 的, 而为了让其变得 "有状态", 就衍生了 cookie 机制.
