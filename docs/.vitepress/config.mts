@@ -46,6 +46,9 @@ export default defineConfig({
       label: '页面导航',
       level: [2, 4],
     },
+    sidebarMenuLabel: '菜单',
+    returnToTopLabel: '返回顶部',
+    darkModeSwitchLabel: '主题',
     // 启用搜索
     search: {
       provider: 'local',
