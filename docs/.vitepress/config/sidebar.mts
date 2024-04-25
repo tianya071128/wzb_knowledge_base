@@ -438,6 +438,90 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/npm/': [
+    {
+      base: '/npm/',
+      text: 'npm 概念',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      items: [
+        {
+          text: 'npm',
+          link: 'home',
+        },
+        {
+          text: '包安装机制',
+          link: 'install',
+        },
+        {
+          text: 'package 文件',
+          link: 'packageFile',
+        },
+        {
+          text: '依赖包',
+          link: 'dependent',
+        },
+        {
+          text: '配置',
+          link: 'config',
+        },
+        {
+          text: '发布包',
+          link: 'publishPackage',
+        },
+        {
+          text: '获取包',
+          link: 'getPackage',
+        },
+      ],
+    },
+    {
+      base: '/npm/',
+      text: '命令',
+      collapsed: true, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      items: [
+        {
+          text: 'init 初始化工程',
+          link: 'npm-init',
+        },
+        {
+          text: 'install 安装包',
+          link: 'npm-install',
+        },
+        {
+          text: 'update 更新包',
+          link: 'npm-update',
+        },
+        {
+          text: 'uninstall 卸载包',
+          link: 'npm-uninstall',
+        },
+        {
+          text: 'outdated 过时包',
+          link: 'npm-outdated',
+        },
+        {
+          text: 'ls 查看已安装包',
+          link: 'npm-ls',
+        },
+        {
+          text: 'dedupe 去除重复包',
+          link: 'npm-dedupe',
+        },
+        {
+          text: 'docs 打开包主页',
+          link: 'npm-docs',
+        },
+        {
+          text: 'search 搜索远程包',
+          link: 'npm-search',
+        },
+        {
+          text: 'view 远程查看包信息',
+          link: 'npm-view',
+        },
+      ],
+    },
+  ],
   '/http/': [
     {
       base: '/http/',
