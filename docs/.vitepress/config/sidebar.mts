@@ -566,6 +566,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'HTTP 抓包分析',
           link: 'capture',
         },
+        {
+          text: 'HTTP 问题',
+          link: 'issue',
+        },
       ],
     },
   ],

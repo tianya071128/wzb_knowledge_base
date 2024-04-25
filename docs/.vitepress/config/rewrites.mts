@@ -105,6 +105,7 @@ const rewrites: Record<string, string> = {
   '03_网络协议/01_http/08_传输大文件.md': 'http/bigFile.md',
   '03_网络协议/01_http/09_cors.md': 'http/cors.md',
   '03_网络协议/01_http/10_抓包分析.md': 'http/capture.md',
+  '03_网络协议/01_http/11_问题.md': 'http/issue.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/02_开发者工具/01_index.md': 'devtools/home.md',
