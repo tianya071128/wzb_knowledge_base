@@ -48,7 +48,7 @@
 
 ### 依赖项
 
-以下几个字段描述了项目的依赖项，[详细说明参考](/npm/dependent/)
+以下几个字段描述了项目的依赖项，[详细说明参考](/npm/depend)
 
 - dependencies - 业务依赖
 - devDependencies - 开发依赖
@@ -78,7 +78,7 @@
 
 ### bin - 可执行命令
 
-[详情参考](/npm/scripts/)
+[详情参考](/npm/scripts)
 
 `bin` 字段指定项目的一个或多个可执行文件，将其安装到 PATH 中，这样在终端可以直接运行命令。
 
