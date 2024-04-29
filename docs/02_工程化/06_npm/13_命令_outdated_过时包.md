@@ -1,4 +1,4 @@
-# outdated 过时包
+# outdated 检查过时包
 
 [`npm outdated`](https://docs.npmjs.com/cli/v10/commands/npm-outdated) 用于检查过时的包(需要更新的包)
 

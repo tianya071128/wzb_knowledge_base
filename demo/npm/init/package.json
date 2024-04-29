@@ -8,5 +8,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "vue": "^3.4.25",
+    "wenzubiao_package_demo": "^1.0.1"
+  }
 }

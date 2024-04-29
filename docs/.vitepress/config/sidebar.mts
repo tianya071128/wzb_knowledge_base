@@ -441,12 +441,160 @@ const sidebar: DefaultTheme.Sidebar = {
   '/npm/': [
     {
       base: '/npm/',
-      text: 'npm 概念',
+      text: 'npm 基础',
       collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
       items: [
         {
           text: 'npm',
           link: 'home',
+        },
+        {
+          text: '配置',
+          link: 'config',
+        },
+
+        {
+          text: '发布包',
+          link: 'publishPackage',
+        },
+      ],
+    },
+    {
+      base: '/npm/',
+      text: '命令',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      items: [
+        {
+          text: '管理依赖',
+          items: [
+            {
+              text: 'install 安装包',
+              link: 'npm-install',
+            },
+            {
+              text: 'update 更新包',
+              link: 'npm-update',
+            },
+            {
+              text: 'uninstall 卸载包',
+              link: 'npm-uninstall',
+            },
+            {
+              text: 'dedupe 去除重复包',
+              link: 'npm-dedupe',
+            },
+          ],
+        },
+        {
+          text: '查看依赖',
+          items: [
+            {
+              text: 'ls 查看已安装包',
+              link: 'npm-ls',
+            },
+            {
+              text: 'outdated 检查过时包',
+              link: 'npm-outdated',
+            },
+            {
+              text: 'docs 打开包主页',
+              link: 'npm-docs',
+            },
+            {
+              text: 'bugs 打开包 bugs 地址',
+              link: 'npm-bugs',
+            },
+            {
+              text: 'view 远程查看包信息',
+              link: 'npm-view',
+            },
+            {
+              text: 'search 搜索远程包',
+              link: 'npm-search',
+            },
+          ],
+        },
+        {
+          text: '发布包',
+          items: [
+            {
+              text: 'publish 发布包',
+              link: 'npm-publish',
+            },
+            {
+              text: 'deprecate 弃用包的某个版本',
+              link: 'npm-deprecate',
+            },
+            {
+              text: 'dist-tag 包标签',
+              link: 'npm-dist-tag',
+            },
+          ],
+        },
+        {
+          text: '账户操作',
+          items: [
+            {
+              text: 'login 登录',
+              link: 'npm-login',
+            },
+            {
+              text: 'logout 登出',
+              link: 'npm-logout',
+            },
+            {
+              text: 'token 令牌',
+              link: 'npm-token',
+            },
+          ],
+        },
+        {
+          text: '其他',
+          items: [
+            {
+              text: 'init 初始化工程',
+              link: 'npm-init',
+            },
+            {
+              text: 'config 配置',
+              link: 'npm-config',
+            },
+            {
+              text: 'help 帮助',
+              link: 'npm-help',
+            },
+            {
+              text: 'ping',
+              link: 'npm-ping',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      base: '/npm/',
+      text: 'npm 概念',
+      collapsed: false, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
+      items: [
+        {
+          text: '包名称',
+          link: 'spec',
+        },
+        {
+          text: '范围包',
+          link: 'scope',
+        },
+        {
+          text: '依赖分类',
+          link: 'depend',
+        },
+        {
+          text: '版本规范',
+          link: 'version',
+        },
+        {
+          text: '包入口',
+          link: 'entrance',
         },
         {
           text: '包安装机制',
@@ -455,69 +603,6 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'package 文件',
           link: 'packageFile',
-        },
-        {
-          text: '依赖包',
-          link: 'dependent',
-        },
-        {
-          text: '配置',
-          link: 'config',
-        },
-        {
-          text: '发布包',
-          link: 'publishPackage',
-        },
-        {
-          text: '获取包',
-          link: 'getPackage',
-        },
-      ],
-    },
-    {
-      base: '/npm/',
-      text: '命令',
-      collapsed: true, // 如果为“false”，则组是可折叠的，但默认情况下是展开的
-      items: [
-        {
-          text: 'init 初始化工程',
-          link: 'npm-init',
-        },
-        {
-          text: 'install 安装包',
-          link: 'npm-install',
-        },
-        {
-          text: 'update 更新包',
-          link: 'npm-update',
-        },
-        {
-          text: 'uninstall 卸载包',
-          link: 'npm-uninstall',
-        },
-        {
-          text: 'outdated 过时包',
-          link: 'npm-outdated',
-        },
-        {
-          text: 'ls 查看已安装包',
-          link: 'npm-ls',
-        },
-        {
-          text: 'dedupe 去除重复包',
-          link: 'npm-dedupe',
-        },
-        {
-          text: 'docs 打开包主页',
-          link: 'npm-docs',
-        },
-        {
-          text: 'search 搜索远程包',
-          link: 'npm-search',
-        },
-        {
-          text: 'view 远程查看包信息',
-          link: 'npm-view',
         },
       ],
     },
