@@ -110,10 +110,10 @@ export default defineConfig({
       },
       {
         text: '网络协议',
-        activeMatch: `/http/`,
+        activeMatch: `/http|https/`,
         items: [
           { text: 'http', link: '/http/home.html', activeMatch: '/http/' },
-          { text: 'https', link: '/https/' },
+          { text: 'https', link: '/https/home.html', activeMatch: '/https/' },
           { text: 'http2', link: '/h2/' },
         ],
       },

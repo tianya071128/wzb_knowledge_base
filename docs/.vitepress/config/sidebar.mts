@@ -452,7 +452,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '配置',
           link: 'config',
         },
-
+        {
+          text: '文件夹结构',
+          link: 'folders',
+        },
         {
           text: '发布包',
           link: 'publishPackage',
@@ -567,6 +570,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: 'ping',
               link: 'npm-ping',
             },
+            {
+              text: 'root 根目录',
+              link: 'npm-root',
+            },
           ],
         },
       ],
@@ -654,6 +661,29 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'HTTP 问题',
           link: 'issue',
+        },
+      ],
+    },
+  ],
+  '/https/': [
+    {
+      base: '/https/',
+      items: [
+        {
+          text: 'HTTPS 基本概念',
+          link: 'home',
+        },
+        {
+          text: 'HTTPS 如何解决安全性？',
+          link: 'security',
+        },
+        {
+          text: 'TLS 的连接过程',
+          link: 'tls',
+        },
+        {
+          text: '抓包分析',
+          link: 'capture',
         },
       ],
     },
