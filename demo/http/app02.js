@@ -1,14 +1,19 @@
-//导入httpmok
-const http = require('http');
-
-//创建服务对象
-const server = http.createServer((request, response) => {
-  response.writeHead(200, { 'Content-Length': 10 });
-  response.end('Hello HTTP Server'); //设置响应体，结束响应
+const net = require('node:net');
+const server = net.createServer((c) => {
+  c.on('data', function (data) {
+    console.log(data);
+    c.write('你好');
+  });
+  // console.log(c);
+  c.on('end', () => {
+    console.log('client disconnected');
+  });
+  c.write('hello\r\n');
+  c.pipe(c);
 });
-
-//监听端口，启动服务
-server.listen(9000, () => {
-  //服务启动成功
-  console.log('服务已启动');
+server.on('error', (err) => {
+  throw err;
+});
+server.listen(8124, () => {
+  console.log('server bound');
 });

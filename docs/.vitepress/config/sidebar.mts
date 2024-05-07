@@ -457,6 +457,10 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'folders',
         },
         {
+          text: '脚本',
+          link: 'scripts',
+        },
+        {
           text: '发布包',
           link: 'publishPackage',
         },
@@ -514,6 +518,27 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: 'search 搜索远程包',
               link: 'npm-search',
+            },
+          ],
+        },
+        {
+          text: '运行脚本',
+          items: [
+            {
+              text: 'run-script 运行脚本',
+              link: 'npm-run-script',
+            },
+            {
+              text: 'test 运行 test 脚本',
+              link: 'npm-test',
+            },
+            {
+              text: 'start 运行 start 脚本',
+              link: 'npm-start',
+            },
+            {
+              text: 'stop 运行 stop 脚本',
+              link: 'npm-stop',
             },
           ],
         },
