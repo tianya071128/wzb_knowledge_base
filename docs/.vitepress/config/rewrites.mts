@@ -117,6 +117,7 @@ const rewrites: Record<string, string> = {
   '02_工程化/06_npm/36_命令_start_运行start脚本.md': 'npm/npm-start.md',
   '02_工程化/06_npm/37_命令_stop_运行stop脚本.md': 'npm/npm-stop.md',
   '02_工程化/08_Prettier/01_home.md': 'prettier/home.md',
+  '02_工程化/09_Browserslist/01_home.md': 'browserslist/home.md',
   '03_网络协议/01_http/01_index.md': 'http/home.md',
   '03_网络协议/01_http/02_请求方法.md': 'http/method.md',
   '03_网络协议/01_http/03_状态码.md': 'http/status.md',

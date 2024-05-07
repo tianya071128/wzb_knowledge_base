@@ -90,10 +90,6 @@ module.exports = {
 };
 ```
 
-## 问题
-
-目前没有找到方式在 vscode 的 Prettier 插件中使用共享配置和插件的方式, 虽然这也不是重要的内容, 备注一下
-
 ## 参考
 
 - [知乎-Prettier](https://zhuanlan.zhihu.com/p/81764012?from_voters_page=true)

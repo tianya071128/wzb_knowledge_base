@@ -93,7 +93,7 @@ export default defineConfig({
       },
       {
         text: '工程化',
-        activeMatch: `/babel|sass|eslint|npm|prettier/`,
+        activeMatch: `/babel|sass|eslint|npm|prettier|browserslist/`,
         items: [
           { text: 'babel', link: '/babel/home.html', activeMatch: '/babel/' },
           { text: 'sass', link: '/sass/home.html', activeMatch: '/sass/' },
@@ -109,6 +109,11 @@ export default defineConfig({
             text: 'prettier',
             link: '/prettier/home.html',
             activeMatch: '/prettier/',
+          },
+          {
+            text: 'browserslist',
+            link: '/browserslist/home.html',
+            activeMatch: '/browserslist/',
           },
           // { text: '其他', link: '/otherEngineering/' },
         ],
