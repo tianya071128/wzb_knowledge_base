@@ -1,14 +1,3 @@
----
-title: HTTPS 基本概念
-date: 2021-10-21 15:00:00
-permalink: /https/
-categories:
-  - 其他
-  - HTTPS
-tags:
-  - null
----
-
 # HTTPS
 
 HTTP 是一个“明文”协议，整个传输过程完全透明，任何人都能够在链路中截获、修改或伪造请求/响应报文，数据不具有可信度。
