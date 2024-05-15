@@ -1,14 +1,3 @@
----
-title: TLS 的连接过程
-date: 2021-10-21 15:00:00
-permalink: /https/TLS
-categories:
-  - 其他
-  - HTTPS
-tags:
-  - null
----
-
 # TLS 的连接过程
 
 HTTPS 也就是 HTTP + SSL/TLS + 数字证书，HTTPS 的连接过程也同样要先经过 TCP 层的三次握手建立 TCP 连接，**然后在通过 TLS 建立安全通道，之后就可以通过这个安全通道进行 HTTP 通信了。**
