@@ -732,7 +732,6 @@ const sidebar: DefaultTheme.Sidebar = {
   ],
   '/devtools/': [
     {
-      text: '开发者工具',
       base: '/devtools/',
       items: [
         {
@@ -808,6 +807,40 @@ const sidebar: DefaultTheme.Sidebar = {
               link: 'sources/debug',
             },
           ],
+        },
+        {
+          text: '性能(Performance)',
+          link: 'performance',
+        },
+        {
+          text: '渲染(Rendering)',
+          link: 'rendering',
+          items: [
+            {
+              text: '渲染性能问题',
+              link: 'rendering/performance',
+            },
+            {
+              text: '应用渲染效果',
+              link: 'rendering/effects',
+            },
+            {
+              text: '模拟 CSS 媒体功能',
+              link: 'rendering/emulate',
+            },
+          ],
+        },
+        {
+          text: '覆盖率(Coverage)',
+          link: 'coverage',
+        },
+        {
+          text: '开发者资源(Developer Resources)',
+          link: 'developer-resources',
+        },
+        {
+          text: '网络状况(Netword conditions)',
+          link: 'netword-conditions',
         },
       ],
     },

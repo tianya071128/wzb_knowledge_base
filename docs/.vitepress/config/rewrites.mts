@@ -154,5 +154,15 @@ const rewrites: Record<string, string> = {
   '04_更多/02_开发者工具/21_源代码_本地替换.md': 'devtools/sources/replace.md',
   '04_更多/02_开发者工具/22_源代码_断点.md': 'devtools/sources/break.md',
   '04_更多/02_开发者工具/23_源代码_调试.md': 'devtools/sources/debug.md',
+  '04_更多/02_开发者工具/24_性能.md': 'devtools/performance.md',
+  '04_更多/02_开发者工具/25_渲染.md': 'devtools/rendering.md',
+  '04_更多/02_开发者工具/26_渲染性能问题.md':
+    'devtools/rendering/performance.md',
+  '04_更多/02_开发者工具/27_应用渲染效果.md': 'devtools/rendering/effects.md',
+  '04_更多/02_开发者工具/28_模拟css媒体功能.md':
+    'devtools/rendering/emulate.md',
+  '04_更多/02_开发者工具/29_覆盖率.md': 'devtools/coverage.md',
+  '04_更多/02_开发者工具/30_开发者资源.md': 'devtools/developer-resources.md',
+  '04_更多/02_开发者工具/31_网络状况.md': 'devtools/netword-conditions.md',
 };
 export default rewrites;
