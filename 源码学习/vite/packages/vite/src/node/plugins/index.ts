@@ -136,20 +136,23 @@ export function createPluginHookUtils(
   }
 }
 
+// 提取出插件数组提取出对应的钩子数组, 并对这些钩子根据 order 属性进行排序
 export function getSortedPluginsByHook<K extends keyof Plugin>(
   hookName: K,
   plugins: readonly Plugin[],
 ): PluginWithRequiredHook<K>[] {
   const sortedPlugins: Plugin[] = []
-  // Use indexes to track and insert the ordered plugins directly in the
-  // resulting array to avoid creating 3 extra temporary arrays per hook
+  // Use indexes to track and insert the ordered plugins directly in the 使用索引来跟踪排序的插件并将其直接插入到
+  // resulting array to avoid creating 3 extra temporary arrays per hook 结果数组以避免每个钩子创建 3 个额外的临时数组
   let pre = 0,
     normal = 0,
     post = 0
   for (const plugin of plugins) {
-    const hook = plugin[hookName]
+    const hook = plugin[hookName] // 提取出插件的钩子：https://cn.vitejs.dev/guide/api-plugin#vite-specific-hooks
     if (hook) {
+      // 如果钩子是对象形式
       if (typeof hook === 'object') {
+        // 根据钩子的 order 来区分钩子的执行顺序
         if (hook.order === 'pre') {
           sortedPlugins.splice(pre++, 0, plugin)
           continue
@@ -159,6 +162,7 @@ export function getSortedPluginsByHook<K extends keyof Plugin>(
           continue
         }
       }
+      // 其他的则是默认顺序
       sortedPlugins.splice(pre + normal++, 0, plugin)
     }
   }
@@ -166,6 +170,7 @@ export function getSortedPluginsByHook<K extends keyof Plugin>(
   return sortedPlugins as PluginWithRequiredHook<K>[]
 }
 
+// 获取钩子的处理器：如果是对象，则取自 hook.handler，否则为钩子本身
 export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {

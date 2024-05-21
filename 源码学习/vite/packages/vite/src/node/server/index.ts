@@ -415,12 +415,14 @@ export interface ResolvedServerUrls {
   network: string[]
 }
 
+// 创建服务器实例
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { hotListen: true })
 }
 
+// 创建服务器实例
 export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: { hotListen: boolean },

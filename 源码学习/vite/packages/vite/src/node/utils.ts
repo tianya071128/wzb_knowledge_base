@@ -212,6 +212,7 @@ export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
 const VOLUME_RE = /^[A-Z]:/i
 
+// 规范化路径
 export function normalizePath(id: string): string {
   return path.posix.normalize(isWindows ? slash(id) : id)
 }
@@ -390,9 +391,10 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
+// 获取文件的信息：https://nodejs.cn/api/fs.html#fsstatsyncpath-options
 export function tryStatSync(file: string): fs.Stats | undefined {
   try {
-    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist
+    // The "throwIfNoEntry" is a performance optimization for cases where the file does not exist “throwIfNoEntry”是针对文件不存在的情况的性能优化
     return fs.statSync(file, { throwIfNoEntry: false })
   } catch {
     // Ignore errors
@@ -415,16 +417,19 @@ export function lookupFile(
   }
 }
 
+// 判断传入的文件路径指定的文件是否是 ESM 文件
 export function isFilePathESM(
   filePath: string,
   packageCache?: PackageCache,
 ): boolean {
   if (/\.m[jt]s$/.test(filePath)) {
+    // 如果文件是以 .mts 或 .mjs 结尾，直接返回 true
     return true
   } else if (/\.c[jt]s$/.test(filePath)) {
+    // 如果文件是以 .mjs 或 .mts 结尾, 直接返回 false
     return false
   } else {
-    // check package.json for type: "module"
+    // check package.json for type: "module" 检查 package.json 中的 type: "module"
     try {
       const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
       return pkg?.data.type === 'module'
@@ -1015,6 +1020,7 @@ export async function resolveServerUrls(
   return { local, network }
 }
 
+// 组装成 array
 export function arraify<T>(target: T | T[]): T[] {
   return Array.isArray(target) ? target : [target]
 }
@@ -1068,6 +1074,7 @@ function backwardCompatibleWorkerPlugins(plugins: any) {
   return []
 }
 
+/** 递归的合并配置项 */
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
@@ -1127,6 +1134,7 @@ function mergeConfigRecursively(
   return merged
 }
 
+// 合并配置项
 export function mergeConfig<
   D extends Record<string, any>,
   O extends Record<string, any>,
@@ -1136,26 +1144,29 @@ export function mergeConfig<
   isRoot = true,
 ): Record<string, any> {
   if (typeof defaults === 'function' || typeof overrides === 'function') {
-    throw new Error(`Cannot merge config in form of callback`)
+    throw new Error(`Cannot merge config in form of callback`) // 无法以回调的形式合并配置
   }
 
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
+// 合并 alias
 export function mergeAlias(
   a?: AliasOptions,
   b?: AliasOptions,
 ): AliasOptions | undefined {
   if (!a) return b
   if (!b) return a
+  // 如果都是对象的话, 直接合并俩个对象
   if (isObject(a) && isObject(b)) {
     return { ...a, ...b }
   }
-  // the order is flipped because the alias is resolved from top-down,
-  // where the later should have higher priority
+  // the order is flipped because the alias is resolved from top-down, 顺序被翻转，因为别名是从上到下解析的，
+  // where the later should have higher priority 后者应该具有更高的优先级
   return [...normalizeAlias(b), ...normalizeAlias(a)]
 }
 
+// 规范化 alias，组装成 [Alias] 格式 --  https://cn.vitejs.dev/config/shared-options.html#resolve-alias
 export function normalizeAlias(o: AliasOptions = []): Alias[] {
   return Array.isArray(o)
     ? o.map(normalizeSingleAlias)
@@ -1211,6 +1222,8 @@ export function transformStableResult(
   }
 }
 
+// 异步的递归处理数据，最终会将 Promise 处理：
+// 例如：(Plugin | Plugin[] | Promise<Plugin | Plugin[]>)[] -> Plugin[]
 export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
   do {
     arr = (await Promise.all(arr)).flat(Infinity) as any

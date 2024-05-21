@@ -13,7 +13,7 @@ import { resolveConfig } from './config'
 
 const cli = cac('vite')
 
-// global options
+// global options 命令行选项
 interface GlobalCLIOptions {
   '--'?: string[]
   c?: boolean | string
@@ -68,7 +68,8 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
   }
 }
 /**
- * removing global flags before passing as command specific sub-configs
+ * 从输入的 Options 对象中移除特定的属性(因为这些选项已经应用了)，并将 sourcemap 选项转换为布尔值。
+ * removing global flags before passing as command specific sub-configs 在以命令特定的子范围作为命令之前删除全局标志
  */
 function cleanOptions<Options extends GlobalCLIOptions>(
   options: Options,
@@ -88,7 +89,7 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.m
   delete ret.mode
 
-  // convert the sourcemap option to a boolean if necessary
+  // convert the sourcemap option to a boolean if necessary 如有必要，将 Sourcemap 选项转换为布尔值
   if ('sourcemap' in ret) {
     const sourcemap = ret.sourcemap as `${boolean}` | 'inline' | 'hidden'
     ret.sourcemap =
@@ -151,13 +152,15 @@ cli
     filterDuplicateOptions(options)
     // output structure is preserved even after bundling so require() 即使在捆绑后，输出结构也会保留，因此需要
     // is ok here 这里没问题
+
+    // 创建服务器
     const { createServer } = await import('./server')
     try {
       const server = await createServer({
         root,
         base: options.base,
         mode: options.mode,
-        configFile: options.config,
+        configFile: options.config, // 命令行参数 - 配置文件路径，不设置会自动去取根目录下的
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },

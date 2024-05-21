@@ -713,6 +713,21 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/h2/': [
+    {
+      base: '/h2/',
+      items: [
+        {
+          text: 'HTTP2 基本概念',
+          link: 'home',
+        },
+        {
+          text: 'HTTP2 内核剖析',
+          link: 'analyze',
+        },
+      ],
+    },
+  ],
   '/node/': [
     {
       text: 'Node.js 基础概念',

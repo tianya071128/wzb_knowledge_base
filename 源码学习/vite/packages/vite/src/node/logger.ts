@@ -38,6 +38,7 @@ let lastType: LogType | undefined
 let lastMsg: string | undefined
 let sameCount = 0
 
+// 清空控制台消息
 function clearScreen() {
   const repeatCount = process.stdout.rows - 2
   const blank = repeatCount > 0 ? '\n'.repeat(repeatCount) : ''
@@ -70,13 +71,16 @@ export function createLogger(
   level: LogLevel = 'info',
   options: LoggerOptions = {},
 ): Logger {
+  // 使用自定义 logger 记录消息，那么直接返回自定义的 logger
   if (options.customLogger) {
     return options.customLogger
   }
 
   const loggedErrors = new WeakSet<Error | RollupError>()
+  // prefix: 前缀
+  // allowClearScreen: 是否信息过多时清空消息
   const { prefix = '[vite]', allowClearScreen = true } = options
-  const thresh = LogLevels[level]
+  const thresh = LogLevels[level] // 打印 level
   const canClearScreen =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
@@ -173,6 +177,7 @@ export function createLogger(
     },
   }
 
+  // 打印器
   return logger
 }
 
