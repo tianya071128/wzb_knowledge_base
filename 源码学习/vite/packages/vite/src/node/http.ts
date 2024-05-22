@@ -87,26 +87,37 @@ export interface CorsOptions {
 
 export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
+/**
+ * 根据提供的配置和应用创建一个 HTTP(HTTPS、HTTP2) 服务器。
+ * @param {CommonServerOptions} options - 服务器配置选项，包括代理设置。
+ * @param {Connect.Server} app - 已配置的Connect应用程序实例。
+ * @param {HttpsServerOptions} [httpsOptions] - HTTPS服务器的额外选项（可选）。
+ * @returns {Promise<HttpServer>} 创建的HTTP服务器的Promise。
+ */
 export async function resolveHttpServer(
   { proxy }: CommonServerOptions,
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions,
 ): Promise<HttpServer> {
+  // 如果没有提供HTTPS选项，则创建一个HTTP服务器
   if (!httpsOptions) {
     const { createServer } = await import('node:http')
     return createServer(app)
   }
 
-  // #484 fallback to http1 when proxy is needed.
+  // #484 fallback to http1 when proxy is needed. 需要代理时回退到 http1
+  // 使用了 proxy 时, 不支持使用 h2，此时使用 node:https 创建 HTTPS 服务器
   if (proxy) {
     const { createServer } = await import('node:https')
     return createServer(httpsOptions, app)
-  } else {
+  }
+  // 否则创建一个 HTTP2
+  else {
     const { createSecureServer } = await import('node:http2')
     return createSecureServer(
       {
-        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
-        // errors on large numbers of requests
+        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM 手动增加会话内存以防止 502 ENHANCE_YOUR_CALM
+        // errors on large numbers of requests 大量请求时出错
         maxSessionMemory: 1000,
         ...httpsOptions,
         allowHTTP1: true,
@@ -117,20 +128,22 @@ export async function resolveHttpServer(
   }
 }
 
+// 处理 server.https 配置项
 export async function resolveHttpsConfig(
   https: HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
   const [ca, cert, key, pfx] = await Promise.all([
-    readFileIfExists(https.ca),
-    readFileIfExists(https.cert),
-    readFileIfExists(https.key),
-    readFileIfExists(https.pfx),
+    readFileIfExists(https.ca), // CA 证书文件
+    readFileIfExists(https.cert), // PEM 格式的证书链。
+    readFileIfExists(https.key), // PEM 格式的私钥。
+    readFileIfExists(https.pfx), // PFX 或 PKCS12 编码的私钥和证书链。
   ])
   return { ...https, ca, cert, key, pfx }
 }
 
+// 读取文件
 async function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     return fsp.readFile(path.resolve(value)).catch(() => value)

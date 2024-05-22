@@ -119,30 +119,34 @@ export function resolvePackageData(
   return null
 }
 
+// 从指定目录一直往上查找到 package.json 文件并读取文件内容
 export function findNearestPackageData(
-  basedir: string,
-  packageCache?: PackageCache,
+  basedir: string, // 解析根目录
+  packageCache?: PackageCache, // 缓存对象
 ): PackageData | null {
   const originalBasedir = basedir
   while (basedir) {
+    // 如果存在缓存的话，
     if (packageCache) {
-      const cached = getFnpdCache(packageCache, basedir, originalBasedir)
-      if (cached) return cached
+      const cached = getFnpdCache(packageCache, basedir, originalBasedir) // 提取缓存
+      if (cached) return cached // 存在缓存的话, 直接返回缓存
     }
 
-    const pkgPath = path.join(basedir, 'package.json')
+    const pkgPath = path.join(basedir, 'package.json') // 拼接 package.json 文件名
+    // 检测是否为文件
     if (tryStatSync(pkgPath)?.isFile()) {
       try {
-        const pkgData = loadPackageData(pkgPath)
+        const pkgData = loadPackageData(pkgPath) // 加载 package.json 文件相关信息
 
         if (packageCache) {
-          setFnpdCache(packageCache, pkgData, basedir, originalBasedir)
+          setFnpdCache(packageCache, pkgData, basedir, originalBasedir) // 执行缓存
         }
 
-        return pkgData
+        return pkgData // 找了的话, 直接返回
       } catch {}
     }
 
+    // 如果没有 package.json 的话, 那么就从上一个目录继续查找，直至到根目录
     const nextBasedir = path.dirname(basedir)
     if (nextBasedir === basedir) break
     basedir = nextBasedir
@@ -316,18 +320,18 @@ function getRpdCacheKey(
 }
 
 /**
- * Get cached `findNearestPackageData` value based on `basedir`. When one is found,
- * and we've already traversed some directories between `basedir` and `originalBasedir`,
- * we cache the value for those in-between directories as well.
+ * Get cached `findNearestPackageData` value based on `basedir`. When one is found, 根据“basedir”获取缓存的“findNearestPackageData”值。当找到一个时
+ * and we've already traversed some directories between `basedir` and `originalBasedir`, 我们已经遍历了 `basedir` 和 `originalBasedir` 之间的一些目录
+ * we cache the value for those in-between directories as well. 我们也缓存中间目录的值
  *
- * This makes it so the fs is only read once for a shared `basedir`.
+ * This makes it so the fs is only read once for a shared `basedir`. 这使得 fs 对于共享的“basedir”仅被读取一次
  */
 function getFnpdCache(
   packageCache: PackageCache,
   basedir: string,
   originalBasedir: string,
 ) {
-  const cacheKey = getFnpdCacheKey(basedir)
+  const cacheKey = getFnpdCacheKey(basedir) // 获取缓存标识
   const pkgData = packageCache.get(cacheKey)
   if (pkgData) {
     traverseBetweenDirs(originalBasedir, basedir, (dir) => {
@@ -343,19 +347,20 @@ function setFnpdCache(
   basedir: string,
   originalBasedir: string,
 ) {
-  packageCache.set(getFnpdCacheKey(basedir), pkgData)
+  packageCache.set(getFnpdCacheKey(basedir), pkgData) // 设置缓存
+  // 对两个目录之间遍历目录，同一份 package.json 文件信息
   traverseBetweenDirs(originalBasedir, basedir, (dir) => {
     packageCache.set(getFnpdCacheKey(dir), pkgData)
   })
 }
 
-// package cache key for `findNearestPackageData`
+// package cache key for `findNearestPackageData` `findNearestPackageData` 的包缓存 key
 function getFnpdCacheKey(basedir: string) {
   return `fnpd_${basedir}`
 }
 
 /**
- * Traverse between `longerDir` (inclusive) and `shorterDir` (exclusive) and call `cb` for each dir.
+ * Traverse between `longerDir` (inclusive) and `shorterDir` (exclusive) and call `cb` for each dir. 在 `longerDir` （包含）和 `shorterDir` （不包含）之间遍历，并为每个目录调用 `cb`
  * @param longerDir Longer dir path, e.g. `/User/foo/bar/baz`
  * @param shorterDir Shorter dir path, e.g. `/User/foo`
  */
@@ -366,6 +371,6 @@ function traverseBetweenDirs(
 ) {
   while (longerDir !== shorterDir) {
     cb(longerDir)
-    longerDir = path.dirname(longerDir)
+    longerDir = path.dirname(longerDir) // 返回 path 的目录名
   }
 }

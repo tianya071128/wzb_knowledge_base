@@ -81,10 +81,10 @@ export interface BuildOptions {
    */
   target?: 'modules' | TransformOptions['target'] | false
   /**
-   * whether to inject module preload polyfill.
-   * Note: does not apply to library mode.
+   * whether to inject module preload polyfill. 是否注入模块预加载polyfill
+   * Note: does not apply to library mode. 注意：不适用于库模式
    * @default true
-   * @deprecated use `modulePreload.polyfill` instead
+   * @deprecated use `modulePreload.polyfill` instead 使用 modulePreload.polyfill 代替
    */
   polyfillModulePreload?: boolean
   /**
@@ -306,18 +306,25 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
+/**
+ * 加载 build 构建选项 -- https://cn.vitejs.dev/config/build-options.html
+ */
 export function resolveBuildOptions(
+  /** build 构建选项 -- https://cn.vitejs.dev/config/build-options.html */
   raw: BuildOptions | undefined,
+  /** 记录器 */
   logger: Logger,
+  /** 根目录 -- "D:/低代码/project/wzb/源码学习/vite/playground/html" */
   root: string,
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  // 对 build.polyfillModulePreload 废弃配置进行处理
   if (raw) {
     const { polyfillModulePreload, ...rest } = raw
     raw = rest
     if (deprecatedPolyfillModulePreload !== undefined) {
       logger.warn(
-        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.',
+        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.', // polyfillModulePreload 已弃用。使用 modulePreload.polyfill 代替
       )
     }
     if (
@@ -333,6 +340,7 @@ export function resolveBuildOptions(
     polyfill: true,
   }
 
+  // 默认的 构建配置项
   const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -355,11 +363,13 @@ export function resolveBuildOptions(
     watch: null,
   }
 
+  // 将用户定义的构建配置项和默认的构建配置项进行合并
   const userBuildOptions = raw
     ? mergeConfig(defaultBuildOptions, raw)
     : defaultBuildOptions
 
-  // @ts-expect-error Fallback options instead of merging
+  // @ts-expect-error Fallback options instead of merging 后备选项而不是合并
+  //
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     cssTarget: false,
@@ -386,11 +396,14 @@ export function resolveBuildOptions(
           : defaultModulePreload,
   }
 
-  // handle special build targets
+  // handle special build targets 处理特殊构建目标
   if (resolved.target === 'modules') {
-    resolved.target = ESBUILD_MODULES_TARGET
-  } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
+    resolved.target = ESBUILD_MODULES_TARGET // target 为 modules，默认值
+  }
+  // 当 target 并且压缩器是 terser 时, 需要对其版本进行检测, 已确定能够对 esnext 进行压缩
+  else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     try {
+      // 找到 terser 的 package.json 路径
       const terserPackageJsonPath = requireResolveFromRootWithFallback(
         root,
         'terser/package.json',
@@ -400,17 +413,17 @@ export function resolveBuildOptions(
       )
       const v = terserPackageJson.version.split('.')
       if (v[0] === '5' && v[1] < 16) {
-        // esnext + terser 5.16<: limit to es2021 so it can be minified by terser
+        // esnext + terser 5.16<: limit to es2021 so it can be minified by terser esnext + terser 5.16<：限制为 es2021，以便可以通过 terser 缩小
         resolved.target = 'es2021'
       }
     } catch {}
   }
 
   if (!resolved.cssTarget) {
-    resolved.cssTarget = resolved.target
+    resolved.cssTarget = resolved.target // 没有对 cssTarget 配置, 则取 build.target 配置
   }
 
-  // normalize false string into actual false
+  // normalize false string into actual false 将 false 字符串标准化为实际的 false
   if ((resolved.minify as string) === 'false') {
     resolved.minify = false
   } else if (resolved.minify === true) {

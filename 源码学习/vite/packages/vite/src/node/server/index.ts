@@ -422,29 +422,40 @@ export function createServer(
   return _createServer(inlineConfig, { hotListen: true })
 }
 
-// 创建服务器实例
+/**
+ * 创建服务器实例
+ *  1.解析配置项，得到配置对象
+ */
 export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: { hotListen: boolean },
 ): Promise<ViteDevServer> {
+  // 解析配置项
   const config = await resolveConfig(inlineConfig, 'serve')
 
+  // 初始化 publicDir 配置项的文件列表的 Promise 状态，后续在处理
   const initPublicFilesPromise = initPublicFiles(config)
 
   const { root, server: serverConfig } = config
+  // 处理 server.https 的相关配置项
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
+  // 获取解析后的输出目录集合。
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
     config.build.rollupOptions?.output,
   )
+  // 处理 build.emptyOutDir -- https://cn.vitejs.dev/config/build-options.html#build-emptyoutdir
+  // 若 outDir 在根目录之外则会抛出一个警告避免意外删除掉重要的文件。可以设置该选项来关闭这个警告
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,
     config.root,
     resolvedOutDirs,
   )
+  // 处理 server.watch -- https://cn.vitejs.dev/config/server-options.html#server-watch
+  // 根据给定的配置和选项解析Chokidar监视器的选项。
   const resolvedWatchOptions = resolveChokidarOptions(
     config,
     {
@@ -455,11 +466,15 @@ export async function _createServer(
     emptyOutDir,
   )
 
-  const middlewares = connect() as Connect.Server
+  const middlewares = connect() as Connect.Server // 中间件
+  // server.middlewareMode: 以中间件模式创建 Vite 服务器。
+  // 此时不创建 http 实例, 否则使用默认创建
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+    : // 根据提供的配置和应用创建一个 HTTP(HTTPS、HTTP2) 服务器。
+      await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
+  // 创建 ws 服务
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
   const hot = createHMRBroadcaster()
     .addChannel(ws)
@@ -1044,15 +1059,21 @@ export function createServerCloseFn(
     })
 }
 
+// 处理为绝对路径
 function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
+/** 处理服务器配置项 -- https://cn.vitejs.dev/config/server-options.html */
 export function resolveServerOptions(
+  /** 根目录 */
   root: string,
+  /** 开发服务器选项 */
   raw: ServerOptions | undefined,
+  /** 记录器 */
   logger: Logger,
 ): ResolvedServerOptions {
+  // 组装一下 开发服务器选项
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
@@ -1063,12 +1084,13 @@ export function resolveServerOptions(
     middlewareMode: raw?.middlewareMode || false,
   }
   let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
+  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}'] // 用于限制 Vite 开发服务器提供敏感文件的黑名单。
 
   if (!allowDirs) {
-    allowDirs = [searchForWorkspaceRoot(root)]
+    allowDirs = [searchForWorkspaceRoot(root)] // 查找到最近的工作区目录作为默认值
   }
 
+  // process.versions 列出了 Node.js 的版本字符串及其依赖
   if (process.versions.pnp) {
     try {
       const enableGlobalCache =
@@ -1083,20 +1105,22 @@ export function resolveServerOptions(
         .trim()
       allowDirs.push(yarnCacheDir)
     } catch (e) {
+      // 获取纱线缓存目录错误
       logger.warn(`Get yarn cache dir error: ${e.message}`, {
         timestamp: true,
       })
     }
   }
 
-  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))
+  allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i)) // 处理 server.fs.allow 为绝对路径
 
-  // only push client dir when vite itself is outside-of-root
+  // only push client dir when vite itself is outside-of-root 仅当 vite 本身位于 root 之外时推送客户端目录
   const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
   if (!allowDirs.some((dir) => isParentDirectory(dir, resolvedClientDir))) {
     allowDirs.push(resolvedClientDir)
   }
 
+  // 处理完成 server.fs 文件相关选项
   server.fs = {
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
@@ -1104,10 +1128,12 @@ export function resolveServerOptions(
     cachedChecks: server.fs?.cachedChecks,
   }
 
+  // 检查 server.origin 是否以 / 结尾
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)
     logger.warn(
       colors.yellow(
+        // server.origin 不应以“/”结尾。使用
         `${colors.bold('(!)')} server.origin should not end with "/". Using "${
           server.origin
         }" instead.`,

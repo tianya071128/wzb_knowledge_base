@@ -126,11 +126,11 @@ export interface WatchOptions {
   persistent?: boolean
 
   /**
-   * ([anymatch](https://github.com/micromatch/anymatch)-compatible definition) Defines files/paths to
-   * be ignored. The whole relative or absolute path is tested, not just filename. If a function
-   * with two arguments is provided, it gets called twice per path - once with a single argument
-   * (the path), second time with two arguments (the path and the
-   * [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats) object of that path).
+   * ([anymatch](https://github.com/micromatch/anymatch)-compatible definition) Defines files/paths to （[任意匹配](https://github.com/micromatch/anymatch)-兼容定义）定义文件/路径
+   * be ignored. The whole relative or absolute path is tested, not just filename. If a function 被忽略。测试的是整个相对或绝对路径，而不仅仅是文件名。如果函数
+   * with two arguments is provided, it gets called twice per path - once with a single argument 如果提供了两个参数，则每个路径会调用两次，一次是使用单个参数
+   * (the path), second time with two arguments (the path and the （路径），第二次使用两个参数（路径和
+   * [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats) object of that path). [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats)该路径的对象）。
    */
   ignored?: Matcher
 

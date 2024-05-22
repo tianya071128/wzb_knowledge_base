@@ -183,12 +183,12 @@ export function createDebugger(
 function testCaseInsensitiveFS() {
   if (!CLIENT_ENTRY.endsWith('client.mjs')) {
     throw new Error(
-      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`,
+      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`, // 无法测试不区分大小写的 FS，CLIENT_ENTRY const 不包含 client.mjs
     )
   }
   if (!fs.existsSync(CLIENT_ENTRY)) {
     throw new Error(
-      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' +
+      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' + // 无法测试不区分大小写的 FS，CLIENT_ENTRY 不指向现有文件：
         CLIENT_ENTRY,
     )
   }
@@ -229,13 +229,13 @@ export function fsPathFromUrl(url: string): string {
 }
 
 /**
- * Check if dir is a parent of file
+ * Check if dir is a parent of file 检查 dir 是否是文件的父级
  *
- * Warning: parameters are not validated, only works with normalized absolute paths
+ * Warning: parameters are not validated, only works with normalized absolute paths 警告：参数未经验证，仅适用于标准化绝对路径
  *
- * @param dir - normalized absolute path
- * @param file - normalized absolute path
- * @returns true if dir is a parent of file
+ * @param dir - normalized absolute path 标准化绝对路径
+ * @param file - normalized absolute path 标准化绝对路径
+ * @returns true if dir is a parent of file 如果 dir 是文件的父级，则为 true
  */
 export function isParentDirectory(dir: string, file: string): boolean {
   dir = withTrailingSlash(dir)
@@ -261,6 +261,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
   )
 }
 
+// 检查是否为 http(https) url
 export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
@@ -383,6 +384,11 @@ export function prettifyUrl(url: string, root: string): string {
   }
 }
 
+/**
+ * 检查一个值是否为对象类型。
+ * @param value 未知类型的值，需要检查是否为对象。
+ * @returns 返回一个布尔值，如果该值是对象则为true，否则为false。
+ */
 export function isObject(value: unknown): value is Record<string, any> {
   return Object.prototype.toString.call(value) === '[object Object]'
 }
@@ -612,33 +618,47 @@ export function copyDir(srcDir: string, destDir: string): void {
 
 export const ERR_SYMLINK_IN_RECURSIVE_READDIR =
   'ERR_SYMLINK_IN_RECURSIVE_READDIR'
+/**
+ * 递归地读取给定目录中的所有文件。
+ *
+ * @param dir 需要读取的目录路径。
+ * @returns 返回一个字符串数组，包含目录中所有文件（包括子目录中的文件）的路径。
+ */
 export async function recursiveReaddir(dir: string): Promise<string[]> {
+  // 检测目录是否存在, 不存在直接返回空
   if (!fs.existsSync(dir)) {
     return []
   }
-  let dirents: fs.Dirent[]
+  let dirents: fs.Dirent[] // 目录
   try {
+    // 读取目录内容，包括文件类型信息
     dirents = await fsp.readdir(dir, { withFileTypes: true })
   } catch (e) {
     if (e.code === 'EACCES') {
-      // Ignore permission errors
+      // Ignore permission errors 忽略权限错误
       return []
     }
     throw e
   }
+  // 不支持符号链接
+  // isSymbolicLink：如果 <fs.Dirent> 对象描述符号链接，则返回 true。
   if (dirents.some((dirent) => dirent.isSymbolicLink())) {
     const err: any = new Error(
-      'Symbolic links are not supported in recursiveReaddir',
+      'Symbolic links are not supported in recursiveReaddir', // recursiveReaddir 不支持符号链接
     )
     err.code = ERR_SYMLINK_IN_RECURSIVE_READDIR
     throw err
   }
   const files = await Promise.all(
     dirents.map((dirent) => {
-      const res = path.resolve(dir, dirent.name)
+      // 获取完整路径
+      const res = path.resolve(dir, dirent.name) // dirent.name：此 <fs.Dirent> 对象引用的文件名。
+      // dirent.isDirectory：如果 <fs.Stats> 对象描述文件系统目录，则返回 true。
+      // 如果是目录 ? 递归处理 : 规范路径
       return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
     }),
   )
+  // 拍平
   return files.flat(1)
 }
 
@@ -1020,7 +1040,13 @@ export async function resolveServerUrls(
   return { local, network }
 }
 
-// 组装成 array
+/**
+ * 将输入的目标转换为数组形式。
+ * 如果目标已经是数组，则直接返回该数组；
+ * 如果目标不是数组，则将其封装成一个单元素数组返回。
+ * @param target 输入的目标，可以是任意类型T，或者是T类型的数组。
+ * @returns 返回一个T类型的数组。
+ */
 export function arraify<T>(target: T | T[]): T[] {
   return Array.isArray(target) ? target : [target]
 }

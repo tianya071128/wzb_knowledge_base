@@ -37,6 +37,7 @@ export function isPrimitive(value: unknown): boolean {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
 }
 
+// 检测路径是否为尾随斜杠，否则修正一下
 export function withTrailingSlash(path: string): string {
   if (path[path.length - 1] !== '/') {
     return `${path}/`

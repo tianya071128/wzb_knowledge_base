@@ -39,13 +39,14 @@ function hasRootFile(root: string): boolean {
   return ROOT_FILES.some((file) => fs.existsSync(join(root, file)))
 }
 
+// 判断当前目录下是否存在 package.json 文件
 function hasPackageJSON(root: string) {
   const path = join(root, 'package.json')
-  return fs.existsSync(path)
+  return fs.existsSync(path) // 检查是否存在 package.json 文件
 }
 
 /**
- * Search up for the nearest `package.json`
+ * Search up for the nearest `package.json` 搜索最近的“package.json”
  */
 export function searchForPackageRoot(current: string, root = current): string {
   if (hasPackageJSON(current)) return current
@@ -54,11 +55,17 @@ export function searchForPackageRoot(current: string, root = current): string {
   // reach the fs root
   if (!dir || dir === current) return root
 
-  return searchForPackageRoot(dir, root)
+  return searchForPackageRoot(dir, root) // 递归查找
 }
 
 /**
- * Search up for the nearest workspace root
+ * Search up for the nearest workspace root 搜索最近的工作区根目录
+ * 主要是有些项目是使用 Monorepo 模式, 有着工作区的概念
+ * 一个有效的工作空间应符合以下几个条件，否则会默认以 项目 root 目录 作备选方案：
+ *  在 package.json 中包含 workspaces 字段
+ *     包含以下几种文件之一
+ *          lerna.json
+ *          pnpm-workspace.yaml
  */
 export function searchForWorkspaceRoot(
   current: string,

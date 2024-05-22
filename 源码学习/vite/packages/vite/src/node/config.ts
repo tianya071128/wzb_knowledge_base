@@ -452,6 +452,10 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
  * 1. 加载配置文件，得出配置信息
  * 2. 运行插件的 config 钩子，给插件提供修改配置项的时机
  * 3. 加载对应模式下的 .env 文件，并提取出能够暴露给客户端源码的环境变量
+ * 4. 依次处理：处理 build 构建选项、处理服务器配置项、处理 SSR 选项、处理 Worker 选项
+ * 5. 获取所有插件：包含用户定义的插件、内置插件
+ * 6. 运行插件的 configResolved 钩子
+ * 7. 得到一个最终配置对象 ResolvedConfig
  *
  * @param inlineConfig 一般为命令行配置项
  * @param command  命令
@@ -471,7 +475,7 @@ export async function resolveConfig(
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode // 模式，默认为 development
   const isNodeEnvSet = !!process.env.NODE_ENV
-  const packageCache: PackageCache = new Map()
+  const packageCache: PackageCache = new Map() //
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting 一些依赖项，例如@vue/compiler-*依赖NODE_ENV来获取
   // production-specific behavior, so set it early on 特定于生产的行为，所以尽早设置
@@ -630,45 +634,47 @@ export async function resolveConfig(
     }
   }
 
-  const isProduction = process.env.NODE_ENV === 'production'
+  const isProduction = process.env.NODE_ENV === 'production' // 用户环境是否为生产环境
 
-  // resolve public base url
-  const isBuild = command === 'build'
+  // resolve public base url  // 解析公共基础 url
+  const isBuild = command === 'build' // 是否为 build 命令
   const relativeBaseShortcut = config.base === '' || config.base === './'
 
-  // During dev, we ignore relative base and fallback to '/'
-  // For the SSR build, relative base isn't possible by means
-  // of import.meta.url.
+  // During dev, we ignore relative base and fallback to '/' 在开发过程中，我们忽略相对基数并回退到“/”
+  // For the SSR build, relative base isn't possible by means 对于SSR的构建，相对基础是不可能的
+  // of import.meta.url. import.meta.url的。
   const resolvedBase = relativeBaseShortcut
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
+  // 处理 build 构建选项 -- https://cn.vitejs.dev/config/build-options.html
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
     logger,
     resolvedRoot,
   )
 
-  // resolve cache directory
-  const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
+  // resolve cache directory 解析缓存目录
+  const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir // 找到 package.json 目录
   const cacheDir = normalizePath(
-    config.cacheDir
+    config.cacheDir // 如果用户配置了的话, 采用用户配置的目录
       ? path.resolve(resolvedRoot, config.cacheDir)
-      : pkgDir
+      : pkgDir // 否则使用默认路径
         ? path.join(pkgDir, `node_modules/.vite`)
         : path.join(resolvedRoot, `.vite`),
   )
 
+  // 静态资源过滤器
   const assetsFilter =
     config.assetsInclude &&
     (!Array.isArray(config.assetsInclude) || config.assetsInclude.length)
       ? createFilter(config.assetsInclude)
       : () => false
 
-  // create an internal resolver to be used in special scenarios, e.g.
-  // optimizer & handling css @imports
+  // create an internal resolver to be used in special scenarios, e.g. 创建一个内部解析器以在特殊场景中使用，例如
+  // optimizer & handling css @imports 优化器和处理 css @imports
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
     let aliasContainer: PluginContainer | undefined
     let resolverContainer: PluginContainer | undefined
@@ -713,7 +719,8 @@ export async function resolveConfig(
     }
   }
 
-  const { publicDir } = config
+  const { publicDir } = config // 静态资源服务的文件夹
+  // 规范静态资源服务的文件夹 -- D:/低代码/project/wzb/源码学习/vite/playground/html/public
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
       ? normalizePath(
@@ -724,15 +731,16 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
+  const server = resolveServerOptions(resolvedRoot, config.server, logger) // 处理服务器配置项 -- https://cn.vitejs.dev/config/server-options.html
+  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks) // 处理 SSR 选项 -- https://cn.vitejs.dev/config/ssr-options.html
 
   const optimizeDeps = config.optimizeDeps || {}
 
-  const BASE_URL = resolvedBase
+  const BASE_URL = resolvedBase // base Url：开发或生产环境服务的公共基础路径。
 
   let resolved: ResolvedConfig
 
+  // 修正 worker.plugins 配置格式
   let createUserWorkerPlugins = config.worker?.plugins
   if (Array.isArray(createUserWorkerPlugins)) {
     // @ts-expect-error backward compatibility
@@ -740,8 +748,8 @@ export async function resolveConfig(
 
     logger.warn(
       colors.yellow(
-        `worker.plugins is now a function that returns an array of plugins. ` +
-          `Please update your Vite config accordingly.\n`,
+        `worker.plugins is now a function that returns an array of plugins. ` + // worker.plugins 现在是一个返回插件数组的函数
+          `Please update your Vite config accordingly.\n`, // 请相应更新您的 Vite 配置
       ),
     )
   }
@@ -795,12 +803,14 @@ export async function resolveConfig(
     return resolvedWorkerPlugins
   }
 
+  // 处理 Worker 选项 -- https://cn.vitejs.dev/config/worker-options.html
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
     format: config.worker?.format || 'iife',
     plugins: createWorkerPlugins,
     rollupOptions: config.worker?.rollupOptions || {},
   }
 
+  // 组装成所有的配置项
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -868,6 +878,7 @@ export async function resolveConfig(
     ...config,
     ...resolved,
   }
+  // 获取所有插件：包含用户定义的插件、内置插件
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
@@ -876,7 +887,7 @@ export async function resolveConfig(
   )
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
-  // call configResolved hooks
+  // call configResolved hooks 调用 configResolved 钩子 -- https://cn.vitejs.dev/guide/api-plugin.html#configresolved
   await Promise.all(
     resolved
       .getSortedPluginHooks('configResolved')
@@ -890,6 +901,7 @@ export async function resolveConfig(
     'ssr.',
   )
 
+  // 使用解析的配置
   debug?.(`using resolved config: %O`, {
     ...resolved,
     plugins: resolved.plugins.map((p) => p.name),
@@ -899,7 +911,7 @@ export async function resolveConfig(
     },
   })
 
-  // validate config
+  // validate config 验证配置
 
   if (
     config.build?.terserOptions &&
@@ -908,17 +920,17 @@ export async function resolveConfig(
   ) {
     logger.warn(
       colors.yellow(
-        `build.terserOptions is specified but build.minify is not set to use Terser. ` +
-          `Note Vite now defaults to use esbuild for minification. If you still ` +
-          `prefer Terser, set build.minify to "terser".`,
+        `build.terserOptions is specified but build.minify is not set to use Terser. ` + // 指定了 build.terserOptions 但未将 build.minify 设置为使用 Terser
+          `Note Vite now defaults to use esbuild for minification. If you still ` + // 注意 Vite 现在默认使用 esbuild 进行缩小。如果你还
+          `prefer Terser, set build.minify to "terser".`, // 更喜欢 Terser，将 build.minify 设置为“terser”。
       ),
     )
   }
 
-  // Check if all assetFileNames have the same reference.
-  // If not, display a warn for user.
+  // Check if all assetFileNames have the same reference. 检查所有 assetFileName 是否具有相同的引用
+  // If not, display a warn for user. 如果没有，则向用户显示警告
   const outputOption = config.build?.rollupOptions?.output ?? []
-  // Use isArray to narrow its type to array
+  // Use isArray to narrow its type to array 使用 isArray 将其类型缩小为数组
   if (Array.isArray(outputOption)) {
     const assetFileNamesList = outputOption.map(
       (output) => output.assetFileNames,
@@ -929,6 +941,7 @@ export async function resolveConfig(
         (assetFileNames) => assetFileNames !== firstAssetFileNames,
       )
       if (hasDifferentReference) {
+        // assetFileNames 对于每个 build.rollupOptions.output 并不相等。 Vite 支持跨所有输出的单一模式
         resolved.logger.warn(
           colors.yellow(`
 assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
@@ -938,7 +951,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     }
   }
 
-  // Warn about removal of experimental features
+  // Warn about removal of experimental features 关于删除实验性功能的警告
   if (
     // @ts-expect-error Option removed
     config.legacy?.buildSsrCjsExternalHeuristics ||
@@ -947,12 +960,13 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
   ) {
     resolved.logger.warn(
       colors.yellow(`
-(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
-    The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
+(!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5. (!) 实验性的 Legacy.buildSsrCjsExternalHeuristics 和 ssr.format 在 Vite 5 中被删除。
+    The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816. 唯一的 SSR 输出格式是 ESM。欲了解更多信息，请访问 https://github.com/vitejs/vite/discussions/13816
 `),
     )
   }
 
+  // 整理输出路径
   const resolvedBuildOutDir = normalizePath(
     path.resolve(resolved.root, resolved.build.outDir),
   )
@@ -960,6 +974,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
     isParentDirectory(resolvedBuildOutDir, resolved.root) ||
     resolvedBuildOutDir === resolved.root
   ) {
+    // build.outDir 不能与 root 相同的目录或 root 的父目录，因为这可能会导致 Vite 用构建输出覆盖源文件
     resolved.logger.warn(
       colors.yellow(`
 (!) build.outDir must not be the same directory of root or a parent directory of root as this could cause Vite to overwriting source files with build outputs.
@@ -971,41 +986,45 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 }
 
 /**
- * Resolve base url. Note that some users use Vite to build for non-web targets like
- * electron or expects to deploy
+ * 加载 base Url，在这里会确保是绝对路径
+ * Resolve base url. Note that some users use Vite to build for non-web targets like 解析基本 url。请注意，一些用户使用 Vite 来构建非 Web 目标，例如
+ * electron or expects to deploy 电子或预计部署
  */
 export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
+  /** 是否为 build 命令 */
   isBuild: boolean,
+  /** 打印器 */
   logger: Logger,
 ): string {
+  // 如果是以 '.' 开头, 那么断定为 '/', 并发出警告
   if (base[0] === '.') {
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: "${base}". The value can only be an absolute ` +
-            `URL, "./", or an empty string.`,
+          `(!) invalid "base" option: "${base}". The value can only be an absolute ` + // (!) 无效的“base”选项：“${base}”。该值只能是绝对值
+            `URL, "./", or an empty string.`, // URL、“./”或空字符串。
         ),
       ),
     )
     return '/'
   }
 
-  // external URL flag
-  const isExternal = isExternalUrl(base)
-  // no leading slash warn
+  // external URL flag 外部 URL 标志
+  const isExternal = isExternalUrl(base) // 检查是否为 http(https) url
+  // no leading slash warn // 没有前导斜杠警告
   if (!isExternal && base[0] !== '/') {
     logger.warn(
       colors.yellow(
-        colors.bold(`(!) "base" option should start with a slash.`),
+        colors.bold(`(!) "base" option should start with a slash.`), // (!)“base”选项应以斜杠开头。
       ),
     )
   }
 
-  // parse base when command is serve or base is not External URL
+  // parse base when command is serve or base is not External URL 当命令为服务或基址不是外部 URL 时解析基址
   if (!isBuild || !isExternal) {
     base = new URL(base, 'http://vitejs.dev').pathname
-    // ensure leading slash
+    // ensure leading slash 确保前导斜杠
     if (base[0] !== '/') {
       base = '/' + base
     }
@@ -1356,6 +1375,7 @@ export function getDepOptimizationConfig(
 ): DepOptimizationConfig {
   return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
 }
+// 检测是否启动预构建优化
 export function isDepsOptimizerEnabled(
   config: ResolvedConfig,
   ssr: boolean,

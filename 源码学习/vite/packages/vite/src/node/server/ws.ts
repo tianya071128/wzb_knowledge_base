@@ -16,8 +16,8 @@ import { isObject } from '../utils'
 import type { HMRChannel } from './hmr'
 import type { HttpServer } from '.'
 
-/* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
- * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
+/* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version 在 Bun 中，“ws”模块被重写以挂钩到本机代码。使用捆绑的“js”版本
+ * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket. `ws` 将不起作用，因为 Bun 的 req.socket 不允许读/写底层套接字
  */
 const WebSocketServerRaw = process.versions.bun
   ? // @ts-expect-error: Bun defines `import.meta.require`
@@ -85,6 +85,9 @@ const wsServerEvents = [
   'message',
 ]
 
+/**
+ * 创建一个WebSocket服务器。
+ */
 export function createWebSocketServer(
   server: HttpServer | null,
   config: ResolvedConfig,
@@ -93,42 +96,52 @@ export function createWebSocketServer(
   let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
-  const hmr = isObject(config.server.hmr) && config.server.hmr
-  const hmrServer = hmr && hmr.server
-  const hmrPort = hmr && hmr.port
-  // TODO: the main server port may not have been chosen yet as it may use the next available
+  const hmr = isObject(config.server.hmr) && config.server.hmr // server.hmr 禁用或配置 HMR 连接（用于 HMR websocket 必须使用不同的 http 服务器地址的情况）。 -- https://cn.vitejs.dev/config/server-options.html#server-hmr
+  const hmrServer = hmr && hmr.server // server.hmr.server：自定义配置 HMR 连接的服务器
+  const hmrPort = hmr && hmr.port // server.hmr.port：配置 HMR 连接的端口
+  // TODO: the main server port may not have been chosen yet as it may use the next available 主服务器端口可能尚未选择，因为它可能使用下一个可用的端口
   const portsAreCompatible = !hmrPort || hmrPort === config.server.port
+  // 如果 ws 连接的端口与 http 服务的端口一致的话，可以共享 http 服务器 -- 因为 ws 协议是通过 http 进行连接的
   const wsServer = hmrServer || (portsAreCompatible && server)
   let hmrServerWsListener: (
     req: InstanceType<typeof IncomingMessage>,
     socket: Duplex,
     head: Buffer,
   ) => void
+  // 自定义事件监听器映射
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
+  // 设置默认端口和主机
   const port = hmrPort || 24678
   const host = (hmr && hmr.host) || undefined
 
+  // 如果可以共享服务器(或用户自定义配置)，那么通过 ws 库实现 ws 连接
   if (wsServer) {
     let hmrBase = config.base
     const hmrPath = hmr ? hmr.path : undefined
     if (hmrPath) {
       hmrBase = path.posix.join(hmrBase, hmrPath)
     }
+    // 基于 ws 库创建 ws 服务器
     wss = new WebSocketServerRaw({ noServer: true })
     hmrServerWsListener = (req, socket, head) => {
       if (
         req.headers['sec-websocket-protocol'] === HMR_HEADER &&
         req.url === hmrBase
       ) {
+        // 启动协议变更为 ws
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+          // 连接成功, 发送特定事件
           wss.emit('connection', ws, req)
         })
       }
     }
+    // 监听服务器协议变更事件 -- https://nodejs.cn/api/http.html#%E4%BA%8B%E4%BB%B6upgrade
     wsServer.on('upgrade', hmrServerWsListener)
-  } else {
-    // http server request handler keeps the same with
+  }
+  // 否则自定义创建 HTTP 服务器实现 ws 连接
+  else {
+    // http server request handler keeps the same with http 服务器请求处理程序与
     // https://github.com/websockets/ws/blob/45e17acea791d865df6b255a55182e9c42e5877a/lib/websocket-server.js#L88-L96
     const route = ((_, res) => {
       const statusCode = 426
@@ -152,6 +165,7 @@ export function createWebSocketServer(
     wss = new WebSocketServerRaw({ server: wsHttpServer })
   }
 
+  // ws 连接后, 会触发 connection 事件, 在这里进行 ws 数据交互
   wss.on('connection', (socket) => {
     socket.on('message', (raw) => {
       if (!customListeners.size) return
@@ -178,22 +192,23 @@ export function createWebSocketServer(
     }
   })
 
+  // ws 连接失败
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
-        colors.red(`WebSocket server error: Port is already in use`),
+        colors.red(`WebSocket server error: Port is already in use`), // WebSocket 服务器错误：端口已在使用中
         { error: e },
       )
     } else {
       config.logger.error(
-        colors.red(`WebSocket server error:\n${e.stack || e.message}`),
+        colors.red(`WebSocket server error:\n${e.stack || e.message}`), // WebSocket 服务器错误
         { error: e },
       )
     }
   })
 
-  // Provide a wrapper to the ws client so we can send messages in JSON format
-  // To be consistent with server.ws.send
+  // Provide a wrapper to the ws client so we can send messages in JSON format 为 ws 客户端提供一个包装器，以便我们可以以 JSON 格式发送消息
+  // To be consistent with server.ws.send 与server.ws.send保持一致
   function getSocketClient(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
@@ -216,12 +231,13 @@ export function createWebSocketServer(
     return clientsMap.get(socket)!
   }
 
-  // On page reloads, if a file fails to compile and returns 500, the server
-  // sends the error payload before the client connection is established.
-  // If we have no open clients, buffer the error and send it to the next
-  // connected client.
+  // On page reloads, if a file fails to compile and returns 500, the server 在页面重新加载时，如果文件编译失败并返回500，则服务器
+  // sends the error payload before the client connection is established. 在建立客户端连接之前发送错误负载
+  // If we have no open clients, buffer the error and send it to the next 如果我们没有打开的客户端，请缓冲错误并将其发送到下一个
+  // connected client. 连接的客户端。
   let bufferedError: ErrorPayload | null = null
 
+  // 暴露一些操作方法用于 ws 服务器
   return {
     name: 'ws',
     listen: () => {

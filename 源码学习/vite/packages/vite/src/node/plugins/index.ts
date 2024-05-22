@@ -27,14 +27,16 @@ import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 
+// 处理需要执行的插件集合
 export async function resolvePlugins(
   config: ResolvedConfig,
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === 'build' // 是否为 build 命令
   const isWorker = config.isWorker
+  // 加载 build 命令下插件
   const buildPlugins = isBuild
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
@@ -44,7 +46,7 @@ export async function resolvePlugins(
     (isDepsOptimizerEnabled(config, false) ||
       isDepsOptimizerEnabled(config, true))
   return [
-    depsOptimizerEnabled ? optimizedDepsPlugin(config) : null,
+    depsOptimizerEnabled ? optimizedDepsPlugin(config) : null, // 依赖预构建插件
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
@@ -109,13 +111,19 @@ export async function resolvePlugins(
   ].filter(Boolean) as Plugin[]
 }
 
+/**
+ * 初始化插件的钩子工具方法：
+ *  getSortedPlugins：根据钩子名称获取排好序后的插件数组
+ *  getSortedPluginHooks：根据钩子名称返回已经排好序后的钩子数组
+ */
 export function createPluginHookUtils(
   plugins: readonly Plugin[],
 ): PluginHookUtils {
-  // sort plugins per hook
+  // sort plugins per hook 每个钩子对插件进行排序
   const sortedPluginsCache = new Map<keyof Plugin, Plugin[]>()
+  // 根据钩子名称获取排好序后的插件数组
   function getSortedPlugins<K extends keyof Plugin>(
-    hookName: K,
+    hookName: K, // 钩子类型: https://cn.vitejs.dev/guide/api-plugin.html#vite-specific-hooks
   ): PluginWithRequiredHook<K>[] {
     if (sortedPluginsCache.has(hookName))
       return sortedPluginsCache.get(hookName) as PluginWithRequiredHook<K>[]
@@ -123,6 +131,7 @@ export function createPluginHookUtils(
     sortedPluginsCache.set(hookName, sorted)
     return sorted
   }
+  // 根据钩子名称返回已经排好序后的钩子数组
   function getSortedPluginHooks<K extends keyof Plugin>(
     hookName: K,
   ): NonNullable<HookHandler<Plugin[K]>>[] {
@@ -131,7 +140,9 @@ export function createPluginHookUtils(
   }
 
   return {
+    /** 根据钩子名称获取排好序后的插件数组 */
     getSortedPlugins,
+    /** 根据钩子名称返回已经排好序后的钩子数组 */
     getSortedPluginHooks,
   }
 }
