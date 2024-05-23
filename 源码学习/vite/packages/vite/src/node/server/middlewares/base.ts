@@ -2,13 +2,13 @@ import type { Connect } from 'dep-types/connect'
 import { joinUrlSegments, stripBase } from '../../utils'
 import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
 
-// this middleware is only active when (base !== '/')
+// this middleware is only active when (base !== '/') 该中间件仅在 (base !== '/') 时才处于活动状态
 
 export function baseMiddleware(
   rawBase: string,
   middlewareMode: boolean,
 ): Connect.NextHandleFunction {
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
     const pathname = cleanUrl(url)
@@ -48,13 +48,13 @@ export function baseMiddleware(
       )
       return
     } else {
-      // not found for resources
+      // not found for resources 找不到资源
       res.writeHead(404, {
         'Content-Type': 'text/plain',
       })
       res.end(
-        `The server is configured with a public base URL of ${base} - ` +
-          `did you mean to visit ${redirectPath} instead?`,
+        `The server is configured with a public base URL of ${base} - ` + // 服务器配置有公共基本 URL
+          `did you mean to visit ${redirectPath} instead?`, // 您的意思是访问 ${redirectPath} 吗？
       )
       return
     }

@@ -164,7 +164,7 @@ export async function createPluginContainer(
     createPluginHookUtils(plugins)
 
   const seenResolves: Record<string, true | undefined> = {}
-  const debugResolve = createDebugger('vite:resolve')
+  const debugResolve = createDebugger('vite:resolve') // 创建 debugger 调试器：微型 JavaScript 调试实用程序，模仿 Node.js 核心的调试技术
   const debugPluginResolve = createDebugger('vite:plugin-resolve', {
     onlyWhenFocused: 'vite:plugin',
   })
@@ -180,7 +180,7 @@ export async function createPluginContainer(
   // ---------------------------------------------------------------------------
 
   const watchFiles = new Set<string>()
-  // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
+  // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook 来自 `load()` 钩子的 _addedFiles 保存在此处，以便可以在 `transform()` 钩子中重用
   const moduleNodeToLoadAddedImports = new WeakMap<
     ModuleNode,
     Set<string> | null
@@ -209,7 +209,7 @@ export async function createPluginContainer(
     )
   }
 
-  // parallel, ignores returns
+  // parallel, ignores returns 并行，忽略返回
   async function hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
     hookName: H,
     context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
@@ -233,8 +233,8 @@ export async function createPluginContainer(
     await Promise.all(parallelPromises)
   }
 
-  // throw when an unsupported ModuleInfo property is accessed,
-  // so that incompatible plugins fail in a non-cryptic way.
+  // throw when an unsupported ModuleInfo property is accessed, 访问不支持的 ModuleInfo 属性时抛出
+  // so that incompatible plugins fail in a non-cryptic way. 以便不兼容的插件以非神秘的方式失败
   const ModuleInfoProxy: ProxyHandler<ModuleInfo> = {
     get(info: any, key: string) {
       if (key in info) {
@@ -250,7 +250,7 @@ export async function createPluginContainer(
     },
   }
 
-  // same default value of "moduleInfo.meta" as in Rollup
+  // same default value of "moduleInfo.meta" as in Rollup “moduleInfo.meta”的默认值与 Rollup 中相同
   const EMPTY_OBJECT = Object.freeze({})
 
   function getModuleInfo(id: string) {
@@ -628,7 +628,7 @@ export async function createPluginContainer(
 
   let closed = false
   const processesing = new Set<Promise<any>>()
-  // keeps track of hook promises so that we can wait for them all to finish upon closing the server
+  // keeps track of hook promises so that we can wait for them all to finish upon closing the server 跟踪钩子承诺，以便我们可以在关闭服务器时等待它们全部完成
   function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
     if (!(maybePromise as any)?.then) {
       return maybePromise

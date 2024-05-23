@@ -158,11 +158,12 @@ interface DebuggerOptions {
 
 export type ViteDebugScope = `vite:${string}`
 
+// 创建 debugger 调试器：微型 JavaScript 调试实用程序，模仿 Node.js 核心的调试技术
 export function createDebugger(
   namespace: ViteDebugScope,
   options: DebuggerOptions = {},
 ): debug.Debugger['log'] | undefined {
-  const log = debug(namespace)
+  const log = debug(namespace) // 微型 JavaScript 调试实用程序，模仿 Node.js 核心的调试技术
   const { onlyWhenFocused } = options
 
   let enabled = log.enabled
@@ -298,6 +299,7 @@ const internalPrefixes = [
 const InternalPrefixRE = new RegExp(`^(?:${internalPrefixes.join('|')})`)
 const trailingSeparatorRE = /[?&]$/
 export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
+// 检查给定的URL是否为内部请求。
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
 
@@ -355,9 +357,18 @@ export async function asyncReplace(
   return rewritten
 }
 
+/**
+ * 计算并返回从指定起点开始的经过时间。
+ * @param start 起点时间，单位为毫秒。
+ * @param subtract 从最终时间中减去的毫秒数，默认为0。
+ * @returns 经过时间的字符串表示，根据时间长度不同，返回不同颜色的文本。
+ */
 export function timeFrom(start: number, subtract = 0): string {
+  // 计算当前时间与起点时间的差值，减去指定的减去值
   const time: number | string = performance.now() - start - subtract
+  // 将计算得到的时间转换为字符串，保留两位小数，并以"ms"为单位，在末尾填充空格以达到指定长度
   const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
+  // 根据时间的长短，返回不同颜色的文本
   if (time < 10) {
     return colors.green(timeString)
   } else if (time < 50) {

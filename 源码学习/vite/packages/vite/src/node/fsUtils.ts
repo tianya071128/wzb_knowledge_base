@@ -26,7 +26,7 @@ export interface FsUtils {
     path: string,
     preserveSymlinks?: boolean,
   ) => { path?: string; type: 'directory' | 'file' } | undefined
-
+  // 初始化 watcher 文件监听器一些事件
   initWatcher?: (watcher: FSWatcher) => void
 }
 
@@ -40,26 +40,38 @@ export const commonFsUtils: FsUtils = {
   tryResolveRealFileOrType,
 }
 
-const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
+const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>() // 根据配置缓存一下
+/**
+ * 根据配置参数获取相应的文件系统工具对象。
+ * 这个函数首先尝试从缓存中获取与给定配置对应的文件系统工具，如果缓存中不存在，则根据配置条件动态创建。
+ * 创建的文件系统工具对象将被缓存，以供后续请求使用。
+ *
+ * @param config 配置对象，包含各种项目配置参数。
+ * @returns 返回一个FsUtils实例，提供文件系统操作的方法。
+ */
 export function getFsUtils(config: ResolvedConfig): FsUtils {
+  // 尝试从缓存中获取文件系统工具
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
+    // 根据配置条件决定使用哪种文件系统工具
     if (
       config.command !== 'serve' ||
       config.server.fs.cachedChecks === false ||
       config.server.watch?.ignored ||
       process.versions.pnp
     ) {
-      // cached fsUtils is only used in the dev server for now
-      // it is enabled by default only when there aren't custom watcher ignored patterns configured
-      // and if yarn pnp isn't used
+      // cached fsUtils is only used in the dev server for now 缓存的 fsUtils 目前仅在开发服务器中使用
+      // it is enabled by default only when there aren't custom watcher ignored patterns configured 仅当没有配置自定义观察程序忽略模式时，它才会默认启用
+      // and if yarn pnp isn't used 如果不使用yarn pnp
       fsUtils = commonFsUtils
     } else if (
       !config.resolve.preserveSymlinks &&
       config.root !== getRealPath(config.root)
     ) {
+      // 当不保留符号链接，并且根路径不是实际路径时，使用通用文件系统工具
       fsUtils = commonFsUtils
     } else {
+      // 其他情况下，创建并使用缓存的文件系统工具
       fsUtils = createCachedFsUtils(config)
     }
     cachedFsUtilsMap.set(config, fsUtils)
@@ -129,6 +141,7 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
   return p
 }
 
+// 创建并返回一个缓存文件系统工具对象，用于高效地处理文件路径和文件类型缓存。
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   const root = config.root // root is resolved and normalized, so it doesn't have a trailing slash
   const rootDirPath = `${root}/`
@@ -372,6 +385,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
       return direntCache && direntCache.type === 'directory'
     },
 
+    // 初始化 watcher 文件监听器一些事件
     initWatcher(watcher: FSWatcher) {
       watcher.on('add', (file) => {
         onPathAdd(file, 'file_maybe_symlink')

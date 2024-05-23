@@ -45,7 +45,7 @@ export interface WebSocketServer extends HMRChannel {
    */
   close(): Promise<void>
   /**
-   * Handle custom event emitted by `import.meta.hot.send`
+   * Handle custom event emitted by `import.meta.hot.send` 处理“import.meta.hot.send”发出的自定义事件
    */
   on: WebSocketTypes.Server['on'] & {
     <T extends string>(

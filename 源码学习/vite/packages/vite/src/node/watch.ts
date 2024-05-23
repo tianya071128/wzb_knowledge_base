@@ -139,6 +139,7 @@ class NoopWatcher extends EventEmitter implements FSWatcher {
   }
 }
 
+// 创建空的监听文件器
 export function createNoopWatcher(options: WatchOptions): FSWatcher {
   return new NoopWatcher(options)
 }

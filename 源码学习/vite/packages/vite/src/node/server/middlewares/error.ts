@@ -61,8 +61,8 @@ export function errorMiddleware(
   server: ViteDevServer,
   allowNext = false,
 ): Connect.ErrorHandleFunction {
-  // note the 4 args must be kept for connect to treat this as error middleware
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // note the 4 args must be kept for connect to treat this as error middleware 请注意，必须保留 4 个参数以便 connect 将其视为错误中间件
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   return function viteErrorMiddleware(err: RollupError, _req, res, next) {
     logError(server, err)
 

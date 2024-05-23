@@ -96,7 +96,7 @@ export class ModuleGraph {
   urlToModuleMap = new Map<string, ModuleNode>()
   idToModuleMap = new Map<string, ModuleNode>()
   etagToModuleMap = new Map<string, ModuleNode>()
-  // a single file may corresponds to multiple modules with different queries
+  // a single file may corresponds to multiple modules with different queries 单个文件可能对应于具有不同查询的多个模块
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
 

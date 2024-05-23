@@ -191,13 +191,14 @@ export function setClientErrorHandler(
   server: HttpServer,
   logger: Logger,
 ): void {
+  // 如果客户端连接触发 'error' 事件，则会在此处转发。
   server.on('clientError', (err, socket) => {
-    let msg = '400 Bad Request'
+    let msg = '400 Bad Request' // 400 错误请求
     if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
-      msg = '431 Request Header Fields Too Large'
+      msg = '431 Request Header Fields Too Large' // 431 请求标头字段太大
       logger.warn(
         colors.yellow(
-          'Server responded with status code 431. ' +
+          'Server responded with status code 431. ' + // 服务器响应状态码 431。
             'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
         ),
       )

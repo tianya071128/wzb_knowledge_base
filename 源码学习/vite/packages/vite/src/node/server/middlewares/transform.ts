@@ -41,21 +41,21 @@ const debugCache = createDebugger('vite:cache')
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
 /**
- * A middleware that short-circuits the middleware chain to serve cached transformed modules
+ * A middleware that short-circuits the middleware chain to serve cached transformed modules 一个中间件，可以使中间件链短路以服务缓存的转换模块
  */
 export function cachedTransformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   return function viteCachedTransformMiddleware(req, res, next) {
-    // check if we can return 304 early
-    const ifNoneMatch = req.headers['if-none-match']
+    // check if we can return 304 early 检查我们是否可以提前返回 304
+    const ifNoneMatch = req.headers['if-none-match'] // HTTP 协商缓存头部字段
     if (ifNoneMatch) {
       const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
-        // For CSS requests, if the same CSS file is imported in a module,
-        // the browser sends the request for the direct CSS request with the etag
-        // from the imported CSS module. We ignore the etag in this case.
+        // For CSS requests, if the same CSS file is imported in a module, 对于CSS请求，如果在模块中导入相同的CSS文件，
+        // the browser sends the request for the direct CSS request with the etag 浏览器使用etag发送对直接CSS请求的请求
+        // from the imported CSS module. We ignore the etag in this case. 从导入的CSS模块。在这种情况下，我们忽略etag。
         const maybeMixedEtag = isCSSRequest(req.url!)
         if (!maybeMixedEtag) {
           debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
@@ -69,12 +69,13 @@ export function cachedTransformMiddleware(
   }
 }
 
+// 该函数作为中间件处理请求，用于处理Vite开发服务器的资源转换。
 export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
 
-  // check if public dir is inside root dir
+  // check if public dir is inside root dir 检查公共目录是否在根目录内
   const { root, publicDir } = server.config
   const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
   const publicPath = `${publicDir.slice(root.length)}/`

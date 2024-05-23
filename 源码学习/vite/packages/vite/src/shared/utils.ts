@@ -28,6 +28,7 @@ export function slash(p: string): string {
   return p.replace(windowsSlashRE, '/')
 }
 
+// 规范化 url
 const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')

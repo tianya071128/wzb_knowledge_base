@@ -62,19 +62,19 @@ export interface HMRBroadcasterClient {
 
 export interface HMRChannel {
   /**
-   * Unique channel name
+   * Unique channel name 唯一的频道名称
    */
   name: string
   /**
-   * Broadcast events to all clients
+   * Broadcast events to all clients 向所有客户端广播事件
    */
   send(payload: HMRPayload): void
   /**
-   * Send custom event
+   * Send custom event 发送自定义事件
    */
   send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
-   * Handle custom event emitted by `import.meta.hot.send`
+   * Handle custom event emitted by `import.meta.hot.send` 处理“import.meta.hot.send”发出的自定义事件
    */
   on<T extends string>(
     event: T,
@@ -86,15 +86,15 @@ export interface HMRChannel {
   ): void
   on(event: 'connection', listener: () => void): void
   /**
-   * Unregister event listener
+   * Unregister event listener 取消注册事件监听器
    */
   off(event: string, listener: Function): void
   /**
-   * Start listening for messages
+   * Start listening for messages 开始监听消息
    */
   listen(): void
   /**
-   * Disconnect all clients, called when server is closed or restarted.
+   * Disconnect all clients, called when server is closed or restarted. 断开所有客户端的连接，在服务器关闭或重新启动时调用
    */
   close(): void
 }
@@ -713,24 +713,36 @@ async function readModifiedFile(file: string): Promise<string> {
   }
 }
 
+/**
+ * 创建一个热模块替换（HMR）广播器实例。
+ * HMR广播器用于管理多个HMR通道，并支持跨这些通道进行事件广播和监听。
+ * @returns {HMRBroadcaster} 返回一个HMR广播器实例。
+ */
 export function createHMRBroadcaster(): HMRBroadcaster {
+  // 存储所有已添加的HMR通道。
   const channels: HMRChannel[] = []
+  // 存储已准备好的HMR通道，即所有通道都已建立连接。
   const readyChannels = new WeakSet<HMRChannel>()
+  // HMR广播器对象，提供管理通道和处理事件的方法。
   const broadcaster: HMRBroadcaster = {
+    // 获取当前所有通道的列表。
     get channels() {
       return [...channels]
     },
+    // 添加一个新的HMR通道。
     addChannel(channel) {
+      // 检查是否已存在同名通道，若存在则抛出错误。
       if (channels.some((c) => c.name === channel.name)) {
-        throw new Error(`HMR channel "${channel.name}" is already defined.`)
+        throw new Error(`HMR channel "${channel.name}" is already defined.`) // HMR 频道“${channel.name}”已定义
       }
       channels.push(channel)
-      return broadcaster
+      return broadcaster // 返回当前实例, 链式调用
     },
+    // 注册一个事件监听器，当所有通道都已准备就绪时，特别处理'connection'事件。
     on(event: string, listener: (...args: any[]) => any) {
-      // emit connection event only when all channels are ready
+      // emit connection event only when all channels are ready 仅当所有通道准备就绪时才发出连接事件
       if (event === 'connection') {
-        // make a copy so we don't wait for channels that might be added after this is triggered
+        // make a copy so we don't wait for channels that might be added after this is triggered 制作副本，这样我们就不会等待触发后可能添加的频道
         const channels = this.channels
         channels.forEach((channel) =>
           channel.on('connection', () => {
@@ -745,16 +757,20 @@ export function createHMRBroadcaster(): HMRBroadcaster {
       channels.forEach((channel) => channel.on(event, listener))
       return
     },
+    // 移除指定事件的监听器。
     off(event, listener) {
       channels.forEach((channel) => channel.off(event, listener))
       return
     },
+    // 向所有通道发送消息。
     send(...args: any[]) {
       channels.forEach((channel) => channel.send(...(args as [any])))
     },
+    // 让所有通道开始监听。
     listen() {
       channels.forEach((channel) => channel.listen())
     },
+    // 关闭所有通道。
     close() {
       return Promise.all(channels.map((channel) => channel.close()))
     },
@@ -769,14 +785,26 @@ export interface ServerHMRChannel extends HMRChannel {
   }
 }
 
+/**
+ * 创建一个服务器端热模块替换（HMR）通道。
+ *
+ * @returns {ServerHMRChannel} 返回一个符合 ServerHMRChannel 接口的对象，用于在服务器端进行HMR通信。
+ */
 export function createServerHMRChannel(): ServerHMRChannel {
-  const innerEmitter = new EventEmitter()
-  const outsideEmitter = new EventEmitter()
+  const innerEmitter = new EventEmitter() // 内部事件发射器，用于处理HMR内部事件
+  const outsideEmitter = new EventEmitter() // 外部事件发射器，用于向客户端发送HMR消息
 
+  // 返回一个包含HMR通道功能的对象
   return {
     name: 'ssr',
+    /**
+     * 向客户端发送HMR消息。
+     *
+     * @param {...any[]} args - 可变参数，支持两种调用方式：一种是字符串类型的消息类型和消息数据，另一种是预定义的HMR负载对象。
+     */
     send(...args: any[]) {
       let payload: HMRPayload
+      // 根据参数类型构造payload
       if (typeof args[0] === 'string') {
         payload = {
           type: 'custom',
@@ -786,21 +814,44 @@ export function createServerHMRChannel(): ServerHMRChannel {
       } else {
         payload = args[0]
       }
+      // 发送payload到外部事件发射器
       outsideEmitter.emit('send', payload)
     },
+    /**
+     * 移除指定事件的监听器。
+     *
+     * @param event - 事件名称。
+     * @param listener - 监听器函数。
+     */
     off(event, listener: () => void) {
       innerEmitter.off(event, listener)
     },
+    /**
+     * 监听指定事件。
+     *
+     * @param event - 事件名称。
+     * @param listener - 监听器函数。
+     * @returns 定义了on方法以符合ServerHMRChannel接口。
+     */
     on: ((event: string, listener: () => unknown) => {
       innerEmitter.on(event, listener)
     }) as ServerHMRChannel['on'],
+    /**
+     * 关闭HMR通道，移除所有监听器。
+     */
     close() {
       innerEmitter.removeAllListeners()
       outsideEmitter.removeAllListeners()
     },
+    /**
+     * 触发内部的连接事件，表示一个客户端已连接。
+     */
     listen() {
       innerEmitter.emit('connection')
     },
+    /**
+     * 提供对内部和外部事件发射器的访问。
+     */
     api: {
       innerEmitter,
       outsideEmitter,

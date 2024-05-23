@@ -29,14 +29,24 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
+/**
+ * 创建一个代理中间件。
+ *
+ * @param httpServer HTTP服务器实例，如果为null，则不处理升级请求（如WebSocket）。
+ * @param options 代理配置对象，每个键代表一个上下文，对应的值为代理选项。
+ * @param config 配置对象，包含日志记录器和其他配置项。
+ * @returns 返回一个Connect中间件函数，用于处理HTTP请求的代理。
+ */
 export function proxyMiddleware(
   httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig,
 ): Connect.NextHandleFunction {
-  // lazy require only when proxy is used
+  // lazy require only when proxy is used 仅当使用代理时才需要惰性请求
+  // 创建一个空对象来存储代理实例和它们的选项
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
+  // 遍历代理选项，为每个上下文创建一个代理实例
   Object.keys(options).forEach((context) => {
     let opts = options[context]
     if (!opts) {
@@ -51,6 +61,7 @@ export function proxyMiddleware(
       opts.configure(proxy, opts)
     }
 
+    // 处理代理错误事件
     proxy.on('error', (err, req, originalRes) => {
       // When it is ws proxy, res is net.Socket
       // originalRes can be falsy if the proxy itself errored
@@ -89,6 +100,7 @@ export function proxyMiddleware(
       }
     })
 
+    // 在WebSocket升级请求上设置代理
     proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
       socket.on('error', (err) => {
         config.logger.error(
@@ -112,10 +124,11 @@ export function proxyMiddleware(
       })
     })
 
-    // clone before saving because http-proxy mutates the options
+    // clone before saving because http-proxy mutates the options 保存前克隆，因为 http-proxy 会改变选项
     proxies[context] = [proxy, { ...opts }]
   })
 
+  // 如果提供了HTTP服务器实例，处理WebSocket升级请求
   if (httpServer) {
     httpServer.on('upgrade', (req, socket, head) => {
       const url = req.url!
@@ -139,6 +152,7 @@ export function proxyMiddleware(
     })
   }
 
+  // 返回HTTP请求处理中间件
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteProxyMiddleware(req, res, next) {
     const url = req.url!

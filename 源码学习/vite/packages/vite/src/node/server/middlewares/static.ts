@@ -58,7 +58,8 @@ export function servePublicMiddleware(
   server: ViteDevServer,
   publicFiles?: Set<string>,
 ): Connect.NextHandleFunction {
-  const dir = server.config.publicDir
+  const dir = server.config.publicDir // 获取公共目录并初始化sirv服务器实例用于服务静态文件。
+  // 用于提供静态文件的优化中间件
   const serve = sirv(
     dir,
     sirvOptions({
@@ -66,6 +67,7 @@ export function servePublicMiddleware(
     }),
   )
 
+  // 处理一下请求网址
   const toFilePath = (url: string) => {
     let filePath = cleanUrl(url)
     if (filePath.indexOf('%') !== -1) {
@@ -78,11 +80,12 @@ export function servePublicMiddleware(
     return normalizePath(filePath)
   }
 
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   return function viteServePublicMiddleware(req, res, next) {
-    // To avoid the performance impact of `existsSync` on every request, we check against an
-    // in-memory set of known public files. This set is updated on restarts.
-    // also skip import request and internal requests `/@fs/ /@vite-client` etc...
+    // To avoid the performance impact of `existsSync` on every request, we check against an 为了避免“existsSync”对每个请求的性能影响，我们检查
+    // in-memory set of known public files. This set is updated on restarts. 已知公共文件的内存集中。此集在重新启动时更新。
+    // also skip import request and internal requests `/@fs/ /@vite-client` etc... 也跳过导入请求和内部请求`/@fs//@vite-client`等。。。
+    // 检测是否为公共资源的请求，不是的话 next
     if (
       (publicFiles && !publicFiles.has(toFilePath(req.url!))) ||
       isImportRequest(req.url!) ||
@@ -90,6 +93,7 @@ export function servePublicMiddleware(
     ) {
       return next()
     }
+    // 处理静态资源
     serve(req, res, next)
   }
 }
@@ -105,12 +109,12 @@ export function serveStaticMiddleware(
     }),
   )
 
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   return function viteServeStaticMiddleware(req, res, next) {
-    // only serve the file if it's not an html request or ends with `/`
-    // so that html requests can fallthrough to our html middleware for
-    // special processing
-    // also skip internal requests `/@fs/ /@vite-client` etc...
+    // only serve the file if it's not an html request or ends with `/` 仅当文件不是 html 请求或以“/”结尾时才提供文件
+    // so that html requests can fallthrough to our html middleware for 这样 html 请求就可以传递到我们的 html 中间件
+    // special processing 特殊加工
+    // also skip internal requests `/@fs/ /@vite-client` etc... 还跳过内部请求 `/@fs/ /@vite-client` 等...
     const cleanedUrl = cleanUrl(req.url!)
     if (
       cleanedUrl[cleanedUrl.length - 1] === '/' ||
@@ -168,19 +172,23 @@ export function serveRawFsMiddleware(
 ): Connect.NextHandleFunction {
   const serveFromRoot = sirv(
     '/',
-    sirvOptions({ getHeaders: () => server.config.server.headers }),
+    sirvOptions({
+      getHeaders: () =>
+        /** 指定服务器响应的 header。 */
+        server.config.server.headers,
+    }),
   )
 
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   return function viteServeRawFsMiddleware(req, res, next) {
     const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
-    // In some cases (e.g. linked monorepos) files outside of root will
-    // reference assets that are also out of served root. In such cases
-    // the paths are rewritten to `/@fs/` prefixed paths and must be served by
-    // searching based from fs root.
+    // In some cases (e.g. linked monorepos) files outside of root will 在某些情况下（例如，链接的monorespo）根目录之外的文件将
+    // reference assets that are also out of served root. In such cases 也超出服务根的参考资产。在这种情况下
+    // the paths are rewritten to `/@fs/` prefixed paths and must be served by 路径被重写为“/@fs/”前缀路径，并且必须由
+    // searching based from fs root. 基于fs根进行搜索。
     if (url.pathname.startsWith(FS_PREFIX)) {
       const pathname = decodeURI(url.pathname)
-      // restrict files outside of `fs.allow`
+      // restrict files outside of `fs.allow` 限制“fs.allow”之外的文件
       if (
         !ensureServingAccess(
           slash(path.resolve(fsPathFromId(pathname))),

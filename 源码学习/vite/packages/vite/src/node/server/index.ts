@@ -476,31 +476,37 @@ export async function _createServer(
 
   // 创建 ws 服务
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
+  // 创建一个热模块替换（HMR）广播器实例，并添加 ws 通道和 HMR 通道
   const hot = createHMRBroadcaster()
-    .addChannel(ws)
+    .addChannel(ws) // ws 的类型继承了 HMRChannel 的, 所有也可以视为一个 HMR 通道
     .addChannel(createServerHMRChannel())
+
+  // 添加自定义 hmr 通道
   if (typeof config.server.hmr === 'object' && config.server.hmr.channels) {
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
 
+  // 处理的出静态资源的文件列表
   const publicFiles = await initPublicFilesPromise
   const { publicDir } = config
 
   if (httpServer) {
+    // 处理客户端请求(401、431)等错误的处理器
     setClientErrorHandler(httpServer, config.logger)
   }
 
   // eslint-disable-next-line eqeqeq
-  const watchEnabled = serverConfig.watch !== null
+  const watchEnabled = serverConfig.watch !== null // 是否启用监听文件变化
+  // 文件监听器
   const watcher = watchEnabled
     ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
+        // config file dependencies and env file might be outside of root 配置文件依赖项和环境文件可能位于根目录之外
         [
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
-          // Watch the public directory explicitly because it might be outside
-          // of the root directory.
+          // Watch the public directory explicitly because it might be outside 显式监视公共目录，因为它可能位于外部
+          // of the root directory. 根目录
           ...(publicDir && publicFiles ? [publicDir] : []),
         ],
         resolvedWatchOptions,
@@ -511,11 +517,14 @@ export async function _createServer(
     container.resolveId(url, undefined, { ssr }),
   )
 
+  // 作用? 后续实际作用时在研究
   const container = await createPluginContainer(config, moduleGraph, watcher)
+  // 创建一个用于关闭HTTP服务器的函数。
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  let exitProcess: () => void
+  let exitProcess: () => void // 退出进程方法
 
+  // 创建一个转换 index.html 的方法
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
   const onCrawlEndCallbacks: (() => void)[] = []
@@ -743,7 +752,7 @@ export async function _createServer(
     _shortcutsOptions: undefined,
   }
 
-  // maintain consistency with the server instance after restarting.
+  // maintain consistency with the server instance after restarting. 重启后保持与服务器实例的一致性
   const reflexServer = new Proxy(server, {
     get: (_, property: keyof ViteDevServer) => {
       return server[property]
@@ -754,6 +763,12 @@ export async function _createServer(
     },
   })
 
+  /**
+   * 在非中间件模式下，设置进程退出的处理逻辑。
+   * 该逻辑包括：
+   * 1. 当接收到 SIGTERM 信号时，异步关闭服务器后退出进程。
+   * 2. 如果当前不在持续集成环境中，当标准输入结束时也将触发退出进程的逻辑。
+   */
   if (!middlewareMode) {
     exitProcess = async () => {
       try {
@@ -807,6 +822,7 @@ export async function _createServer(
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
+  // 当监视的目录或文件中的某些内容发生更改时触发。
   watcher.on('change', async (file) => {
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
@@ -815,15 +831,19 @@ export async function _createServer(
     await onHMRUpdate('update', file)
   })
 
+  // 初始化 watcher 文件监听器一些事件
   getFsUtils(config).initWatcher?.(watcher)
 
+  // watcher 文件监听器 add 事件：当添加了监听的文件后触发
   watcher.on('add', (file) => {
     onFileAddUnlink(file, false)
   })
+  // watcher 文件监听器 unlink 事件：当监听文件被删除后触发
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true)
   })
 
+  // 自定义 HMR 事件：当使用 import.meta.hot.invalidate() 使一个模块失效时 -- https://cn.vitejs.dev/guide/api-hmr.html#hot-onevent-cb
   hot.on('vite:invalidate', async ({ path, message }) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
     if (
@@ -850,35 +870,40 @@ export async function _createServer(
     }
   })
 
+  // 服务器启动事件,更新端口,因为这可能与初始值不同
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
-      // update actual port since this may be different from initial value
+      // update actual port since this may be different from initial value 更新实际端口，因为这可能与初始值不同
       serverConfig.port = (httpServer.address() as net.AddressInfo).port
     })
   }
 
-  // apply server configuration hooks from plugins
-  const postHooks: ((() => void) | void)[] = []
+  // 执行 configureServer 钩子：https://cn.vitejs.dev/guide/api-plugin.html#configureserver
+  // apply server configuration hooks from plugins 从插件应用服务器配置挂钩
+  const postHooks: ((() => void) | void)[] = [] // 插件的 configureServer 钩子可以返回一个后置调用函数, 用于在内部中间件运行成功后执行
   for (const hook of config.getSortedPluginHooks('configureServer')) {
     postHooks.push(await hook(reflexServer))
   }
 
-  // Internal middlewares ------------------------------------------------------
+  // Internal middlewares 内部中间件 ------------------------------------------------------
 
-  // request timer
+  // request timer 请求定时器
+  // 用于记录请求处理的时间。
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(root))
   }
 
-  // cors (enabled by default)
+  // cors (enabled by default) cors（默认启用）
   const { cors } = serverConfig
+  // 使用 cors 库作为处理 cors 中间件
   if (cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
+  // 缓存转换中间件，检测请求是否走的是协商缓存 -- 可以使中间件链短路以服务缓存的转换模块
   middlewares.use(cachedTransformMiddleware(server))
 
-  // proxy
+  // proxy 中间件
   const { proxy } = serverConfig
   if (proxy) {
     const middlewareServer =
@@ -886,16 +911,17 @@ export async function _createServer(
     middlewares.use(proxyMiddleware(middlewareServer, proxy, config))
   }
 
-  // base
+  // base 该中间件仅在 (base !== '/') 时才处于活动状态
   if (config.base !== '/') {
     middlewares.use(baseMiddleware(config.rawBase, !!middlewareMode))
   }
 
-  // open in editor support
+  // open in editor support 在编辑器支持中打开
+  // 访问 /__open-in-editor?file=文件路径 时, 会通过 launch-editor(https://github.com/yyx990803/launch-editor) 在编辑器中打开对应的文件
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
-  // ping request handler
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  // ping request handler ping 请求处理程序
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...` 保留命名函数。该名称通过“DEBUG=connect:dispatcher ...”在调试日志中可见
   middlewares.use(function viteHMRPingMiddleware(req, res, next) {
     if (req.headers['accept'] === 'text/x-vite-ping') {
       res.writeHead(204).end()
@@ -904,21 +930,22 @@ export async function _createServer(
     }
   })
 
-  // serve static files under /public
-  // this applies before the transform middleware so that these files are served
-  // as-is without transforms.
+  // serve static files under /public 在 /public 下提供静态文件
+  // this applies before the transform middleware so that these files are served 这适用于转换中间件之前，以便提供这些文件
+  // as-is without transforms. 按原样不进行转换
   if (publicDir) {
     middlewares.use(servePublicMiddleware(server, publicFiles))
   }
 
-  // main transform middleware
+  // main transform middleware 主要转换中间件
+  // 用于处理Vite开发服务器的资源转换。
   middlewares.use(transformMiddleware(server))
 
-  // serve static files
+  // serve static files 提供静态文件
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(server))
 
-  // html fallback
+  // html fallback html 后备
   if (config.appType === 'spa' || config.appType === 'mpa') {
     middlewares.use(
       htmlFallbackMiddleware(
@@ -929,25 +956,26 @@ export async function _createServer(
     )
   }
 
-  // run post config hooks
-  // This is applied before the html middleware so that user middleware can
-  // serve custom content instead of index.html.
+  // configureServer 钩子可以返回一个后置调用函数集合执行
+  // run post config hooks 运行配置后钩子
+  // This is applied before the html middleware so that user middleware can 这在 html 中间件之前应用，以便用户中间件可以
+  // serve custom content instead of index.html. 提供自定义内容而不是index.html。
   postHooks.forEach((fn) => fn && fn())
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    // transform index.html
+    // transform index.html 转换index.html
     middlewares.use(indexHtmlMiddleware(root, server))
 
-    // handle 404s
+    // handle 404s 处理404，最后一个中间件，当其他的中间件都没有处理请求的时候在这里处理
     middlewares.use(notFoundMiddleware())
   }
 
-  // error handler
+  // error handler 错误处理程序
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  // httpServer.listen can be called multiple times
-  // when port when using next port number
-  // this code is to avoid calling buildStart multiple times
+  // httpServer.listen can be called multiple times httpServer.listen 可以被多次调用
+  // when port when using next port number 当端口使用下一个端口号时
+  // this code is to avoid calling buildStart multiple times 这段代码是为了避免多次调用 buildStart
   let initingServer: Promise<void> | undefined
   let serverInited = false
   const initServer = async () => {
@@ -968,7 +996,7 @@ export async function _createServer(
   }
 
   if (!middlewareMode && httpServer) {
-    // overwrite listen to init optimizer before server start
+    // overwrite listen to init optimizer before server start 在服务器启动之前覆盖监听 init 优化器
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
@@ -1021,31 +1049,44 @@ async function startServer(
   server._currentServerPort = serverPort
 }
 
+/**
+ * 创建一个用于关闭HTTP服务器的函数。
+ *
+ * @param server 可以是HttpServer对象或null。如果为null，则返回一个不做任何操作的关闭函数。
+ * @returns 返回一个函数，调用该函数将尝试关闭服务器。如果服务器已启动且有连接，则先关闭所有连接，然后再关闭服务器。
+ */
 export function createServerCloseFn(
   server: HttpServer | null,
 ): () => Promise<void> {
+  // 不存在服务器的话, 则返回个默认关闭方法
   if (!server) {
     return () => Promise.resolve()
   }
 
-  let hasListened = false
+  let hasListened = false // 服务器启动标记
+  // 打开连接的套接字
   const openSockets = new Set<net.Socket>()
 
+  // connection：当建立新的 TCP 流时会触发此事件。
   server.on('connection', (socket) => {
-    openSockets.add(socket)
+    openSockets.add(socket) // 将套接字收集起来
+    // 在套接字关闭时, 从收集器中删除
     socket.on('close', () => {
       openSockets.delete(socket)
     })
   })
 
+  // 服务器成功启动后，标记为已监听
   server.once('listening', () => {
     hasListened = true
   })
 
+  // 服务关闭服务器的方法
   return () =>
     new Promise<void>((resolve, reject) => {
-      openSockets.forEach((s) => s.destroy())
+      openSockets.forEach((s) => s.destroy()) // 销毁所有的套接字
       if (hasListened) {
+        // 如果启动了的话, 调用 close 执行关闭
         server.close((err) => {
           if (err) {
             reject(err)
