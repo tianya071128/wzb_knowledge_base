@@ -984,7 +984,7 @@ export async function _createServer(
 
     initingServer = (async function () {
       await container.buildStart({})
-      // start deps optimizer after all container plugins are ready
+      // start deps optimizer after all container plugins are ready 所有容器插件准备就绪后启动 deps 优化器
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
       }

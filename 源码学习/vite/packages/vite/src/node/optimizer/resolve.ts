@@ -6,10 +6,19 @@ import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
 
+/**
+ * 创建一个优化依赖包含的解析器函数。
+ *
+ * @param config ResolvedConfig 配置对象，包含了项目的配置信息，如根目录、解析选项等。
+ * @param ssr boolean 表示当前环境是否为服务器端渲染。
+ * @returns 返回一个函数，该函数接收一个字符串参数（模块ID），并返回一个Promise，Promise解析为字符串或undefined。
+ *          该函数内部根据传入的模块ID和配置，解析出对应的模块路径或在特殊情况下返回undefined。
+ */
 export function createOptimizeDepsIncludeResolver(
   config: ResolvedConfig,
   ssr: boolean,
 ): (id: string) => Promise<string | undefined> {
+  // 创建一个内部解析器，用于特定情况下的模块解析
   const resolve = config.createResolver({
     asSrc: false,
     scan: true,
@@ -18,11 +27,11 @@ export function createOptimizeDepsIncludeResolver(
     packageCache: new Map(),
   })
   return async (id: string) => {
-    const lastArrowIndex = id.lastIndexOf('>')
+    const lastArrowIndex = id.lastIndexOf('>') // 如果不存在 > 字符
     if (lastArrowIndex === -1) {
-      return await resolve(id, undefined, undefined, ssr)
+      return await resolve(id, undefined, undefined, ssr) // 加载指定 id 对应的文件路径
     }
-    // split nested selected id by last '>', for example:
+    // split nested selected id by last '>', for example: 例如，通过最后一个“>”分割嵌套选定的ID
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
     const nestedRoot = id.substring(0, lastArrowIndex).trim()
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
@@ -41,7 +50,7 @@ export function createOptimizeDepsIncludeResolver(
 }
 
 /**
- * Expand the glob syntax in `optimizeDeps.include` to proper import paths
+ * Expand the glob syntax in `optimizeDeps.include` to proper import paths 将“optimizeDeps.include”中的 glob 语法扩展为正确的导入路径
  */
 export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
   const pkgName = getNpmPackageName(id)

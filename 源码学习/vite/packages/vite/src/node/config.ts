@@ -855,6 +855,7 @@ export async function resolveConfig(
     },
     logger,
     packageCache,
+    // 创建一个内部解析器以在特殊场景中使用
     createResolver,
     optimizeDeps: {
       holdUntilCrawlEnd: true,
@@ -1369,6 +1370,7 @@ async function runConfigHook(
   return conf
 }
 
+// 根据提供的配置和SSR状态，获取依赖优化的配置。
 export function getDepOptimizationConfig(
   config: ResolvedConfig,
   ssr: boolean,
@@ -1381,6 +1383,9 @@ export function isDepsOptimizerEnabled(
   ssr: boolean,
 ): boolean {
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  // optimizeDeps.noDiscovery：禁止自动发现依赖项
+  // optimizeDeps.include：强制预构建链接的包
+  // 当这两项都满足的话, 那么表示不需要依赖预构建
   return !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
 }
 

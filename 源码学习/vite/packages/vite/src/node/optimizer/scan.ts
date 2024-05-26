@@ -64,36 +64,38 @@ export function scanImports(config: ResolvedConfig): {
     missing: Record<string, string>
   }>
 } {
-  // Only used to scan non-ssr code
+  // Only used to scan non-ssr code 仅用于扫描非ssr代码
 
-  const start = performance.now()
-  const deps: Record<string, string> = {}
+  const start = performance.now() // 启动时间
+  const deps: Record<string, string> = {} // 扫描到的依赖集合
   const missing: Record<string, string> = {}
   let entries: string[]
 
   const scanContext = { cancelled: false }
 
+  // 根据配置计算和解析入口文件集合，并且借助 esbuild 处理依赖预构建(会将扫描到的依赖生成到 deps 变量中)
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
     config,
   ).then((computedEntries) => {
+    // 扫描的入口文件路径集合：["D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/index.html"]
     entries = computedEntries
 
     if (!entries.length) {
       if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         config.logger.warn(
           colors.yellow(
-            '(!) Could not auto-determine entry point from rollupOptions or html files ' +
-              'and there are no explicit optimizeDeps.include patterns. ' +
-              'Skipping dependency pre-bundling.',
+            '(!) Could not auto-determine entry point from rollupOptions or html files ' + // '(!) 无法从 rollupOptions 或 html 文件自动确定入口点 '
+              'and there are no explicit optimizeDeps.include patterns. ' + // 并且没有明确的 OptimizeDeps.include 模式。
+              'Skipping dependency pre-bundling.', // 跳过依赖项预捆绑。
           ),
         )
       }
       return
     }
-    if (scanContext.cancelled) return
+    if (scanContext.cancelled) return // 取消标识为真的话, 退出
 
     debug?.(
-      `Crawling dependencies using entries: ${entries
+      `Crawling dependencies using entries: ${entries // 使用条目爬取依赖项：
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
@@ -104,7 +106,7 @@ export function scanImports(config: ResolvedConfig): {
     .then((context) => {
       function disposeContext() {
         return context?.dispose().catch((e) => {
-          config.logger.error('Failed to dispose esbuild context', { error: e })
+          config.logger.error('Failed to dispose esbuild context', { error: e }) // 无法处置 esbuild 上下文
         })
       }
       if (!context || scanContext?.cancelled) {
@@ -115,7 +117,7 @@ export function scanImports(config: ResolvedConfig): {
         .rebuild()
         .then(() => {
           return {
-            // Ensure a fixed order so hashes are stable and improve logs
+            // Ensure a fixed order so hashes are stable and improve logs 确保固定顺序，使哈希稳定并改进日志
             deps: orderedDependencies(deps),
             missing,
           }
@@ -168,15 +170,25 @@ export function scanImports(config: ResolvedConfig): {
   }
 }
 
+/**
+ * 根据配置计算和解析入口文件集合
+ *
+ * @param config 解析后的配置对象，包含优化依赖和构建选项等配置。
+ * @returns 返回一个字符串数组，包含解析后的入口文件路径。
+ */
 async function computeEntries(config: ResolvedConfig) {
   let entries: string[] = []
 
+  // optimizeDeps.entries: 指定自定义条目 -- https://cn.vitejs.dev/config/dep-optimization-options#optimizedeps-entries
+  // 默认情况下，Vite 会抓取你的 index.html 来检测需要预构建的依赖项，如果指定了 build.rollupOptions.input，Vite 将转而去抓取这些入口点。
   const explicitEntryPatterns = config.optimizeDeps.entries
   const buildInput = config.build.rollupOptions?.input
 
   if (explicitEntryPatterns) {
+    // 如果指定了 optimizeDeps.entries 自定义条目的话，以这个为准
     entries = await globEntries(explicitEntryPatterns, config)
   } else if (buildInput) {
+    // 如果指定了 build.rollupOptions.input，则将转而去抓取这些入口点
     const resolvePath = (p: string) => path.resolve(config.root, p)
     if (typeof buildInput === 'string') {
       entries = [resolvePath(buildInput)]
@@ -185,46 +197,55 @@ async function computeEntries(config: ResolvedConfig) {
     } else if (isObject(buildInput)) {
       entries = Object.values(buildInput).map(resolvePath)
     } else {
-      throw new Error('invalid rollupOptions.input value.')
+      throw new Error('invalid rollupOptions.input value.') // rollupOptions.input 值无效
     }
   } else {
+    // 默认情况下, 抓取你的 index.html -- "D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/index.html"
     entries = await globEntries('**/*.html', config)
   }
 
-  // Non-supported entry file types and virtual files should not be scanned for
+  // Non-supported entry file types and virtual files should not be scanned for 不应扫描不支持的条目文件类型和虚拟文件
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, config.optimizeDeps.extensions) &&
-      fs.existsSync(entry),
+      isScannable(entry, config.optimizeDeps.extensions) && // 该入口是一个可扫描的文件
+      fs.existsSync(entry), // 并且存在这个文件
   )
 
   return entries
 }
 
+/**
+ * 在这里借助 esbuild 处理依赖预构建
+ *  1. 生成一个 esbuild 扫描插件，插件中会将扫描到的预构建依赖收集到 deps 入参对象中
+ *  2. 调用 esbuild.context 启动一下构建流程, 快速扫描一下自动查找需要处理的依赖
+ */
 async function prepareEsbuildScanner(
-  config: ResolvedConfig,
-  entries: string[],
-  deps: Record<string, string>,
+  config: ResolvedConfig, // 配置对象
+  entries: string[], // 入口文件路径集合
+  deps: Record<string, string>, //
   missing: Record<string, string>,
   scanContext?: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  const container = await createPluginContainer(config)
+  const container = await createPluginContainer(config) // 创建插件容器
 
-  if (scanContext?.cancelled) return
+  if (scanContext?.cancelled) return // 如果已经取消扫描的话, 直接退出
 
-  const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
+  const plugin = esbuildScanPlugin(config, container, deps, missing, entries) // 生成一个 esbuild 扫描插件
 
+  // optimizeDeps.esbuildOptions：在依赖扫描和优化过程中传递给 esbuild 的选项。
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  // The plugin pipeline automatically loads the closest tsconfig.json.
-  // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
-  // Due to syntax incompatibilities between the experimental decorators in TypeScript and TC39 decorators,
-  // we cannot simply set `"experimentalDecorators": true` or `false`. (https://github.com/vitejs/vite/pull/15206#discussion_r1417414715)
-  // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
-  let tsconfigRaw = esbuildOptions.tsconfigRaw
+  // The plugin pipeline automatically loads the closest tsconfig.json. 插件管道自动加载最接近的 tsconfig.json。
+  // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265). 但如果插件已解析路径，则 esbuild 不支持读取 tsconfig.json (https://github.com/evanw/esbuild/issues/2265)。
+  // Due to syntax incompatibilities between the experimental decorators in TypeScript and TC39 decorators, 由于 TypeScript 中的实验装饰器和 TC39 装饰器之间的语法不兼容，
+  // we cannot simply set `"experimentalDecorators": true` or `false`. (https://github.com/vitejs/vite/pull/15206#discussion_r1417414715) 我们不能简单地设置 `"experimentalDecorators": true` 或 `false`。 （https://github.com/vitejs/vite/pull/15206#discussion_r1417414715）
+  // Therefore, we use the closest tsconfig.json from the root to make it work in most cases. 因此，我们使用距根最近的 tsconfig.json 来使其在大多数情况下都能工作。
+  let tsconfigRaw = esbuildOptions.tsconfigRaw // 该配置项可以被用来将你的 tsconfig.json 文件传递给 transform API， 其不会访问文件系统。 -- https://esbuild.bootcss.com/api/#tsconfig-raw
+  // esbuildOptions.tsconfig: 正常情况下 build API 会自动发现 tsconfig.json 文件，并且在构建时读取其内容。 然而，你也可以配置使用一个自定义 tsconfig.json 文件。 -- https://esbuild.bootcss.com/api/#tsconfig
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
+    // 读取 tsconfig 配置文件内容
     const tsconfigResult = await loadTsconfigJsonForFile(
       path.join(config.root, '_dummy.js'),
     )
@@ -234,17 +255,25 @@ async function prepareEsbuildScanner(
   }
 
   return await esbuild.context({
+    // 构建的工作目录
     absWorkingDir: process.cwd(),
+    // build API 可以写入文件系统中，也可以返回本应作为内存缓冲区写入的文件。
     write: false,
+    // 通常，build API 调用接受一个或多个文件名作为输入。但是，这个配置项可以用于在文件系统上根本不存在模块 的情况下运行构建。它被称为 "stdin"，因为它对应于在命令行上用管道将文件连接到 stdin。
     stdin: {
-      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'),
+      contents: entries.map((e) => `import ${JSON.stringify(e)}`).join('\n'), // 入口文件列表生成一份读取入口文件的内容, 从这里开始构建
       loader: 'js',
     },
+    // 打包一个文件意味着将任何导入的依赖项内联到文件中。 这个过程是递归的，因为依赖的依赖（等等）也将被内联。
     bundle: true,
+    // 为生成的 JavaScript 文件设置输出格式。有三个可能的值：iife、cjs 与 esm。
     format: 'esm',
     logLevel: 'silent',
+    // 插件列表
     plugins: [...plugins, plugin],
+    // 在依赖扫描和优化过程中传递给 esbuild 的选项。
     ...esbuildOptions,
+    //  该配置项可以被用来将你的 tsconfig.json 文件传递给 transform API， 其不会访问文件系统。 -- https://esbuild.bootcss.com/api/#tsconfig-raw
     tsconfigRaw,
   })
 }
@@ -256,25 +285,29 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
+// 获取 glob 模式(如果使用了的话)的入口文件路径
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
-  const resolvedPatterns = arraify(pattern)
+  const resolvedPatterns = arraify(pattern) // 规范为数组：["**/*.html",]
+  // 传递的模式都不是动态模式
   if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
+    // 那么根据根目录的规范为绝对路径返回即可
     return resolvedPatterns.map((p) =>
       normalizePath(path.resolve(config.root, p)),
     )
   }
+  // 根据 fast-glob 库的 glob 模式 查找对应的入口文件
   return glob(pattern, {
     cwd: config.root,
     ignore: [
       '**/node_modules/**',
       `**/${config.build.outDir}/**`,
-      // if there aren't explicit entries, also ignore other common folders
+      // if there aren't explicit entries, also ignore other common folders 如果没有明确的条目，也忽略其他常见文件夹
       ...(config.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
     absolute: true,
-    suppressErrors: true, // suppress EACCES errors
+    suppressErrors: true, // suppress EACCES errors 抑制 EACCES 错误
   })
 }
 
@@ -286,6 +319,7 @@ const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 
+// 生成一个 esbuild 扫描插件 -- 在这里会将扫描到的预构建依赖收集到 depImports 中
 function esbuildScanPlugin(
   config: ResolvedConfig,
   container: PluginContainer,
@@ -546,7 +580,7 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
             if (isInNodeModules(resolved) || include?.includes(id)) {
-              // dependency or forced included, externalize and stop crawling
+              // dependency or forced included, externalize and stop crawling 依赖或强制包含、外部化并停止爬行
               if (isOptimizable(resolved, config.optimizeDeps)) {
                 depImports[id] = resolved
               }
@@ -706,7 +740,17 @@ function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
   return false
 }
 
+/**
+ * 检查给定的 id 是否表示一个可扫描的文件。
+ * @param id 要检查的文件标识符。
+ * @param extensions 可选，文件的扩展名列表，用于进一步筛选。
+ * @returns 返回一个布尔值，表示 id 是否表示一个应该被扫描的文件。
+ */
 function isScannable(id: string, extensions: string[] | undefined): boolean {
+  // 检查 id 是否匹配 JavaScript 类型的正则表达式，
+  // 或者是否匹配 HTML 类型的正则表达式，
+  // 或者是否在给定的扩展名列表中，
+  // 如果都不匹配，则返回 false。
   return (
     JS_TYPES_RE.test(id) ||
     htmlTypesRE.test(id) ||

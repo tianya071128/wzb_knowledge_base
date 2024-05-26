@@ -24,14 +24,15 @@ import type { DepOptimizationResult, DepsOptimizer, OptimizedDepInfo } from '.'
 const debug = createDebugger('vite:deps')
 
 /**
- * The amount to wait for requests to register newly found dependencies before triggering
- * a re-bundle + page reload
+ * The amount to wait for requests to register newly found dependencies before triggering 在触发之前等待注册新发现的依赖项的请求的时间
+ * a re-bundle + page reload 重新捆绑 + 页面重新加载
  */
 const debounceMs = 100
 
 const depsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 const devSsrDepsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 
+// 根据指定配置对象获取预构建依赖优化器
 export function getDepsOptimizer(
   config: ResolvedConfig,
   ssr?: boolean,
@@ -39,10 +40,12 @@ export function getDepsOptimizer(
   return (ssr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(config)
 }
 
+// 初始化依赖优化器。
 export async function initDepsOptimizer(
   config: ResolvedConfig,
   server: ViteDevServer,
 ): Promise<void> {
+  // 检查依赖优化器是否已存在，若不存在则创建
   if (!getDepsOptimizer(config, false)) {
     await createDepsOptimizer(config, server)
   }
@@ -80,28 +83,35 @@ async function createDepsOptimizer(
   config: ResolvedConfig,
   server: ViteDevServer,
 ): Promise<void> {
-  const { logger } = config
+  const { logger } = config // 配置对象
   const ssr = false
-  const sessionTimestamp = Date.now().toString()
+  const sessionTimestamp = Date.now().toString() // 时间戳
 
+  // 加载缓存的优化元数据
   const cachedMetadata = await loadCachedDepOptimizationMetadata(config, ssr)
 
   let debounceProcessingHandle: NodeJS.Timeout | undefined
 
   let closed = false
 
+  // 依赖优化元数据，如果不存在缓存中的话，直接创建一个
   let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, ssr, sessionTimestamp)
 
+  // 依赖优化选项：https://cn.vitejs.dev/config/dep-optimization-options
   const options = getDepOptimizationConfig(config, ssr)
 
+  // noDiscovery：禁止自动发现依赖项
+  // holdUntilCrawlEnd：被启用时，系统会在冷启动时保持第一个优化的依赖结果，直到所有的静态导入都被检索完毕
   const { noDiscovery, holdUntilCrawlEnd } = options
 
   const depsOptimizer: DepsOptimizer = {
     metadata,
     registerMissingImport,
     run: () => debouncedProcessing(0),
+    /** 用于判断给定的模块ID是否指向一个优化过的依赖文件。 */
     isOptimizedDepFile: createIsOptimizedDepFile(config),
+    /** 判断请求URL是否指向缓存目录中的文件的函数。 */
     isOptimizedDepUrl: createIsOptimizedDepUrl(config),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       `${depInfo.file}?v=${depInfo.browserHash}`,
@@ -109,7 +119,7 @@ async function createDepsOptimizer(
     options,
   }
 
-  depsOptimizerMap.set(config, depsOptimizer)
+  depsOptimizerMap.set(config, depsOptimizer) // 缓存一下
 
   let newDepsDiscovered = false
 
@@ -162,10 +172,10 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
   let warnAboutMissedDependencies = false
 
-  // If this is a cold run, we wait for static imports discovered
-  // from the first request before resolving to minimize full page reloads.
-  // On warm start or after the first optimization is run, we use a simpler
-  // debounce strategy each time a new dep is discovered.
+  // If this is a cold run, we wait for static imports discovered 如果这是冷运行，我们等待发现静态导入
+  // from the first request before resolving to minimize full page reloads. 在解析之前从第一个请求开始，以尽量减少整页重新加载。
+  // On warm start or after the first optimization is run, we use a simpler 在热启动或第一次优化运行后，我们使用更简单的
+  // debounce strategy each time a new dep is discovered. 每次发现新的 dep 时的反跳策略。
   let waitingForCrawlEnd = false
   if (!cachedMetadata) {
     server._onCrawlEnd(onCrawlEnd)
@@ -196,14 +206,24 @@ async function createDepsOptimizer(
   }
 
   if (!cachedMetadata) {
-    // Enter processing state until crawl of static imports ends
+    // Enter processing state until crawl of static imports ends 进入处理状态，直到静态导入的抓取结束
     currentlyProcessing = true
 
-    // Initialize discovered deps with manually added optimizeDeps.include info
+    // Initialize discovered deps with manually added optimizeDeps.include info 使用手动添加的 optimDeps.include 信息初始化发现的 deps
 
-    const manuallyIncludedDeps: Record<string, string> = {}
-    await addManuallyIncludedOptimizeDeps(manuallyIncludedDeps, config, ssr)
+    const manuallyIncludedDeps: Record<string, string> = {} // 手动预构建依赖列表
+    await addManuallyIncludedOptimizeDeps(manuallyIncludedDeps, config, ssr) // 向依赖列表中手动添加需要优化的依赖项。
 
+    // 手动预构建依赖列表转化为 依赖相关信息，例如
+    // {
+    //  eslint: {
+    //    id: "eslint", 依赖id
+    //    file: "D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/node_modules/.vite/deps/eslint.js", 构建后存储的路径
+    //    src: "D:/学习/wzb_knowledge_base/源码学习/vite/node_modules/.pnpm/eslint@8.57.0/node_modules/eslint/lib/api.js", 依赖路径
+    //    browserHash: "6362e130", 浏览器哈希值
+    //    exportsData: { ... }, 依赖文件导出相关数据
+    //  }
+    // }
     const manuallyIncludedDepsInfo = toDiscoveredDependencies(
       config,
       manuallyIncludedDeps,
@@ -211,6 +231,7 @@ async function createDepsOptimizer(
       sessionTimestamp,
     )
 
+    // 遍历手动预构建依赖列表信息, 添加到 优化元数据(metadata) 的 discovered 属性中
     for (const depInfo of Object.values(manuallyIncludedDepsInfo)) {
       addOptimizedDepInfo(metadata, 'discovered', {
         ...depInfo,
@@ -219,17 +240,18 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
+    // 如果 禁止自动发现依赖项 的话, 那么直接启动第一次优化
     if (noDiscovery) {
-      // We don't need to scan for dependencies or wait for the static crawl to end
-      // Run the first optimization run immediately
+      // We don't need to scan for dependencies or wait for the static crawl to end 我们不需要扫描依赖关系或等待静态爬行结束
+      // Run the first optimization run immediately 立即运行第一次优化
       runOptimizer()
     } else {
-      // Important, the scanner is dev only
+      // Important, the scanner is dev only 重要的是，扫描仪仅供开发人员使用
       depsOptimizer.scanProcessing = new Promise((resolve) => {
-        // Runs in the background in case blocking high priority tasks
+        // Runs in the background in case blocking high priority tasks 在后台运行以防阻塞高优先级任务
         ;(async () => {
           try {
-            debug?.(colors.green(`scanning for dependencies...`))
+            debug?.(colors.green(`scanning for dependencies...`)) // 扫描依赖关系...
 
             discover = discoverProjectDependencies(config)
             const deps = await discover.result
@@ -641,20 +663,20 @@ async function createDepsOptimizer(
     }, timeout)
   }
 
-  // onCrawlEnd is called once when the server starts and all static
-  // imports after the first request have been crawled (dynamic imports may also
-  // be crawled if the browser requests them right away).
+  // onCrawlEnd is called once when the server starts and all static onCrawlEnd 在服务器启动时调用一次并且全部静态
+  // imports after the first request have been crawled (dynamic imports may also 在抓取第一个请求后导入（动态导入也可以
+  // be crawled if the browser requests them right away). 如果浏览器立即请求它们，则将被抓取）。
   async function onCrawlEnd() {
     // switch after this point to a simple debounce strategy
     waitingForCrawlEnd = false
 
-    debug?.(colors.green(`✨ static imports crawl ended`))
+    debug?.(colors.green(`✨ static imports crawl ended`)) // 静态导入抓取结束
     if (closed) {
       return
     }
 
-    // Await for the scan+optimize step running in the background
-    // It normally should be over by the time crawling of user code ended
+    // Await for the scan+optimize step running in the background 等待后台运行的扫描+优化步骤
+    // It normally should be over by the time crawling of user code ended 通常应该在用户代码爬取结束时结束
     await depsOptimizer.scanProcessing
 
     if (optimizationResult && !config.optimizeDeps.noDiscovery) {
