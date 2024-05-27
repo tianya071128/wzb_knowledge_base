@@ -6,6 +6,7 @@ const { version } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url)).toString(),
 )
 
+/** vite 版本号 */
 export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [

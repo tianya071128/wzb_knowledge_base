@@ -924,11 +924,11 @@ export function unique<T>(arr: T[]): T[] {
 }
 
 /**
- * Returns resolved localhost address when `dns.lookup` result differs from DNS
+ * Returns resolved localhost address when `dns.lookup` result differs from DNS 当“dns.lookup”结果与dns不同时，返回解析的本地主机地址
  *
- * `dns.lookup` result is same when defaultResultOrder is `verbatim`.
- * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
- * For example, when IPv6 is not supported on that machine/network.
+ * `dns.lookup` result is same when defaultResultOrder is `verbatim`. 当defaultResultOrder为“逐字逐句”时，“dns.lookup”结果相同。
+ * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same. 即使defaultResultOrder是“ipv4first”，“dns.lookup”的结果也可能相同。
+ * For example, when IPv6 is not supported on that machine/network. 例如，当该计算机/网络不支持IPv6时。
  */
 export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   string | undefined
@@ -963,23 +963,34 @@ export interface Hostname {
   name: string
 }
 
+/**
+ * 解析并返回主机名。
+ *
+ * @param optionsHost - 可以是字符串、布尔值或未定义。字符串指定主机名，布尔值用于控制默认行为：
+ *                      如果为 `undefined` 或 `false`，则使用安全默认值 `localhost`；
+ *                      如果为 `true`，则主机名设为 `undefined`，意味着监听所有IP地址。
+ * @returns 返回一个 Promise，解析为一个包含 `host` 和 `name` 属性的对象。`host` 是输入的主机名，
+ *          而 `name` 是经过处理的主机名，可能被重定向为本地主机地址。
+ */
 export async function resolveHostname(
   optionsHost: string | boolean | undefined,
 ): Promise<Hostname> {
   let host: string | undefined
+  // 根据 optionsHost 的值设置 host
   if (optionsHost === undefined || optionsHost === false) {
-    // Use a secure default
+    // Use a secure default 使用安全默认值
     host = 'localhost'
   } else if (optionsHost === true) {
-    // If passed --host in the CLI without arguments
-    host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
+    // If passed --host in the CLI without arguments 如果在 CLI 中传递 --host 且不带参数
+    host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs) 未定义通常意味着 0.0.0.0 或 ::（监听所有 IP）
   } else {
-    host = optionsHost
+    host = optionsHost // 直接使用 optionsHost 的值
   }
 
-  // Set host name to localhost when possible
+  // Set host name to localhost when possible 尽可能将主机名设置为 localhost
   let name = host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
+  // 当主机名设置为 localhost 时，检查是否有与 DNS 不同的本地主机地址
   if (host === 'localhost') {
     // See #8647 for more details.
     const localhostAddr = await getLocalhostAddressIfDiffersFromDNS()
@@ -991,39 +1002,59 @@ export async function resolveHostname(
   return { host, name }
 }
 
+/**
+ * 解析服务器URLs
+ *
+ * 此异步函数根据提供的服务器信息、选项和配置，解析出本地和网络的服务器URL列表。
+ *
+ * @param server 服务器对象，用于获取服务器地址信息。
+ * @param options 服务器的通用选项，包括是否使用HTTPS。
+ * @param config 解析后的配置对象，提供基础路径等配置信息。
+ * @returns 返回一个Promise，解析为一个对象，包含本地（local）和网络（network）的URL数组。
+ */
 export async function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
   config: ResolvedConfig,
 ): Promise<ResolvedServerUrls> {
+  // 获取服务器地址信息
   const address = server.address()
 
+  // 判断地址信息是否完整
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (!isAddressInfo(address)) {
     return { local: [], network: [] }
   }
 
+  // 初始化本地和网络URL数组
   const local: string[] = []
   const network: string[] = []
+  // 解析主机名
   const hostname = await resolveHostname(options.host)
+  // 确定协议类型
   const protocol = options.https ? 'https' : 'http'
+  // 获取端口号
   const port = address.port
+  // 确定基础路径
   const base =
     config.rawBase === './' || config.rawBase === '' ? '/' : config.rawBase
 
+  // 处理具有明确主机名的情况
   if (hostname.host !== undefined && !wildcardHosts.has(hostname.host)) {
-    let hostnameName = hostname.name
-    // ipv6 host
+    let hostnameName = hostname.name // 例如: localhost
+    // ipv6 host 处理IPv6主机名
     if (hostnameName.includes(':')) {
       hostnameName = `[${hostnameName}]`
     }
-    const address = `${protocol}://${hostnameName}:${port}${base}`
+    const address = `${protocol}://${hostnameName}:${port}${base}` // 'http://localhost:5173/'
+    // 根据主机名判断是添加到本地还是网络URL列表
     if (loopbackHosts.has(hostname.host)) {
       local.push(address)
     } else {
       network.push(address)
     }
   } else {
+    // 处理无明确主机名，使用网络接口地址的情况
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
       .filter(
@@ -1048,6 +1079,7 @@ export async function resolveServerUrls(
         }
       })
   }
+  // 返回解析出的本地和网络URL列表
   return { local, network }
 }
 
@@ -1394,6 +1426,9 @@ export function getPackageManagerCommand(
   }
 }
 
+/**
+ * 检测是否为开发服务
+ */
 export function isDevServer(
   server: ViteDevServer | PreviewServer,
 ): server is ViteDevServer {

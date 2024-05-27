@@ -153,9 +153,10 @@ cli
     // output structure is preserved even after bundling so require() 即使在捆绑后，输出结构也会保留，因此需要
     // is ok here 这里没问题
 
-    // 创建服务器
+    // 创建服务器方法
     const { createServer } = await import('./server')
     try {
+      // 创建服务器实例
       const server = await createServer({
         root,
         base: options.base,
@@ -168,14 +169,14 @@ cli
       })
 
       if (!server.httpServer) {
-        throw new Error('HTTP server not available')
+        throw new Error('HTTP server not available') // HTTP 服务器不可用
       }
 
-      await server.listen()
+      await server.listen() // 启动服务器
 
       const info = server.config.logger.info
 
-      const viteStartTime = global.__vite_start_time ?? false
+      const viteStartTime = global.__vite_start_time ?? false // 开始时间戳
       const startupDurationString = viteStartTime
         ? colors.dim(
             `ready in ${colors.reset(
@@ -186,6 +187,7 @@ cli
       const hasExistingLogs =
         process.stdout.bytesWritten > 0 || process.stderr.bytesWritten > 0
 
+      /** 输出到控制台：VITE v5.2.11  ready in 89149 ms */
       info(
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
@@ -194,13 +196,18 @@ cli
           clear: !hasExistingLogs,
         },
       )
-
+      /**
+       * 打印已解析的服务器URLs。
+       *   ➜  Local:   http://localhost:5173/
+       *   ➜  Network: use --host to expose
+       */
       server.printUrls()
-      const customShortcuts: CLIShortcut<typeof server>[] = []
+      const customShortcuts: CLIShortcut<typeof server>[] = [] // 自定义 CLI 快捷键
+      // 如果启动了分析器的话, 那么添加一个自定义 CLI 快捷键
       if (profileSession) {
         customShortcuts.push({
           key: 'p',
-          description: 'start/stop the profiler',
+          description: 'start/stop the profiler', // 启动/停止分析器
           async action(server) {
             if (profileSession) {
               await stopProfiler(server.config.logger.info)
@@ -222,6 +229,7 @@ cli
           },
         })
       }
+      // 绑定CLI快捷键到给定的服务器实例：处理 press h + enter to show help(按 h + Enter 显示帮助) 功能
       server.bindCLIShortcuts({ print: true, customShortcuts })
     } catch (e) {
       const logger = createLogger(options.logLevel)

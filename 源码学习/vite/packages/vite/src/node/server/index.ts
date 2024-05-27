@@ -424,7 +424,25 @@ export function createServer(
 
 /**
  * 创建服务器实例
- *  1.解析配置项，得到配置对象
+ *  1. 解析配置项，得到配置对象
+ *  2. 创建 ws 服务
+ *  3. 创建 hot 广播实例，并添加两个通道(基于 ws 服务的通道以及 HMR 通道)
+ *  4. 启动 chokidar 监听文件变化器，并注册一些监听文件相关事件
+ *  5. 执行插件的 configureServer 钩子：https://cn.vitejs.dev/guide/api-plugin.html#configureserver
+ *  6. 注册各类中间件
+ *      6.1 记录请求处理的时间，如果开启了的话
+ *      6.2 处理 cors 中间件
+ *      6.3 缓存转换中间件，检测请求是否走的是协商缓存
+ *      6.4 proxy 代理中间件
+ *      6.5 在编辑器支持中打开：访问 /__open-in-editor?file=文件路径 时, 会通过 launch-editor(https://github.com/yyx990803/launch-editor) 在编辑器中打开对应的文件
+ *      6.6 静态文件中间件：在 /public 下提供静态文件
+ *      6.7 用于处理Vite开发服务器的资源转换。
+ *      6.8 提供静态文件？- serveRawFsMiddleware、serveStaticMiddleware
+ *      6.9 转换index.html
+ *      6.10 处理404，最后一个中间件，当其他的中间件都没有处理请求的时候在这里处理
+ *      6.11 错误处理程序
+ *      6.12 用户插件注册的中间件
+ *  7. 生成一个服务器选项的配置项 ViteDevServer
  */
 export async function _createServer(
   inlineConfig: InlineConfig = {},
@@ -606,41 +624,62 @@ export async function _createServer(
         updateModules(module.file, [module], Date.now(), server)
       }
     },
+    /**
+     * 监听指定端口并启动服务器。
+     * 如果服务器已经在运行，则根据参数决定是否重新启动服务器并更新URL。
+     *
+     * @param {number} [port] - 要监听的端口号。可选参数，默认为未指定。
+     * @param {boolean} [isRestart] - 指示是否重新启动已经运行的服务器。可选参数，默认为false。
+     * @returns {Promise<Object>} - 返回服务器对象的Promise。
+     */
     async listen(port?: number, isRestart?: boolean) {
-      await startServer(server, port)
+      await startServer(server, port) // 启动服务器
       if (httpServer) {
+        // 解析出本地和网络的服务器URL列表。
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
           config,
         )
+        // 启动服务器后自动在浏览器中打开应用程序
         if (!isRestart && config.server.open) server.openBrowser()
       }
       return server
     },
+    /**
+     * 打开浏览器并导航到指定的 URL。
+     * 该函数首先从服务器配置中获取打开选项和目标 URL，
+     * 然后根据配置预先发送请求以加速页面加载。
+     * 如果预处理请求已启用，它将立即以异步方式发送 HTTP GET 请求。
+     */
     openBrowser() {
-      const options = server.config.server
+      const options = server.config.server // 获取服务器配置
+      // 尝试获取本地或网络URL
       const url =
         server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
       if (url) {
+        // 根据配置构建浏览器打开的URL路径
         const path =
           typeof options.open === 'string'
             ? new URL(options.open, url).href
             : url
 
-        // We know the url that the browser would be opened to, so we can
-        // start the request while we are awaiting the browser. This will
-        // start the crawling of static imports ~500ms before.
-        // preTransformRequests needs to be enabled for this optimization.
+        // We know the url that the browser would be opened to, so we can 我们知道浏览器将被打开的url，因此我们可以
+        // start the request while we are awaiting the browser. This will 在等待浏览器时启动请求。这将
+        // start the crawling of static imports ~500ms before. 开始爬行静态导入~500ms之前。
+        // preTransformRequests needs to be enabled for this optimization. 此优化需要启用preTransformRequest。
+        // 如果预处理请求已启用，则提前发送请求以加速静态导入的爬取
         if (server.config.server.preTransformRequests) {
           setTimeout(() => {
+            // 根据URL协议选择GET方法
             const getMethod = path.startsWith('https:') ? httpsGet : httpGet
 
+            // 发送GET请求
             getMethod(
               path,
               {
                 headers: {
-                  // Allow the history middleware to redirect to /index.html
+                  // Allow the history middleware to redirect to /index.html  允许历史中间件重定向到/index.html
                   Accept: 'text/html',
                 },
               },
@@ -660,6 +699,7 @@ export async function _createServer(
 
         _openBrowser(path, true, server.config.logger)
       } else {
+        // 如果没有可用的URL，则记录警告
         server.config.logger.warn('No URL available to open in browser')
       }
     },
@@ -694,21 +734,30 @@ export async function _createServer(
       }
       server.resolvedUrls = null
     },
+    /**
+     * 打印已解析的服务器URLs。
+     *   ➜  Local:   http://localhost:5173/
+     *   ➜  Network: use --host to expose
+     */
     printUrls() {
       if (server.resolvedUrls) {
+        // 存在已解析的URLs时，打印它们
         printServerUrls(
           server.resolvedUrls,
           serverConfig.host,
           config.logger.info,
         )
       } else if (middlewareMode) {
-        throw new Error('cannot print server URLs in middleware mode.')
+        throw new Error('cannot print server URLs in middleware mode.') // 无法在中间件模式下打印服务器 URL
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.',
+          'cannot print server URLs before server.listen is called.', // 在调用 server.listen 之前无法打印服务器 URL
         )
       }
     },
+    /**
+     * 绑定CLI快捷键到给定的服务器实例：处理 press h + enter to show help(按 h + Enter 显示帮助) 功能
+     */
     bindCLIShortcuts(options) {
       bindCLIShortcuts(server, options)
     },
@@ -984,7 +1033,7 @@ export async function _createServer(
 
     initingServer = (async function () {
       await container.buildStart({})
-      // start deps optimizer after all container plugins are ready
+      // start deps optimizer after all container plugins are ready 所有容器插件准备就绪后启动 deps 优化器
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
       }
@@ -1000,14 +1049,14 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        // ensure ws server started
+        // ensure ws server started 确保 ws 服务器已启动
         hot.listen()
-        await initServer()
+        await initServer() // 启动服务之前做一些操作
       } catch (e) {
         httpServer.emit('error', e)
         return
       }
-      return listen(port, ...args)
+      return listen(port, ...args) // 启动服务器
     }) as any
   } else {
     if (options.hotListen) {
@@ -1019,27 +1068,39 @@ export async function _createServer(
   return server
 }
 
+/**
+ * 启动Vite开发服务器。
+ *
+ * @param server ViteDevServer实例，代表一个Vite开发服务器。
+ * @param inlinePort 可选参数，指定要监听的端口号。如果未提供，则使用配置文件中的端口号。
+ * @returns Promise<void> 无返回值的Promise。
+ * @throws Error 如果在中间件模式下调用服务器监听方法，则抛出错误。
+ */
 async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
 ): Promise<void> {
   const httpServer = server.httpServer
+  // 检查httpServer是否存在，如果不存在则抛出错误。
   if (!httpServer) {
-    throw new Error('Cannot call server.listen in middleware mode.')
+    throw new Error('Cannot call server.listen in middleware mode.') // 中间件模式下无法调用server.listen
   }
 
   const options = server.config.server
+  // 解析主机名。
   const hostname = await resolveHostname(options.host)
   const configPort = inlinePort ?? options.port
-  // When using non strict port for the dev server, the running port can be different from the config one.
-  // When restarting, the original port may be available but to avoid a switch of URL for the running
-  // browser tabs, we enforce the previously used port, expect if the config port changed.
+  // When using non strict port for the dev server, the running port can be different from the config one. 当开发服务器使用非严格端口时，运行端口可以与配置端口不同
+  // When restarting, the original port may be available but to avoid a switch of URL for the running 重新启动时，原始端口可能可用，但要避免运行时切换 URL
+  // browser tabs, we enforce the previously used port, expect if the config port changed. 浏览器选项卡，我们强制执行以前使用的端口，预计配置端口是否更改
+  // 确定一个端口号
   const port =
     (!configPort || configPort === server._configServerPort
       ? server._currentServerPort
       : configPort) ?? DEFAULT_DEV_PORT
   server._configServerPort = configPort
 
+  // 启动HTTP服务器并返回实际监听的端口号。
   const serverPort = await httpServerStart(httpServer, {
     port,
     strictPort: options.strictPort,

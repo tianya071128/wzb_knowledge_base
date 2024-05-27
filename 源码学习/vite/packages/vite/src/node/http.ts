@@ -151,6 +151,12 @@ async function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
+/**
+ * 启动一个HTTP服务器，并返回服务器监听的端口号。
+ * @param httpServer 一个已经配置好的HttpServer实例，准备开始监听请求。
+ * @param serverOptions 服务器启动选项，包括端口号、是否严格端口、主机名和日志记录器。
+ * @returns 返回一个Promise，解析为服务器监听的端口号。
+ */
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -162,14 +168,16 @@ export async function httpServerStart(
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
 
+  // 尝试启动服务器并处理可能的错误，如端口已被占用。
   return new Promise((resolve, reject) => {
+    // 错误处理函数，特别是处理端口被占用的情况。
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
         if (strictPort) {
           httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
+          reject(new Error(`Port ${port} is already in use`)) // 端口 ${port} 已被使用
         } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
+          logger.info(`Port ${port} is in use, trying another one...`) // 端口 ${port} 正在使用，请尝试另一个...
           httpServer.listen(++port, host)
         }
       } else {
@@ -178,11 +186,11 @@ export async function httpServerStart(
       }
     }
 
-    httpServer.on('error', onError)
+    httpServer.on('error', onError) // 监听错误事件。
 
     httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
+      httpServer.removeListener('error', onError) // 成功时移除错误监听器。
+      resolve(port) // 解析承诺，返回监听的端口号。
     })
   })
 }

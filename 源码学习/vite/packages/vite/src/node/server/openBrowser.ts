@@ -18,7 +18,7 @@ import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
 
 /**
- * Reads the BROWSER environment variable and decides what to do with it.
+ * Reads the BROWSER environment variable and decides what to do with it. 读取 BROWSER 环境变量并决定如何处理它。
  */
 export function openBrowser(
   url: string,
