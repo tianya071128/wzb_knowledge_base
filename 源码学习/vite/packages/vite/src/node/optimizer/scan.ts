@@ -57,10 +57,16 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
+/**
+ * 依赖预构建：扫描入口文件，返回操作对象：取消扫描操作、Promise 的依赖信息
+ *  1. 计算和解析入口文件集合：["D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/index.html"]
+ *  2. 借助 esbuild 处理依赖预构建(会将扫描到的依赖生成到 deps 变量中)
+ */
 export function scanImports(config: ResolvedConfig): {
   cancel: () => Promise<void>
   result: Promise<{
     deps: Record<string, string>
+    /** 表示找到了这一依赖导入, 但是没有找到对应的依赖文件 */
     missing: Record<string, string>
   }>
 } {
@@ -99,6 +105,12 @@ export function scanImports(config: ResolvedConfig): {
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
+
+    /**
+     * 在这里借助 esbuild 处理依赖预构建
+     *  1. 生成一个 esbuild 扫描插件，插件中会将扫描到的预构建依赖收集到 deps 入参对象中
+     *  2. 调用 esbuild.context 启动一下构建流程, 快速扫描一下自动查找需要处理的依赖
+     */
     return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
   })
 
@@ -109,8 +121,9 @@ export function scanImports(config: ResolvedConfig): {
           config.logger.error('Failed to dispose esbuild context', { error: e }) // 无法处置 esbuild 上下文
         })
       }
+      // 如果没有找到调用 esbuild.context 的话, 就不会存在 context 进行处理, 或者已经被取消的话
       if (!context || scanContext?.cancelled) {
-        disposeContext()
+        disposeContext() // 通知 esbuild 的 context 一些内容
         return { deps: {}, missing: {} }
       }
       return context
@@ -127,14 +140,16 @@ export function scanImports(config: ResolvedConfig): {
         })
     })
     .catch(async (e) => {
+      // 处理错误
       if (e.errors && e.message.includes('The build was canceled')) {
-        // esbuild logs an error when cancelling, but this is expected so
-        // return an empty result instead
+        // esbuild logs an error when cancelling, but this is expected so esbuild 在取消时记录错误，但这是预料之中的
+        // return an empty result instead 相反返回一个空结果
         return { deps: {}, missing: {} }
       }
 
+      // 无法扫描条目中的依赖关系
       const prependMessage = colors.red(`\
-  Failed to scan for dependencies from entries:
+  Failed to scan for dependencies from entries: 
   ${entries.join('\n')}
 
   `)
@@ -162,10 +177,12 @@ export function scanImports(config: ResolvedConfig): {
     })
 
   return {
+    /** 取消扫描方法 */
     cancel: async () => {
-      scanContext.cancelled = true
+      scanContext.cancelled = true //
       return esbuildContext.then((context) => context?.cancel())
     },
+    // 扫描结果
     result,
   }
 }
@@ -278,9 +295,10 @@ async function prepareEsbuildScanner(
   })
 }
 
+// 对依赖进行排序
 function orderedDependencies(deps: Record<string, string>) {
   const depsList = Object.entries(deps)
-  // Ensure the same browserHash for the same set of dependencies
+  // Ensure the same browserHash for the same set of dependencies 确保同一组依赖项具有相同的 browserHash
   depsList.sort((a, b) => a[0].localeCompare(b[0]))
   return Object.fromEntries(depsList)
 }

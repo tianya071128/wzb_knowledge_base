@@ -395,6 +395,8 @@ export async function loadCachedDepOptimizationMetadata(
 }
 
 /**
+ * 依赖预构建：扫描入口文件，返回操作对象：取消扫描操作、Promise 的依赖信息
+ *
  * Initial optimizeDeps at server start. Perform a fast scan using esbuild to 服务器启动时初始optimizeDeps。使用 esbuild 执行快速扫描
  * find deps to pre-bundle and include user hard-coded dependencies 查找要预捆绑的 deps 并包含用户硬编码的依赖项
  */
@@ -402,13 +404,20 @@ export function discoverProjectDependencies(config: ResolvedConfig): {
   cancel: () => Promise<void>
   result: Promise<Record<string, string>>
 } {
+  /**
+   * 依赖预构建：扫描入口文件，返回操作对象：取消扫描操作、Promise 的依赖信息
+   *  1. 计算和解析入口文件集合：["D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/index.html"]
+   *  2. 借助 esbuild 处理依赖预构建(会将扫描到的依赖生成到 deps 变量中)
+   */
   const { cancel, result } = scanImports(config)
 
+  // 在 scanImports 方法基础上再封装一层，对 missing(导入了依赖, 但没有安装依赖) 进行处理，只返回 deps
   return {
     cancel,
     result: result.then(({ deps, missing }) => {
       const missingIds = Object.keys(missing)
       if (missingIds.length) {
+        // 导入了以下依赖项但无法解决 ... 它们安装了吗？
         throw new Error(
           `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
             .map(
@@ -465,8 +474,16 @@ export function depsLogString(qualifiedIds: string[]): string {
 }
 
 /**
- * Internally, Vite uses this function to prepare a optimizeDeps run. When Vite starts, we can get
- * the metadata and start the server without waiting for the optimizeDeps processing to be completed
+ * Internally, Vite uses this function to prepare a optimizeDeps run. When Vite starts, we can get 在内部，Vite使用此功能来准备运行优化的EPP。当Vite开始时，我们可以得到
+ * the metadata and start the server without waiting for the optimizeDeps processing to be completed 元数据并启动服务器，而无需等待“优化EPP”处理完成
+ */
+/**
+ * 运行优化依赖项的函数。
+ *
+ * @param resolvedConfig 已解析的配置对象，包含项目的配置细节。
+ * @param depsInfo 依赖信息的记录，键是依赖的ID，值是优化后的依赖信息。
+ * @param ssr 布尔值，指示是否为服务器端渲染进行优化。
+ * @returns 返回一个对象，包含一个取消函数和一个结果Promise，该Promise解析为依赖项优化结果。
  */
 export function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
@@ -483,33 +500,39 @@ export function runOptimizeDeps(
     command: 'build',
   }
 
+  // 获取依赖预构建的缓存路径 - D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
+  // 构建并返回处理依赖项缓存目录的路径。 - "D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_30ccde96"
   const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
 
-  // Create a temporary directory so we don't need to delete optimized deps
-  // until they have been processed. This also avoids leaving the deps cache
-  // directory in a corrupted state if there is an error
-  fs.mkdirSync(processingCacheDir, { recursive: true })
+  // Create a temporary directory so we don't need to delete optimized deps 创建一个临时目录，因此我们不需要删除优化的 deps
+  // until they have been processed. This also avoids leaving the deps cache 直到处理为止。这也避免了离开 deps 缓存
+  // directory in a corrupted state if there is an error 在损坏状态下的目录如果存在错误
+  fs.mkdirSync(processingCacheDir, { recursive: true }) // 创建缓存目录
 
-  // a hint for Node.js
-  // all files in the cache directory should be recognized as ES modules
+  // a hint for Node.js node.js的提示
+  // all files in the cache directory should be recognized as ES modules 缓存目录中的所有文件应识别为ES模块
   debug?.(colors.green(`creating package.json in ${processingCacheDir}`))
+  // 给缓存目录创建一个 package.json 文件, 并且 type: 'module' 标识为 ES 模块
   fs.writeFileSync(
     path.resolve(processingCacheDir, 'package.json'),
     `{\n  "type": "module"\n}\n`,
   )
 
+  // 初始化依赖优化元数据
   const metadata = initDepsOptimizerMetadata(config, ssr)
 
+  // 计算出该次的浏览器哈希值
   metadata.browserHash = getOptimizedBrowserHash(
     metadata.hash,
     depsFromOptimizedDepInfo(depsInfo),
   )
 
-  // We prebundle dependencies with esbuild and cache them, but there is no need
-  // to wait here. Code that needs to access the cached deps needs to await
-  // the optimizedDepInfo.processing promise for each dep
+  // We prebundle dependencies with esbuild and cache them, but there is no need 我们使用Esbuild并缓存它们，但没有必要
+  // to wait here. Code that needs to access the cached deps needs to await 在这里等待。需要访问缓存的DEP的代码需要等待
+  // the optimizedDepInfo.processing promise for each dep 每个dep的优化DepInfo.prrocessing承诺
 
+  // 依赖的 ids
   const qualifiedIds = Object.keys(depsInfo)
   let cleaned = false
   let committed = false
@@ -593,9 +616,9 @@ export function runOptimizeDeps(
   }
 
   if (!qualifiedIds.length) {
-    // No deps to optimize, we still commit the processing cache dir to remove
-    // the previous optimized deps if they exist, and let the next server start
-    // skip the scanner step if the lockfile hasn't changed
+    // No deps to optimize, we still commit the processing cache dir to remove 无需优化的dep，我们仍然提交处理高速缓存以删除
+    // the previous optimized deps if they exist, and let the next server start 以前的优化DEP（如果存在），然后让下一个服务器启动
+    // skip the scanner step if the lockfile hasn't changed 如果Lockfile没有更改，请跳过扫描仪步骤
     return {
       cancel: async () => cleanUp(),
       result: Promise.resolve(successfulResult),
@@ -608,7 +631,7 @@ export function runOptimizeDeps(
     cancel: cleanUp,
   }
 
-  const start = performance.now()
+  const start = performance.now() // 开始时间
 
   const preparedRun = prepareEsbuildOptimizerRun(
     resolvedConfig,
@@ -893,7 +916,8 @@ export async function addManuallyIncludedOptimizeDeps(
   }
 }
 
-// Convert to { id: src }
+// Convert to { id: src } 转换成 { id: src }
+// 将依赖列表转换成 { id: src }
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>,
 ): Record<string, string> {
@@ -925,6 +949,7 @@ export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
   return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(ssr) // 如果是 ssr 的话, 额外处理一下
 }
 
+// 构建并返回处理依赖项缓存目录的路径。
 function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
   return (
     getDepsCacheDirPrefix(config) + getDepsCacheSuffix(ssr) + getTempSuffix()

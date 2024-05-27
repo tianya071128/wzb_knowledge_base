@@ -121,7 +121,7 @@ async function createDepsOptimizer(
 
   depsOptimizerMap.set(config, depsOptimizer) // 缓存一下
 
-  let newDepsDiscovered = false
+  let newDepsDiscovered = false // 新依赖发现标志
 
   let newDepsToLog: string[] = []
   let newDepsToLogHandle: NodeJS.Timeout | undefined
@@ -144,6 +144,7 @@ async function createDepsOptimizer(
     if (discoveredDepsWhileScanning.length) {
       config.logger.info(
         colors.green(
+          // 扫描时发现
           `✨ discovered while scanning: ${depsLogString(
             discoveredDepsWhileScanning,
           )}`,
@@ -253,10 +254,16 @@ async function createDepsOptimizer(
           try {
             debug?.(colors.green(`scanning for dependencies...`)) // 扫描依赖关系...
 
+            // 依赖预构建：扫描入口文件，返回操作对象：取消扫描操作、Promise<依赖信息>
             discover = discoverProjectDependencies(config)
+            // {
+            //   execa: "D:/低代码/project/wzb/源码学习/vite/node_modules/.pnpm/execa@9.1.0/node_modules/execa/index.js",
+            //   vue: "D:/低代码/project/wzb/源码学习/vite/node_modules/.pnpm/vue@3.4.27_typescript@5.2.2/node_modules/vue/dist/vue.runtime.esm-bundler.js",
+            // }
             const deps = await discover.result
             discover = undefined
 
+            // 手动预构建依赖列表
             const manuallyIncluded = Object.keys(manuallyIncludedDepsInfo)
             discoveredDepsWhileScanning.push(
               ...Object.keys(metadata.discovered).filter(
@@ -264,37 +271,44 @@ async function createDepsOptimizer(
               ),
             )
 
-            // Add these dependencies to the discovered list, as these are currently
-            // used by the preAliasPlugin to support aliased and optimized deps.
-            // This is also used by the CJS externalization heuristics in legacy mode
+            // Add these dependencies to the discovered list, as these are currently 将这些依赖项添加到发现的列表中，因为这些是当前的
+            // used by the preAliasPlugin to support aliased and optimized deps. 由 preAliasPlugin 使用来支持别名和优化的 deps。
+            // This is also used by the CJS externalization heuristics in legacy mode 这也被遗留模式下的 CJS 外部化启发法使用
             for (const id of Object.keys(deps)) {
               if (!metadata.discovered[id]) {
                 addMissingDep(id, deps[id])
               }
             }
+            // 到这里，手动预构建依赖列表和扫描到的依赖都集成到了 metadata.discovered 数据中
+            // {
+            //   eslint: OptimizedDepInfo,
+            //   execa: OptimizedDepInfo,
+            //   vue: OptimizedDepInfo,
+            // }
 
+            // 创建一个包含所有已知依赖信息的对象
             const knownDeps = prepareKnownDeps()
             startNextDiscoveredBatch()
 
-            // For dev, we run the scanner and the first optimization
-            // run on the background
+            // For dev, we run the scanner and the first optimization 对于开发，我们运行扫描器和第一次优化
+            // run on the background 后台运行
             optimizationResult = runOptimizeDeps(config, knownDeps, ssr)
 
-            // If the holdUntilCrawlEnd stratey is used, we wait until crawling has
-            // ended to decide if we send this result to the browser or we need to
-            // do another optimize step
+            // If the holdUntilCrawlEnd stratey is used, we wait until crawling has 如果使用 holdUntilCrawlEnd 策略，我们会等到爬行完成
+            // ended to decide if we send this result to the browser or we need to 最终决定是否将结果发送到浏览器或者我们需要
+            // do another optimize step 进行另一个优化步骤
             if (!holdUntilCrawlEnd) {
-              // If not, we release the result to the browser as soon as the scanner
-              // is done. If the scanner missed any dependency, and a new dependency
-              // is discovered while crawling static imports, then there will be a
-              // full-page reload if new common chunks are generated between the old
-              // and new optimized deps.
+              // If not, we release the result to the browser as soon as the scanner 如果没有，我们会在扫描仪扫描完成后立即将结果发布到浏览器
+              // is done. If the scanner missed any dependency, and a new dependency 已经完成了。如果扫描仪遗漏了任何依赖项，以及新的依赖项
+              // is discovered while crawling static imports, then there will be a 在爬取静态导入时发现，那么就会有一个
+              // full-page reload if new common chunks are generated between the old 如果旧的公共块之间生成了新的公共块，则重新加载整页
+              // and new optimized deps. 和新的优化 deps。
               optimizationResult.result.then((result) => {
-                // Check if the crawling of static imports has already finished. In that
-                // case, the result is handled by the onCrawlEnd callback
+                // Check if the crawling of static imports has already finished. In that 检查静态导入的抓取是否已经完成。在那里面
+                // case, the result is handled by the onCrawlEnd callback 这种情况，结果由 onCrawlEnd 回调处理
                 if (!waitingForCrawlEnd) return
 
-                optimizationResult = undefined // signal that we'll be using the result
+                optimizationResult = undefined // signal that we'll be using the result 表明我们将使用结果
 
                 runOptimizer(result)
               })
@@ -310,26 +324,38 @@ async function createDepsOptimizer(
     }
   }
 
+  /**
+   * 开始处理下一个发现的批次。
+   * 此函数不接受参数，也不直接返回任何内容。
+   * 它主要用于调度和准备处理下一个批次的依赖优化。
+   */
   function startNextDiscoveredBatch() {
-    newDepsDiscovered = false
+    newDepsDiscovered = false // 重置新发现依赖的标志
 
-    // Add the current depOptimizationProcessing to the queue, these
-    // promises are going to be resolved once a rerun is committed
+    // Add the current depOptimizationProcessing to the queue, these 将当前的depOptimizationProcessing添加到队列中，这些
+    // promises are going to be resolved once a rerun is committed 一旦提交重新运行，承诺就会得到解决
     depOptimizationProcessingQueue.push(depOptimizationProcessing)
 
-    // Create a new promise for the next rerun, discovered missing
-    // dependencies will be assigned this promise from this point
+    // Create a new promise for the next rerun, discovered missing 为下一次重新运行创建一个新的 Promise，发现丢失了
+    // dependencies will be assigned this promise from this point 从此时起，依赖项将被分配此承诺
     depOptimizationProcessing = promiseWithResolvers()
   }
 
+  /**
+   * 准备已知依赖信息
+   * 该函数创建一个包含所有已知依赖信息的对象，这些信息来自优化和发现的元数据。
+   * 其中，优化的依赖信息会被深拷贝，而发现的依赖信息会保留，但排除处理中的Promise。
+   *
+   * @returns {Record<string, OptimizedDepInfo>} knownDeps - 包含已知依赖信息的记录对象，键为依赖名称，值为对应的优化依赖信息对象。
+   */
   function prepareKnownDeps() {
     const knownDeps: Record<string, OptimizedDepInfo> = {}
-    // Clone optimized info objects, fileHash, browserHash may be changed for them
+    // Clone optimized info objects, fileHash, browserHash may be changed for them 克隆优化的信息对象，fileHash、browserHash 可能会更改
     for (const dep of Object.keys(metadata.optimized)) {
       knownDeps[dep] = { ...metadata.optimized[dep] }
     }
     for (const dep of Object.keys(metadata.discovered)) {
-      // Clone the discovered info discarding its processing promise
+      // Clone the discovered info discarding its processing promise 克隆发现的信息，放弃其处理承诺
       const { processing, ...info } = metadata.discovered[dep]
       knownDeps[dep] = info
     }
@@ -624,24 +650,26 @@ async function createDepsOptimizer(
     return missing
   }
 
+  // 向依赖优化元数据添加缺少的依赖
   function addMissingDep(id: string, resolved: string) {
     newDepsDiscovered = true
 
+    // 向给定的依赖优化元数据中添加优化的依赖信息。
     return addOptimizedDepInfo(metadata, 'discovered', {
       id,
       file: getOptimizedDepPath(id, config, ssr),
       src: resolved,
-      // Adding a browserHash to this missing dependency that is unique to
-      // the current state of known + missing deps. If its optimizeDeps run
-      // doesn't alter the bundled files of previous known dependencies,
-      // we don't need a full reload and this browserHash will be kept
+      // Adding a browserHash to this missing dependency that is unique to 将 browserHash 添加到这个缺失的依赖项中，该依赖项是唯一的
+      // the current state of known + missing deps. If its optimizeDeps run 已知 + 缺失 deps 的当前状态。如果它的optimizeDeps运行
+      // doesn't alter the bundled files of previous known dependencies, 不会改变先前已知依赖项的捆绑文件，
+      // we don't need a full reload and this browserHash will be kept 我们不需要完全重新加载，这个 browserHash 将被保留
       browserHash: getDiscoveredBrowserHash(
         metadata.hash,
         depsFromOptimizedDepInfo(metadata.optimized),
         depsFromOptimizedDepInfo(metadata.discovered),
       ),
-      // loading of this pre-bundled dep needs to await for its processing
-      // promise to be resolved
+      // loading of this pre-bundled dep needs to await for its processing 加载这个预捆绑的 dep 需要等待其处理
+      // promise to be resolved 承诺解决
       processing: depOptimizationProcessing.promise,
       exportsData: extractExportsData(resolved, config, ssr),
     })
