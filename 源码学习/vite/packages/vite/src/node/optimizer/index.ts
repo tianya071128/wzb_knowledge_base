@@ -44,9 +44,9 @@ const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
   hasModuleSyntax: boolean
-  // exported names (for `export { a as b }`, `b` is exported name)
+  // exported names (for `export { a as b }`, `b` is exported name) 导出名称（对于“export { a as b }”，“b”是导出名称）
   exports: readonly string[]
-  // hint if the dep requires loading as jsx
+  // hint if the dep requires loading as jsx 提示 dep 是否需要加载为 jsx
   jsxLoader?: boolean
 }
 
@@ -107,11 +107,11 @@ export interface DepOptimizationConfig {
     | 'metafile'
   >
   /**
-   * List of file extensions that can be optimized. A corresponding esbuild
-   * plugin must exist to handle the specific extension.
+   * List of file extensions that can be optimized. A corresponding esbuild 可以优化的文件扩展名列表。对应的esbuild
+   * plugin must exist to handle the specific extension. 插件必须存在才能处理特定扩展
    *
-   * By default, Vite can optimize `.mjs`, `.js`, `.ts`, and `.mts` files. This option
-   * allows specifying additional extensions.
+   * By default, Vite can optimize `.mjs`, `.js`, `.ts`, and `.mts` files. This option 默认情况下，Vite可以优化`.mjs`、`.js`、`.ts`和`.mts`文件。这个选项
+   * allows specifying additional extensions. 允许指定附加扩展名
    *
    * @experimental
    */
@@ -185,53 +185,53 @@ export interface OptimizedDepInfo {
   browserHash?: string
   fileHash?: string
   /**
-   * During optimization, ids can still be resolved to their final location
-   * but the bundles may not yet be saved to disk
+   * During optimization, ids can still be resolved to their final location 在优化过程中，ids 仍然可以解析到它们的最终位置
+   * but the bundles may not yet be saved to disk 但捆绑包可能尚未保存到磁盘
    */
   processing?: Promise<void>
   /**
-   * ExportData cache, discovered deps will parse the src entry to get exports
-   * data used both to define if interop is needed and when pre-bundling
+   * ExportData cache, discovered deps will parse the src entry to get exports ExportData缓存，发现的deps将解析src条目以获取导出
+   * data used both to define if interop is needed and when pre-bundling 数据用于定义是否需要互操作以及何时进行预捆绑
    */
   exportsData?: Promise<ExportsData>
 }
 
 export interface DepOptimizationMetadata {
   /**
-   * The main hash is determined by user config and dependency lockfiles.
-   * This is checked on server startup to avoid unnecessary re-bundles.
+   * The main hash is determined by user config and dependency lockfiles. 主要哈希由用户配置和依赖锁文件确定
+   * This is checked on server startup to avoid unnecessary re-bundles. 在服务器启动时检查此项以避免不必要的重新捆绑
    */
   hash: string
   /**
-   * This hash is determined by dependency lockfiles.
-   * This is checked on server startup to avoid unnecessary re-bundles.
+   * This hash is determined by dependency lockfiles. 该哈希值由依赖锁文件确定
+   * This is checked on server startup to avoid unnecessary re-bundles. 在服务器启动时检查此项以避免不必要的重新捆绑
    */
   lockfileHash: string
   /**
-   * This hash is determined by user config.
-   * This is checked on server startup to avoid unnecessary re-bundles.
+   * This hash is determined by user config. 该哈希值由用户配置决定
+   * This is checked on server startup to avoid unnecessary re-bundles. 在服务器启动时检查此项以避免不必要的重新捆绑
    */
   configHash: string
   /**
-   * The browser hash is determined by the main hash plus additional dependencies
-   * discovered at runtime. This is used to invalidate browser requests to
-   * optimized deps.
+   * The browser hash is determined by the main hash plus additional dependencies 浏览器哈希由主哈希加上附加依赖项确定
+   * discovered at runtime. This is used to invalidate browser requests to 运行时发现的。这用于使浏览器请求无效
+   * optimized deps. 优化依赖
    */
   browserHash: string
   /**
-   * Metadata for each already optimized dependency
+   * Metadata for each already optimized dependency 每个已优化依赖项的元数据
    */
   optimized: Record<string, OptimizedDepInfo>
   /**
-   * Metadata for non-entry optimized chunks and dynamic imports
+   * Metadata for non-entry optimized chunks and dynamic imports 非条目优化块和动态导入的元数据
    */
   chunks: Record<string, OptimizedDepInfo>
   /**
-   * Metadata for each newly discovered dependency after processing
+   * Metadata for each newly discovered dependency after processing 处理后每个新发现的依赖项的元数据
    */
   discovered: Record<string, OptimizedDepInfo>
   /**
-   * OptimizedDepInfo list
+   * OptimizedDepInfo list OptimizedDepInfo 列表
    */
   depInfoList: OptimizedDepInfo[]
 }
@@ -301,6 +301,7 @@ export async function optimizeServerSsrDeps(
   return result.metadata
 }
 
+// 初始化依赖优化元数据
 export function initDepsOptimizerMetadata(
   config: ResolvedConfig,
   ssr: boolean,
@@ -319,11 +320,13 @@ export function initDepsOptimizerMetadata(
   }
 }
 
+// 向给定的依赖优化元数据中添加优化的依赖信息。
 export function addOptimizedDepInfo(
   metadata: DepOptimizationMetadata,
   type: 'optimized' | 'discovered' | 'chunks',
   depInfo: OptimizedDepInfo,
 ): OptimizedDepInfo {
+  // 将depInfo添加到指定类型的依赖信息中，并更新依赖信息列表
   metadata[type][depInfo.id] = depInfo
   metadata.depInfoList.push(depInfo)
   return depInfo
@@ -332,63 +335,68 @@ export function addOptimizedDepInfo(
 let firstLoadCachedDepOptimizationMetadata = true
 
 /**
- * Creates the initial dep optimization metadata, loading it from the deps cache
- * if it exists and pre-bundling isn't forced
+ * 加载缓存的依赖优化元数据。
+ * Creates the initial dep optimization metadata, loading it from the deps cache 创建初始 dep 优化元数据，从 deps 缓存加载它
+ * if it exists and pre-bundling isn't forced 如果存在并且不强制预捆绑
  */
 export async function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
   ssr: boolean,
-  force = config.optimizeDeps.force,
+  force = config.optimizeDeps.force, // 设置为 true 可以强制依赖预构建，而忽略之前已经缓存过的、已经优化过的依赖。
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? config.logger.info : debug
 
+  // 删除陈旧的缓存临时目录，有效期为 1 天，一个构建期间只需要执行一次
   if (firstLoadCachedDepOptimizationMetadata) {
     firstLoadCachedDepOptimizationMetadata = false
-    // Fire up a clean up of stale processing deps dirs if older process exited early
+    // Fire up a clean up of stale processing deps dirs if older process exited early 如果旧进程提前退出，则启动对过时处理部门目录的清理
     setTimeout(() => cleanupDepsCacheStaleDirs(config), 0)
   }
 
+  // 获取依赖预构建的缓存目录: 'D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/node_modules/.vite/deps'
   const depsCacheDir = getDepsCacheDir(config, ssr)
 
+  // force：强制依赖预构建，忽略缓存
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
+      // 如果预构建元信息已经缓存到 'D:\\学习\\wzb_knowledge_base\\源码学习\\vite\\playground\\vue\\node_modules\\.vite\\deps\\_metadata.json' 文件中的话, 那么读取缓存
       const cachedMetadataPath = path.join(depsCacheDir, METADATA_FILENAME)
       cachedMetadata = parseDepsOptimizerMetadata(
         await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
     } catch (e) {}
-    // hash is consistent, no need to re-bundle
+    // hash is consistent, no need to re-bundle hash一致，无需重新捆绑
     if (cachedMetadata) {
       if (cachedMetadata.lockfileHash !== getLockfileHash(config, ssr)) {
         config.logger.info(
-          'Re-optimizing dependencies because lockfile has changed',
+          'Re-optimizing dependencies because lockfile has changed', // 由于锁文件已更改，因此重新优化依赖项
         )
       } else if (cachedMetadata.configHash !== getConfigHash(config, ssr)) {
         config.logger.info(
-          'Re-optimizing dependencies because vite config has changed',
+          'Re-optimizing dependencies because vite config has changed', // 由于 vite 配置发生变化，重新优化依赖
         )
       } else {
-        log?.('Hash is consistent. Skipping. Use --force to override.')
-        // Nothing to commit or cancel as we are using the cache, we only
-        // need to resolve the processing promise so requests can move on
+        log?.('Hash is consistent. Skipping. Use --force to override.') // 哈希值是一致的。跳绳。使用 --force 覆盖
+        // Nothing to commit or cancel as we are using the cache, we only 当我们使用缓存时，无需提交或取消任何内容，我们只需
+        // need to resolve the processing promise so requests can move on 需要解决处理承诺，以便请求可以继续进行
         return cachedMetadata
       }
     }
   } else {
-    config.logger.info('Forced re-optimization of dependencies')
+    config.logger.info('Forced re-optimization of dependencies') // 强制重新优化依赖
   }
 
-  // Start with a fresh cache
+  // Start with a fresh cache 从新的缓存开始
   debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
 /**
- * Initial optimizeDeps at server start. Perform a fast scan using esbuild to
- * find deps to pre-bundle and include user hard-coded dependencies
+ * Initial optimizeDeps at server start. Perform a fast scan using esbuild to 服务器启动时初始optimizeDeps。使用 esbuild 执行快速扫描
+ * find deps to pre-bundle and include user hard-coded dependencies 查找要预捆绑的 deps 并包含用户硬编码的依赖项
  */
 export function discoverProjectDependencies(config: ResolvedConfig): {
   cancel: () => Promise<void>
@@ -418,12 +426,21 @@ export function discoverProjectDependencies(config: ResolvedConfig): {
   }
 }
 
+/**
+ * 将依赖信息转换为发现的依赖对象集合。
+ * @param config 配置对象，包含解析后的配置信息。
+ * @param deps 一个键为依赖id，值为依赖源路径的对象。
+ * @param ssr 布尔值，指示是否为服务器端渲染模式。
+ * @param timestamp 可选字符串，用于指定一个时间戳，影响依赖的哈希值计算。
+ * @returns 返回一个记录对象，键是依赖id，值是优化后的依赖信息对象。
+ */
 export function toDiscoveredDependencies(
   config: ResolvedConfig,
   deps: Record<string, string>,
   ssr: boolean,
   timestamp?: string,
 ): Record<string, OptimizedDepInfo> {
+  // 获取浏览器哈希值
   const browserHash = getOptimizedBrowserHash(
     getDepHash(config, ssr).hash,
     deps,
@@ -434,9 +451,9 @@ export function toDiscoveredDependencies(
     const src = deps[id]
     discovered[id] = {
       id,
-      file: getOptimizedDepPath(id, config, ssr),
+      file: getOptimizedDepPath(id, config, ssr), // 获取优化后的依赖路径。
       src,
-      browserHash: browserHash,
+      browserHash: browserHash, // 浏览器哈希值
       exportsData: extractExportsData(src, config, ssr),
     }
   }
@@ -526,8 +543,8 @@ export function runOptimizeDeps(
       // we finish commiting the new deps cache files to the deps folder
       committed = true
 
-      // Write metadata file, then commit the processing folder to the global deps cache
-      // Rewire the file paths from the temporary processing dir to the final deps cache dir
+      // Write metadata file, then commit the processing folder to the global deps cache 写入元数据文件，然后将处理文件夹提交到全局 deps 缓存
+      // Rewire the file paths from the temporary processing dir to the final deps cache dir 将文件路径从临时处理目录重新连接到最终 deps 缓存目录
       const dataPath = path.join(processingCacheDir, METADATA_FILENAME)
       debug?.(
         colors.green(`creating ${METADATA_FILENAME} in ${processingCacheDir}`),
@@ -811,6 +828,13 @@ async function prepareEsbuildOptimizerRun(
   return { context, idToExports }
 }
 
+/**
+ * 向依赖列表中手动添加需要优化的依赖项。
+ * @param deps 依赖记录，键为依赖名称，值为依赖路径。
+ * @param config 解析后的配置对象，包含日志记录器和配置信息。
+ * @param ssr 是否为服务器端渲染模式。
+ * @returns Promise<void> 无返回值的Promise。
+ */
 export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
@@ -818,8 +842,10 @@ export async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const { logger } = config
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  // 默认情况下，不在 node_modules 中的，链接的包不会被预构建。使用此选项可强制预构建链接的包 -- https://cn.vitejs.dev/config/dep-optimization-options#optimizedeps-include
   const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length) {
+    // 无法解析的依赖项
     const unableToOptimize = (id: string, msg: string) => {
       if (optimizeDepsInclude.includes(id)) {
         logger.warn(
@@ -830,22 +856,26 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
 
-    const includes = [...optimizeDepsInclude]
+    const includes = [...optimizeDepsInclude] // 手动预构建的包
+    // 处理 glob 模式 -- 深层导入
     for (let i = 0; i < includes.length; i++) {
       const id = includes[i]
+      // 如果当前是 glob 模式 -- 深层导入
       if (glob.isDynamicPattern(id)) {
-        const globIds = expandGlobIds(id, config)
+        const globIds = expandGlobIds(id, config) // 处理 glob 模式
         includes.splice(i, 1, ...globIds)
         i += globIds.length - 1
       }
     }
 
+    // 创建一个优化依赖包含的解析器函数。
     const resolve = createOptimizeDepsIncludeResolver(config, ssr)
     for (const id of includes) {
-      // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
-      // and for pretty printing
+      // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added 将 'foo >bar` 规范化为 'foo > bar' 以防止添加相同的 id
+      // and for pretty printing 以及漂亮的印刷
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId]) {
+        // 解析 optimizeDeps.include 的依赖地址，例如：'D:/学习/wzb_knowledge_base/源码学习/vite/node_modules/.pnpm/eslint@8.57.0/node_modules/eslint/lib/api.js'
         const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
@@ -853,10 +883,10 @@ export async function addManuallyIncludedOptimizeDeps(
               deps[normalizedId] = entry
             }
           } else {
-            unableToOptimize(id, 'Cannot optimize dependency')
+            unableToOptimize(id, 'Cannot optimize dependency') // 无法优化依赖关系
           }
         } else {
-          unableToOptimize(id, 'Failed to resolve dependency')
+          unableToOptimize(id, 'Failed to resolve dependency') // 无法解决依赖关系
         }
       }
     }
@@ -874,6 +904,7 @@ export function depsFromOptimizedDepInfo(
   return obj
 }
 
+// 获取依赖构建后存储的地址：例如 "D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/node_modules/.vite/deps/eslint.js"
 export function getOptimizedDepPath(
   id: string,
   config: ResolvedConfig,
@@ -884,12 +915,14 @@ export function getOptimizedDepPath(
   )
 }
 
+// 获取依赖预构建的缓存路径后缀
 function getDepsCacheSuffix(ssr: boolean): string {
   return ssr ? '_ssr' : ''
 }
 
+// 获取依赖预构建的缓存路径
 export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
-  return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(ssr)
+  return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(ssr) // 如果是 ssr 的话, 额外处理一下
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
@@ -909,25 +942,39 @@ function getTempSuffix() {
   )
 }
 
+// 获取依赖预构建的缓存目录：'D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/node_modules/.vite/deps'
 function getDepsCacheDirPrefix(config: ResolvedConfig): string {
   return normalizePath(path.resolve(config.cacheDir, 'deps'))
 }
 
+/**
+ * 创建一个函数，用于判断给定的模块ID是否指向一个优化过的依赖文件。
+ *
+ * @param config - 解析后的配置对象，包含项目的配置信息，例如缓存目录等。
+ * @returns 返回一个函数，该函数接收一个模块ID作为参数，并返回一个布尔值，
+ *          表示该模块ID是否以依赖预构建的缓存目录路径为前缀。
+ */
 export function createIsOptimizedDepFile(
   config: ResolvedConfig,
 ): (id: string) => boolean {
-  const depsCacheDirPrefix = getDepsCacheDirPrefix(config)
+  const depsCacheDirPrefix = getDepsCacheDirPrefix(config) // 依赖预构建的缓存目录： 'D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/node_modules/.vite/deps'
   return (id) => id.startsWith(depsCacheDirPrefix)
 }
 
+/**
+ * 创建一个用于判断URL是否指向缓存目录中的文件的函数。
+ * @param config 配置对象，包含项目的根目录等配置信息。
+ * @returns 返回一个函数，该函数接收一个URL字符串作为参数，并返回一个布尔值，指示该URL是否指向缓存目录中的文件。
+ */
 export function createIsOptimizedDepUrl(
   config: ResolvedConfig,
 ): (url: string) => boolean {
   const { root } = config
-  const depsCacheDir = getDepsCacheDirPrefix(config)
+  const depsCacheDir = getDepsCacheDirPrefix(config) // 依赖预构建的缓存目录： 'D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/node_modules/.vite/deps'
 
-  // determine the url prefix of files inside cache directory
+  // determine the url prefix of files inside cache directory 确定缓存目录中文件的 url 前缀
   const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
+  // '/node_modules/.vite/deps'
   const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
     ? // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
@@ -1059,6 +1106,7 @@ function esbuildOutputFromId(
   }
 }
 
+// 读取指定路径文件，提取出文件导出相关信息
 export async function extractExportsData(
   filePath: string,
   config: ResolvedConfig,
@@ -1066,13 +1114,13 @@ export async function extractExportsData(
 ): Promise<ExportsData> {
   await init
 
-  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  const optimizeDeps = getDepOptimizationConfig(config, ssr) // 依赖优化配置项
 
-  const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
+  const esbuildOptions = optimizeDeps?.esbuildOptions ?? {} // 在依赖扫描和优化过程中传递给 esbuild 的选项。
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
-    // For custom supported extensions, build the entry file to transform it into JS,
-    // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
-    // so only the entry file is being transformed.
+    // For custom supported extensions, build the entry file to transform it into JS, 对于自定义支持的扩展，构建入口文件将其转换为JS，
+    // and then parse with es-module-lexer. Note that the `bundle` option is not `true`, 然后用 es-module-lexer 解析。请注意，“bundle”选项不是“true”，
+    // so only the entry file is being transformed. 所以只有入口文件被转换。
     const result = await build({
       ...esbuildOptions,
       entryPoints: [filePath],
@@ -1089,13 +1137,14 @@ export async function extractExportsData(
   let parseResult: ReturnType<typeof parse>
   let usedJsxLoader = false
 
-  const entryContent = await fsp.readFile(filePath, 'utf-8')
+  const entryContent = await fsp.readFile(filePath, 'utf-8') // filePath 路径对应文件的内容
+  // 使用 es-module-lexer 进行 ES 模块词法分析器，如果失败的话，尝试转换重试
   try {
-    parseResult = parse(entryContent)
+    parseResult = parse(entryContent) // ES 模块词法分析器
   } catch {
     const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
     debug?.(
-      `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`,
+      `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`, // 无法解析：${filePath}。\n 使用 ${loader} 转换重试
     )
     const transformed = await transformWithEsbuild(entryContent, filePath, {
       loader,
@@ -1104,6 +1153,8 @@ export async function extractExportsData(
     usedJsxLoader = true
   }
 
+  // exports：导入内容
+  // hasModuleSyntax：检测使用ESM语法的模块
   const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
     hasModuleSyntax,
@@ -1160,10 +1211,20 @@ const lockfileFormats = [
 })
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
+/**
+ * 生成配置的哈希字符串。
+ * 该函数考虑特定的配置选项子集，这些选项可以影响依赖项优化的过程，并据此生成一个哈希字符串。
+ * 这个哈希字符串能够反映配置及优化选项的状态，可用于缓存等场景。
+ *
+ * @param config ResolvedConfig - 已解析的配置对象，包含项目的各种配置详情。
+ * @param ssr boolean - 表示是否为服务器端渲染模式。
+ * @return string - 返回根据配置和依赖项优化选项生成的哈希字符串。
+ */
 function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
-  // Take config into account
-  // only a subset of config options that can affect dep optimization
+  // Take config into account 考虑配置
+  // only a subset of config options that can affect dep optimization 只有配置选项的子集可以影响 dep 优化
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  // 需要根据这些内容来进行计算 hash，当这些配置信息发生变化时，依赖需要重新缓存
   const content = JSON.stringify(
     {
       mode: process.env.NODE_ENV || config.mode,
@@ -1194,11 +1255,26 @@ function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
   return getHash(content)
 }
 
+/**
+ * 获取项目的锁文件的哈希值。
+ * 该函数首先尝试查找项目根目录下的多种锁文件（如package-lock.json、pnpm-lock.yaml等），
+ * 然后读取找到的第一个锁文件的内容。如果锁文件是通过patch-package创建的，
+ * 会额外加上patches目录的修改时间戳，以确保哈希值能够反映patch文件的变动。
+ *
+ * @param config ResolvedConfig - 包含项目配置信息的对象，主要用于指定项目根目录。
+ * @param ssr boolean - 表示是否为服务器端渲染模式。当前该参数未被使用，但保留以供未来可能的扩展。
+ * @returns string - 锁文件内容的哈希值字符串。
+ */
 function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
+  /**
+   * 查找到项目的锁文件：D:\\学习\\wzb_knowledge_base\\源码学习\\vite\\pnpm-lock.yaml
+   *  ["package-lock.json","bun.lockb","pnpm-lock.yaml","yarn.lock",] 尝试这几种文件可能性
+   */
   const lockfilePath = lookupFile(config.root, lockfileNames)
+  // 读取文件内容
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
-    const lockfileName = path.basename(lockfilePath)
+    const lockfileName = path.basename(lockfilePath) // 查找到的锁文件名："pnpm-lock.yaml"
     const { checkPatches } = lockfileFormats.find(
       (f) => f.name === lockfileName,
     )!
@@ -1214,20 +1290,21 @@ function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
   return getHash(content)
 }
 
+// 计算依赖的相关哈希值
 function getDepHash(
   config: ResolvedConfig,
   ssr: boolean,
 ): { lockfileHash: string; configHash: string; hash: string } {
-  const lockfileHash = getLockfileHash(config, ssr)
-  const configHash = getConfigHash(config, ssr)
-  const hash = getHash(lockfileHash + configHash)
+  const lockfileHash = getLockfileHash(config, ssr) // 锁文件的哈希值。
+  const configHash = getConfigHash(config, ssr) // 配置的哈希值
+  const hash = getHash(lockfileHash + configHash) // 根据这两个哈希值计算一个哈希值
   return {
     hash,
     lockfileHash,
     configHash,
   }
 }
-
+// 计算浏览器哈希
 function getOptimizedBrowserHash(
   hash: string,
   deps: Record<string, string>,
@@ -1284,22 +1361,26 @@ export async function optimizedDepNeedsInterop(
 }
 
 const MAX_TEMP_DIR_AGE_MS = 24 * 60 * 60 * 1000
+// 删除陈旧的缓存临时目录，有效期为 1 天
 export async function cleanupDepsCacheStaleDirs(
   config: ResolvedConfig,
 ): Promise<void> {
   try {
-    const cacheDir = path.resolve(config.cacheDir)
+    const cacheDir = path.resolve(config.cacheDir) // 预构建缓存目录：D:\\学习\\wzb_knowledge_base\\源码学习\\vite\\playground\\vue\\node_modules\\.vite
+    // 检查目录是否存在
     if (fs.existsSync(cacheDir)) {
-      const dirents = await fsp.readdir(cacheDir, { withFileTypes: true })
+      const dirents = await fsp.readdir(cacheDir, { withFileTypes: true }) // 读取目录
       for (const dirent of dirents) {
+        // 如果 Dirent 是一个目录, 并且名称存在 _temp_，表示为缓存目录文件
         if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
           const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const stats = await fsp.stat(tempDirPath).catch((_) => null)
+          const stats = await fsp.stat(tempDirPath).catch((_) => null) // 获取目录信息
+          // 删除大于一天的缓存临时目录
           if (
             stats?.mtime &&
             Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
           ) {
-            debug?.(`removing stale cache temp dir ${tempDirPath}`)
+            debug?.(`removing stale cache temp dir ${tempDirPath}`) // 删除陈旧的缓存临时目录
             await fsp.rm(tempDirPath, { recursive: true, force: true })
           }
         }

@@ -134,7 +134,16 @@ cli
   .option('-f, --filter <filter>', `[string] filter debug logs`)
   .option('-m, --mode <mode>', `[string] set env mode`)
 
-// dev dev 命令启动器
+// dev
+/**
+ * dev 命令启动器
+ *  1. createServer 创建服务器实例
+ *  2. 启动服务器，在服务器启动的时候做一些处理
+ *  3. 打印一些内容在控制台
+ *     ➜  Local:   http://localhost:5173/
+ *     ➜  Network: use --host to expose
+ *     ➜  press h + enter to show help
+ */
 cli
   .command('[root]', 'start dev server') // default command
   .alias('serve') // the command is called 'serve' in Vite's API
@@ -385,7 +394,9 @@ cli
     },
   )
 
+// 当出现“-h”或“--help”时显示帮助消息
 cli.help()
+// 当 -v, --version 标志出现时输出版本号。
 cli.version(VERSION)
 
 cli.parse()

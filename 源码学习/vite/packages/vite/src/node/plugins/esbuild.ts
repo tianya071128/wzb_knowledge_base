@@ -459,14 +459,14 @@ export async function loadTsconfigJsonForFile(
       cache: tsconfckCache,
       ignoreNodeModules: true,
     })
-    // tsconfig could be out of root, make sure it is watched on dev
+    // tsconfig could be out of root, make sure it is watched on dev tsconfig 可能不在 root 范围内，请确保在开发人员上监视它
     if (server && result.tsconfigFile) {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
     }
     return result.tsconfig
   } catch (e) {
     if (e instanceof TSConfckParseError) {
-      // tsconfig could be out of root, make sure it is watched on dev
+      // tsconfig could be out of root, make sure it is watched on dev tsconfig 可能不在 root 范围内，请确保在开发人员上监视它
       if (server && e.tsconfigFile) {
         ensureWatchedFile(server.watcher, e.tsconfigFile, server.config.root)
       }

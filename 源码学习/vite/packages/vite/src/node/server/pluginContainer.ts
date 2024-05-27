@@ -88,11 +88,11 @@ export const ERR_CLOSED_SERVER = 'ERR_CLOSED_SERVER'
 
 export function throwClosedServerError(): never {
   const err: any = new Error(
-    'The server is being restarted or closed. Request is outdated',
+    'The server is being restarted or closed. Request is outdated', // 服务器正在重新启动或关闭。请求已过时
   )
   err.code = ERR_CLOSED_SERVER
-  // This error will be caught by the transform middleware that will
-  // send a 504 status code request timeout
+  // This error will be caught by the transform middleware that will 此错误将被转换中间件捕获，该中间件将
+  // send a 504 status code request timeout // 发送504状态码请求超时
   throw err
 }
 
@@ -149,6 +149,7 @@ type PluginContext = Omit<
   'cache'
 >
 
+// 创建一个插件容器
 export async function createPluginContainer(
   config: ResolvedConfig,
   moduleGraph?: ModuleGraph,
@@ -160,6 +161,7 @@ export async function createPluginContainer(
     root,
     build: { rollupOptions },
   } = config
+  // 初始化插件的钩子工具方法
   const { getSortedPluginHooks, getSortedPlugins } =
     createPluginHookUtils(plugins)
 
@@ -209,6 +211,13 @@ export async function createPluginContainer(
     )
   }
 
+  /**
+   * 并行执行插件钩子函数，忽略返回值。
+   * @param hookName 钩子函数的名称，必须是异步钩子和并行钩子的类型。
+   * @param context 一个函数，接收一个插件作为参数，返回该插件对应的上下文。
+   * @param args 一个函数，接收一个插件作为参数，返回该插件钩子函数所需的参数数组。
+   * @returns Promise<void> 无返回值的Promise。
+   */
   // parallel, ignores returns 并行，忽略返回
   async function hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
     hookName: H,
@@ -216,20 +225,29 @@ export async function createPluginContainer(
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>,
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
+    // 遍历并排序插件，然后执行指定的钩子函数
     for (const plugin of getSortedPlugins(hookName)) {
-      // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
-      const hook = plugin[hookName]
+      // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running 如果关闭的话不要抛出这里，这样buildEnd和closeBundle钩子就可以完成运行
+      const hook = plugin[hookName] // 插件钩子函数
       if (!hook) continue
 
-      const handler: Function = getHookHandler(hook)
+      const handler: Function = getHookHandler(hook) // 执行钩子的处理器
+      /**
+       * sequential：如果有多个插件实现此钩子，则所有这些钩子将按指定的插件顺序运行。如果钩子是 async，则此类后续钩子将等待当前钩子解决后再运行。
+       * 参考：https://cn.rollupjs.org/plugin-development/
+       *
+       * 当钩子类型是 sequential 时，要先将其他的钩子函数执行完成后才继续执行
+       */
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
         await handler.apply(context(plugin), args(plugin))
       } else {
+        // 其他情况下，加入队列执行
         parallelPromises.push(handler.apply(context(plugin), args(plugin)))
       }
     }
+    // 等待所有并行执行的钩子函数完成
     await Promise.all(parallelPromises)
   }
 
@@ -283,9 +301,9 @@ export async function createPluginContainer(
     }
   }
 
-  // we should create a new context for each async hook pipeline so that the
-  // active plugin in that pipeline can be tracked in a concurrency-safe manner.
-  // using a class to make creating new contexts more efficient
+  // we should create a new context for each async hook pipeline so that the 我们应该为每个异步钩子管道创建一个新的上下文，以便
+  // active plugin in that pipeline can be tracked in a concurrency-safe manner. 可以以并发安全的方式跟踪该管道中的活动插件
+  // using a class to make creating new contexts more efficient 使用类来更有效地创建新上下文
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
@@ -626,23 +644,25 @@ export async function createPluginContainer(
     }
   }
 
-  let closed = false
-  const processesing = new Set<Promise<any>>()
+  let closed = false // 标识是否关闭：在服务器关闭的时候，会调用 container.close() 方法标识关闭了
+  const processesing = new Set<Promise<any>>() // promise 处理的队列
   // keeps track of hook promises so that we can wait for them all to finish upon closing the server 跟踪钩子承诺，以便我们可以在关闭服务器时等待它们全部完成
   function handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
     if (!(maybePromise as any)?.then) {
       return maybePromise
     }
     const promise = maybePromise as Promise<T>
-    processesing.add(promise)
+    processesing.add(promise) // 添加至队列
     return promise.finally(() => processesing.delete(promise))
   }
 
   const container: PluginContainer = {
+    /** 启动执行插件的 options 钩子 */
     options: await (async () => {
       let options = rollupOptions
       for (const optionsHook of getSortedPluginHooks('options')) {
-        if (closed) throwClosedServerError()
+        if (closed) throwClosedServerError() // 如果服务器已被关闭的话,那么就抛出错误
+        // options 钩子：https://cn.rollupjs.org/plugin-development/#options
         options =
           (await handleHookPromise(
             optionsHook.call(minimalContext, options),
@@ -653,6 +673,7 @@ export async function createPluginContainer(
 
     getModuleInfo,
 
+    /** 启动执行插件的 buildStart 钩子：https://cn.rollupjs.org/plugin-development/#buildstart */
     async buildStart() {
       await handleHookPromise(
         hookParallel(

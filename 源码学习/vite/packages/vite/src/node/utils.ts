@@ -418,17 +418,27 @@ export function tryStatSync(file: string): fs.Stats | undefined {
   }
 }
 
+/**
+ * 查找指定文件。
+ * @param dir 起始查找目录。
+ * @param fileNames 需要查找的文件名列表。
+ * @returns 找到的第一个文件的完整路径，如果没有找到则返回 undefined。
+ */
 export function lookupFile(
   dir: string,
   fileNames: string[],
 ): string | undefined {
+  // 在当前目录及其父目录中查找指定的文件
   while (dir) {
+    // 遍历文件名列表，尝试在当前目录下找到文件
     for (const fileName of fileNames) {
-      const fullPath = path.join(dir, fileName)
+      const fullPath = path.join(dir, fileName) // 拼接文件的完整路径
+      // 尝试获取文件状态，如果是文件则返回路径
       if (tryStatSync(fullPath)?.isFile()) return fullPath
     }
+    // 将当前目录设置为其父目录，继续在上一级目录中查找
     const parentDir = path.dirname(dir)
-    if (parentDir === dir) return
+    if (parentDir === dir) return // 如果父目录与当前目录相同，则退出循环
 
     dir = parentDir
   }
@@ -1102,6 +1112,7 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
+// 根据内容获取 hash 值
 export function getHash(text: Buffer | string, length = 8): string {
   const h = createHash('sha256').update(text).digest('hex').substring(0, length)
   if (length <= 64) return h
@@ -1440,6 +1451,7 @@ export interface PromiseWithResolvers<T> {
   resolve: (value: T | PromiseLike<T>) => void
   reject: (reason?: any) => void
 }
+// 生成一个带有解析器（resolve和reject）的Promise对象。
 export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
   let resolve: any
   let reject: any
