@@ -292,6 +292,7 @@ async function createDepsOptimizer(
 
             // For dev, we run the scanner and the first optimization 对于开发，我们运行扫描器和第一次优化
             // run on the background 后台运行
+            // 运行构建优化依赖项：返回一个对象 --> 包含一个取消函数和一个结果Promise，该Promise解析为依赖项优化结果。
             optimizationResult = runOptimizeDeps(config, knownDeps, ssr)
 
             // If the holdUntilCrawlEnd stratey is used, we wait until crawling has 如果使用 holdUntilCrawlEnd 策略，我们会等到爬行完成
@@ -781,6 +782,7 @@ async function createDepsOptimizer(
       if (newDepsDiscovered) {
         debug?.(
           colors.green(
+            // 在爬行静态进口，重新运行优化器时发现了新的依赖项
             `✨ new dependencies were found while crawling static imports, re-running optimizer`,
           ),
         )

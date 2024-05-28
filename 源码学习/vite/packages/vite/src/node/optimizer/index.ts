@@ -478,12 +478,15 @@ export function depsLogString(qualifiedIds: string[]): string {
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed 元数据并启动服务器，而无需等待“优化EPP”处理完成
  */
 /**
- * 运行优化依赖项的函数。
- *
- * @param resolvedConfig 已解析的配置对象，包含项目的配置细节。
- * @param depsInfo 依赖信息的记录，键是依赖的ID，值是优化后的依赖信息。
- * @param ssr 布尔值，指示是否为服务器端渲染进行优化。
- * @returns 返回一个对象，包含一个取消函数和一个结果Promise，该Promise解析为依赖项优化结果。
+ * 运行构建优化依赖项：
+ *  1. 为本次构建生成一个唯一路径 - "D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_30ccde96"
+ *  2. 初始化依赖优化元数据 DepOptimizationMetadata
+ *  3. 准备 esbuild 优化运行的配置和环境，并运行 esbuild.context 执行进行构建依赖, 并输出到指定目录(后台处理)
+ *        --> 例如输出到：D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_51f3a59e
+ *  4. 处理 esbuild 构建后的处置
+ *      -> 遍历发现的依赖信息, 添加到 metadata.optimized 中
+ *      -> 遍历构建生成的所有文件，将生成的 chunks 文件导入其中 metadata.chunks 中
+ *  5. 返回一个对象：包含一个取消函数和一个结果Promise，该Promise解析为依赖项优化结果。
  */
 export function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
@@ -534,18 +537,19 @@ export function runOptimizeDeps(
 
   // 依赖的 ids
   const qualifiedIds = Object.keys(depsInfo)
-  let cleaned = false
+  let cleaned = false // 是否清空标志
   let committed = false
+  // 后置处理构建生成的缓存文件夹
   const cleanUp = () => {
-    // If commit was already called, ignore the clean up even if a cancel was requested
-    // This minimizes the chances of leaving the deps cache in a corrupted state
+    // If commit was already called, ignore the clean up even if a cancel was requested 如果已经调用了commit，则忽略清理，即使请求了取消
+    // This minimizes the chances of leaving the deps cache in a corrupted state 这将使deps缓存处于损坏状态的可能性降至最低
     if (!cleaned && !committed) {
       cleaned = true
-      // No need to wait, we can clean up in the background because temp folders
-      // are unique per run
-      debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
+      // No need to wait, we can clean up in the background because temp folders 无需等待，我们可以在后台清理，因为临时文件夹
+      // are unique per run 每次运行都是唯一的
+      debug?.(colors.green(`removing cache dir ${processingCacheDir}`)) // 删除高速缓存
       try {
-        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
+        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync` 退出过程时，`fsp.rm`可能不会生效，因此我们使用`fs.rmsync`
         fs.rmSync(processingCacheDir, { recursive: true, force: true })
       } catch (error) {
         // Ignore errors
@@ -553,17 +557,21 @@ export function runOptimizeDeps(
     }
   }
 
+  // 成功构建后的结果
   const successfulResult: DepOptimizationResult = {
+    // 优化元数据
     metadata,
+    // 取消方法
     cancel: cleanUp,
+
     commit: async () => {
       if (cleaned) {
         throw new Error(
-          'Can not commit a Deps Optimization run as it was cancelled',
+          'Can not commit a Deps Optimization run as it was cancelled', // 由于被取消时无法提交DEPS优化运行
         )
       }
-      // Ignore clean up requests after this point so the temp folder isn't deleted before
-      // we finish commiting the new deps cache files to the deps folder
+      // Ignore clean up requests after this point so the temp folder isn't deleted before 此后忽略清理请求，因此临时文件夹之前未删除
+      // we finish commiting the new deps cache files to the deps folder 我们完成将新的DEP CACHE文件发布到DEPS文件夹
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache 写入元数据文件，然后将处理文件夹提交到全局 deps 缓存
@@ -625,6 +633,7 @@ export function runOptimizeDeps(
     }
   }
 
+  // 空的结果 -- 当没有构建或构建异常时的兼容处理
   const cancelledResult: DepOptimizationResult = {
     metadata,
     commit: async () => cleanUp(),
@@ -633,6 +642,8 @@ export function runOptimizeDeps(
 
   const start = performance.now() // 开始时间
 
+  // 准备 esbuild 优化运行的配置和环境，并运行 esbuild.context 执行进行构建依赖, 并输出到指定目录(后台处理)
+  // 例如输出到：D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_51f3a59e
   const preparedRun = prepareEsbuildOptimizerRun(
     resolvedConfig,
     depsInfo,
@@ -641,12 +652,16 @@ export function runOptimizeDeps(
     optimizerContext,
   )
 
+  // 处理 esbuild 构建后的处置
+  // 遍历发现的依赖信息, 添加到 metadata.optimized 中
+  // 遍历构建生成的所有文件，将生成的 chunks 文件导入其中 metadata.chunks 中
   const runResult = preparedRun.then(({ context, idToExports }) => {
     function disposeContext() {
       return context?.dispose().catch((e) => {
-        config.logger.error('Failed to dispose esbuild context', { error: e })
+        config.logger.error('Failed to dispose esbuild context', { error: e }) // 无法处置 esbuild 上下文
       })
     }
+    // 没有 esbuil 上下文，或者过程中已被取消，则提示
     if (!context || optimizerContext.cancelled) {
       disposeContext()
       return cancelledResult
@@ -655,34 +670,40 @@ export function runOptimizeDeps(
     return context
       .rebuild()
       .then((result) => {
-        const meta = result.metafile!
+        // 走到这一步的时候, 应该是已经通过 esbuild 构建了依赖，输出到了指定目录下
 
-        // the paths in `meta.outputs` are relative to `process.cwd()`
+        const meta = result.metafile! // 构建后的文件结果
+
+        // the paths in `meta.outputs` are relative to `process.cwd()` `meta.outputs` 中的路径是相对于 `process.cwd()` 的
+        // 缓存目录输出路径：node_modules\\.vite\\deps_temp_ffa7d72f
         const processingCacheDirOutputPath = path.relative(
           process.cwd(),
           processingCacheDir,
         )
 
+        /** 遍历发现的依赖信息, 添加到 metadata.optimized 中 */
         for (const id in depsInfo) {
+          // 获取到依赖对应的构建输出
           const output = esbuildOutputFromId(
             meta.outputs,
             id,
             processingCacheDir,
           )
 
+          // 依赖信息
           const { exportsData, ...info } = depsInfo[id]
           addOptimizedDepInfo(metadata, 'optimized', {
             ...info,
-            // We only need to hash the output.imports in to check for stability, but adding the hash
-            // and file path gives us a unique hash that may be useful for other things in the future
+            // We only need to hash the output.imports in to check for stability, but adding the hash 我们只需要哈希输出.imports来检查稳定性，但添加哈希
+            // and file path gives us a unique hash that may be useful for other things in the future 和文件路径为我们提供了一个独特的哈希，这可能对其他事物有用
             fileHash: getHash(
               metadata.hash +
                 depsInfo[id].file +
                 JSON.stringify(output.imports),
             ),
             browserHash: metadata.browserHash,
-            // After bundling we have more information and can warn the user about legacy packages
-            // that require manual configuration
+            // After bundling we have more information and can warn the user about legacy packages 捆绑后，我们有更多信息，可以警告用户有关旧软件包的信息
+            // that require manual configuration 需要手动配置
             needsInterop: needsInterop(
               config,
               ssr,
@@ -693,18 +714,23 @@ export function runOptimizeDeps(
           })
         }
 
+        // 遍历构建生成的所有文件，将生成的 chunks 文件导入其中 metadata.chunks 中
         for (const o of Object.keys(meta.outputs)) {
+          // 不是 .map 文件
           if (!jsMapExtensionRE.test(o)) {
             const id = path
               .relative(processingCacheDirOutputPath, o)
               .replace(jsExtensionRE, '')
-            const file = getOptimizedDepPath(id, resolvedConfig, ssr)
+            const file = getOptimizedDepPath(id, resolvedConfig, ssr) // 获取依赖完整路径: "D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps/eslint.js"
+            // 如果不是属于依赖的直接构建输出文件，例如：eslint -> eslint.js
+            // 而是生成的一份通过代码分割生成的共享的代码，一般为 chunk-xx.js
             if (
               !findOptimizedDepInfoInRecord(
                 metadata.optimized,
                 (depInfo) => depInfo.file === file,
               )
             ) {
+              // 则添加到 metadata.chunks 中
               addOptimizedDepInfo(metadata, 'chunks', {
                 id,
                 file,
@@ -716,16 +742,17 @@ export function runOptimizeDeps(
         }
 
         debug?.(
-          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`,
+          `Dependencies bundled in ${(performance.now() - start).toFixed(2)}ms`, // 依赖项捆绑在一起 ...ms
         )
 
+        // 返回成功结果
         return successfulResult
       })
 
       .catch((e) => {
         if (e.errors && e.message.includes('The build was canceled')) {
-          // esbuild logs an error when cancelling, but this is expected so
-          // return an empty result instead
+          // esbuild logs an error when cancelling, but this is expected so Esbuild在取消时会记录一个错误，但这是可以预期的
+          // return an empty result instead 返回空结果
           return cancelledResult
         }
         throw e
@@ -735,21 +762,39 @@ export function runOptimizeDeps(
       })
   })
 
+  // 错误处置
   runResult.catch(() => {
     cleanUp()
   })
 
   return {
+    // 取消方法
     async cancel() {
-      optimizerContext.cancelled = true
-      const { context } = await preparedRun
-      await context?.cancel()
+      optimizerContext.cancelled = true // 取消标志
+      const { context } = await preparedRun // 等待 esbuild.context 上下文
+      await context?.cancel() // 通知 esbuild 取消构建
       cleanUp()
     },
+    // 结果：Promise
     result: runResult,
   }
 }
 
+/**
+ * 准备 esbuild 优化运行的配置和环境，并运行 esbuild.context 执行进行构建依赖, 并输出到指定目录(后台处理)，例如：D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_51f3a59e
+ *
+ * 该函数主要负责配置和初始化 esbuild 的构建环境，为指定的依赖信息进行构建准备，包括：
+ * - 配置 esbuild 构建选项；
+ * - 处理和转换依赖信息；
+ * - 初始化构建上下文。
+ *
+ * @param resolvedConfig 已解析的配置对象，包含了项目的配置细节。
+ * @param depsInfo 依赖信息的对象，键为依赖的 id，值为包含依赖源和导出信息的对象。
+ * @param ssr 是否为服务器端渲染模式。
+ * @param processingCacheDir 处理中的缓存目录路径。
+ * @param optimizerContext 优化器上下文，包含了取消标志。
+ * @returns 返回一个 Promise，解析为一个对象，可选地包含了构建上下文和 id 到导出数据的映射。
+ */
 async function prepareEsbuildOptimizerRun(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
@@ -760,89 +805,119 @@ async function prepareEsbuildOptimizerRun(
   context?: BuildContext
   idToExports: Record<string, ExportsData>
 }> {
+  // 配置 esbuild 构建命令为 'build'
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build',
   }
 
-  // esbuild generates nested directory output with lowest common ancestor base
-  // this is unpredictable and makes it difficult to analyze entry / output
-  // mapping. So what we do here is:
-  // 1. flatten all ids to eliminate slash
-  // 2. in the plugin, read the entry ourselves as virtual files to retain the
-  //    path.
-  const flatIdDeps: Record<string, string> = {}
-  const idToExports: Record<string, ExportsData> = {}
+  // esbuild generates nested directory output with lowest common ancestor base esbuild 生成具有最低公共祖先基础的嵌套目录输出
+  // this is unpredictable and makes it difficult to analyze entry / output 这是不可预测的并且使得分析输入/输出变得困难
+  // mapping. So what we do here is: 映射。所以我们在这里做的是：
+  // 1. flatten all ids to eliminate slash 1. 展平所有 id 以消除斜线
+  // 2. in the plugin, read the entry ourselves as virtual files to retain the 2.在插件中，我们自己读取条目作为虚拟文件以保留
+  //    path.  路径
+  const flatIdDeps: Record<string, string> = {} // 优化后的依赖 id, 对应着依赖文件路径
+  const idToExports: Record<string, ExportsData> = {} // 依赖 id, 对应的依赖的相关导出信息
 
+  // 获取依赖优化配置
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
+  // 解构出 esbuild 构建选项的插件和其他选项
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
     optimizeDeps?.esbuildOptions ?? {}
 
+  // 并行处理所有依赖，提取导出数据并准备构建配置
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
-      const src = depsInfo[id].src!
+      const src = depsInfo[id].src! // 依赖路径：D:/低代码/project/wzb/源码学习/vite/node_modules/.pnpm/eslint@8.57.0/node_modules/eslint/lib/api.js
+      // 提取依赖的相关导出信息
       const exportsData = await (depsInfo[id].exportsData ??
         extractExportsData(src, config, ssr))
       if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
-        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-        // This is useful for packages such as Gatsby.
+        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser. 通过将“.js”默认为 JSX 解析器，确保优化不会失败。
+        // This is useful for packages such as Gatsby. 这对于 Gatsby 之类的包很有用。
         esbuildOptions.loader = {
           '.js': 'jsx',
           ...esbuildOptions.loader,
         }
       }
-      const flatId = flattenId(id)
+      const flatId = flattenId(id) // 将依赖 id 处理一下特殊字符以及长度问题
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
     }),
   )
 
+  // 如果已经取消了的话, 那么返回空的消息出去
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
+  // 提供给 esbuild 的环境变量
   const define = {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
   }
 
+  // 提供给 esbuild 的平台配置
   const platform =
     ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
 
+  // 预构建中强制排除的依赖项。
   const external = [...(optimizeDeps?.exclude ?? [])]
 
+  // 用户自定义依赖优化过程的插件
   const plugins = [...pluginsFromConfig]
+  // 如果存在排除的依赖, 那么就注册插件处理
   if (external.length) {
     plugins.push(esbuildCjsExternalPlugin(external, platform))
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
+  // 调用 esbuild.context 进行构建依赖, 并输出到指定目录：D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_51f3a59e
   const context = await esbuild.context({
+    // 工作区
     absWorkingDir: process.cwd(),
+    // 入口
     entryPoints: Object.keys(flatIdDeps),
+    // 捆绑文件意味着将任何导入的依赖项内联到文件本身中。
     bundle: true,
-    // We can't use platform 'neutral', as esbuild has custom handling
-    // when the platform is 'node' or 'browser' that can't be emulated
-    // by using mainFields and conditions
+    // We can't use platform 'neutral', as esbuild has custom handling 我们不能使用平台“中立”，因为 esbuild 有自定义处理
+    // when the platform is 'node' or 'browser' that can't be emulated 当平台是无法模拟的“节点”或“浏览器”时
+    // by using mainFields and conditions 通过使用 mainFields 和条件
+    // 默认情况下，esbuild 的捆绑器配置为生成适用于浏览器的代码。如果您的捆绑代码打算在节点中运行，则应将平台设置为节点
     platform,
+    // 此功能提供了一种用常量表达式替换全局标识符的方法。它可以是一种在构建之间更改某些代码的行为而不更改代码本身的方法：
     define,
+    // 这设置生成的 JavaScript 文件的输出格式。
     format: 'esm',
     // See https://github.com/evanw/esbuild/issues/1921#issuecomment-1152991694
+    // 使用它可以在生成的 JavaScript 和 CSS 文件的开头插入任意字符串。
     banner:
       platform === 'node'
         ? {
             js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
           }
         : undefined,
+    // 这将为生成的 JavaScript 和/或 CSS 代码设置目标环境。
     target: ESBUILD_MODULES_TARGET,
+    // 您可以将文件或包标记为外部，以将其从构建中排除。导入不会被捆绑，而是会被保留（对 iife 和 cjs 格式使用 require，对 esm 格式使用 import），并将在运行时进行评估。
     external,
+    // 日志等级
     logLevel: 'error',
+    // 代码分割
     splitting: true,
+    // 开启源代码映射
     sourcemap: true,
+    // 输出目录 -- D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_51f3a59e
     outdir: processingCacheDir,
     ignoreAnnotations: true,
+    // 此选项告诉 esbuild 以 JSON 格式生成一些有关构建的元数据。
     metafile: true,
+    // 插件列表
     plugins,
+    // 字符集
     charset: 'utf8',
+    // 外部用户自定义配置项
     ...esbuildOptions,
+    // 此设置允许您在各个语法功能级别自定义 esbuild 的一组不支持的语法功能。
     supported: {
       ...defaultEsbuildSupported,
       ...esbuildOptions.supported,
@@ -1108,22 +1183,25 @@ function stringifyDepsOptimizerMetadata(
   )
 }
 
+// 根据给定的 ID 从 esbuild 输出中获取对应的输出内容。
 function esbuildOutputFromId(
   outputs: Record<string, any>,
   id: string,
   cacheDirOutputPath: string,
 ): any {
-  const cwd = process.cwd()
-  const flatId = flattenId(id) + '.js'
+  const cwd = process.cwd() // 工作目录: "D:\\低代码\\project\\wzb\\源码学习\\vite\\playground\\vue"
+  const flatId = flattenId(id) + '.js' // 依赖 id "eslint.js"
+  // 依赖输出的相对位置：'node_modules/.vite/deps_temp_4ba10ccd/eslint.js'
   const normalizedOutputPath = normalizePath(
     path.relative(cwd, path.join(cacheDirOutputPath, flatId)),
   )
+  // 依赖构建后的输出
   const output = outputs[normalizedOutputPath]
   if (output) {
     return output
   }
-  // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
-  // Normalize keys to support this case too
+  // If the root dir was symlinked, esbuild could return output keys as `../cwd/` 如果root dir是链接的，则Esbuild可以将输出键返回为`../ cwd/`
+  // Normalize keys to support this case too 正常化的密钥也支持此案
   for (const [key, value] of Object.entries(outputs)) {
     if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
       return value
@@ -1189,6 +1267,8 @@ export async function extractExportsData(
   return exportsData
 }
 
+// 检测模式是否需要 ESM 转换：https://cn.vitejs.dev/config/dep-optimization-options#optimizedeps-needsinterop
+//
 function needsInterop(
   config: ResolvedConfig,
   ssr: boolean,
@@ -1200,15 +1280,16 @@ function needsInterop(
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
-  // entry has no ESM syntax - likely CJS or UMD
+  // entry has no ESM syntax - likely CJS or UMD 条目没有ESM语法 - 可能的CJ或UMD
+  // 此时不会 ESM 模式，需要 ESM 转换
   if (!hasModuleSyntax) {
     return true
   }
 
   if (output) {
-    // if a peer dependency used require() on an ESM dependency, esbuild turns the
-    // ESM dependency's entry chunk into a single default export... detect
-    // such cases by checking exports mismatch, and force interop.
+    // if a peer dependency used require() on an ESM dependency, esbuild turns the 如果使用ESM依赖关系上使用的同行依赖性creignect（），则Esbuild转动
+    // ESM dependency's entry chunk into a single default export... detect ESM依赖项的输入块成一个默认导出...检测
+    // such cases by checking exports mismatch, and force interop. 通过检查出口不匹配并强制互动来检查此类情况
     const generatedExports: string[] = output.exports
 
     if (
@@ -1354,16 +1435,20 @@ export function optimizedDepInfoFromFile(
   return metadata.depInfoList.find((depInfo) => depInfo.file === file)
 }
 
+// 在给定的依赖信息记录中，通过回调函数查找优化后的依赖信息。
 function findOptimizedDepInfoInRecord(
   dependenciesInfo: Record<string, OptimizedDepInfo>,
   callbackFn: (depInfo: OptimizedDepInfo, id: string) => any,
 ): OptimizedDepInfo | undefined {
+  // 遍历dependenciesInfo对象的所有键
   for (const o of Object.keys(dependenciesInfo)) {
     const info = dependenciesInfo[o]
+    // 使用callbackFn对当前依赖信息进行测试，如果返回true，则返回当前依赖信息
     if (callbackFn(info, o)) {
       return info
     }
   }
+  // 如果没有找到匹配的依赖信息，返回undefined
 }
 
 export async function optimizedDepNeedsInterop(

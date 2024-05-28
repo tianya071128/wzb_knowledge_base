@@ -47,32 +47,35 @@ const externalTypes = [
   ...KNOWN_ASSET_TYPES,
 ]
 
+// 生成 esbuild 的依赖优化插件
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   external: string[],
   config: ResolvedConfig,
   ssr: boolean,
 ): Plugin {
+  // 获取依赖优化的配置项
   const { extensions } = getDepOptimizationConfig(config, ssr)
 
-  // remove optimizable extensions from `externalTypes` list
+  // remove optimizable extensions from `externalTypes` list 从“externalTypes”列表中删除可优化的扩展
   const allExternalTypes = extensions
     ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
 
-  // use separate package cache for optimizer as it caches paths around node_modules
-  // and it's unlikely for the core Vite process to traverse into node_modules again
+  // use separate package cache for optimizer as it caches paths around node_modules 为优化器使用单独的包缓存，因为它缓存node_modules周围的路径
+  // and it's unlikely for the core Vite process to traverse into node_modules again 并且核心Vite进程不太可能再次遍历到node_modules
   const esmPackageCache: PackageCache = new Map()
   const cjsPackageCache: PackageCache = new Map()
 
-  // default resolver which prefers ESM
+  // default resolver which prefers ESM 默认解析器更喜欢 ESM
+  // 解析器
   const _resolve = config.createResolver({
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
-  // cjs resolver that prefers Node
+  // cjs resolver that prefers Node 更喜欢 Node 的 cjs 解析器
   const _resolveRequire = config.createResolver({
     asSrc: false,
     isRequire: true,
@@ -287,7 +290,7 @@ module.exports = Object.create(new Proxy({}, {
 
 const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 
-// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized 如果 'foo' 被外部化，esbuild 不会将 `require('foo')` 转换为 `import` 语句
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
 export function esbuildCjsExternalPlugin(
   externals: string[],
