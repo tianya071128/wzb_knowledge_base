@@ -54,8 +54,10 @@ const sirvOptions = ({
   }
 }
 
+// 用于服务静态文件的中间件。
 export function servePublicMiddleware(
   server: ViteDevServer,
+  /** 静态资源文件列表 */
   publicFiles?: Set<string>,
 ): Connect.NextHandleFunction {
   const dir = server.config.publicDir // 获取公共目录并初始化sirv服务器实例用于服务静态文件。
@@ -72,7 +74,7 @@ export function servePublicMiddleware(
     let filePath = cleanUrl(url)
     if (filePath.indexOf('%') !== -1) {
       try {
-        filePath = decodeURI(filePath)
+        filePath = decodeURI(filePath) // 解码由encodeURI 创建或其他流程得到的统一资源标识符
       } catch (err) {
         /* malform uri */
       }

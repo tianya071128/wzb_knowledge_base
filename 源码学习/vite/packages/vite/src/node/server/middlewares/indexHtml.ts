@@ -57,6 +57,7 @@ interface InlineStyleAttribute {
   code: string
 }
 
+// 创建一个用于开发环境HTML转换的函数。
 export function createDevHtmlTransformFn(
   config: ResolvedConfig,
 ): (
@@ -65,12 +66,18 @@ export function createDevHtmlTransformFn(
   html: string,
   originalUrl?: string,
 ) => Promise<string> {
+  // 解析并组织插件 transformIndexHtml 钩子。
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
     config.plugins,
     config.logger,
   )
   const transformHooks = [
+    // 定义一个预导入映射钩子函数，用于在HTML中检查`<script type="importmap">`的位置，
+    // 确保它位于`<script type="module">`和`<link rel="modulepreload">`标签之前。
     preImportMapHook(config),
+    // 向HTML中注入CSP（内容安全策略）nonce值的meta标签。
+    // CSP nonce可以用于确保页面内的脚本和样式等资源在加载时具有一个随时间变化的令牌，
+    // 以此加强内容安全策略，防止XSS等安全威胁。
     injectCspNonceMetaTagHook(config),
     ...preHooks,
     htmlEnvHook(config),
@@ -80,10 +87,15 @@ export function createDevHtmlTransformFn(
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
+  // 返回一个 HTML转换 的方法
   return (
+    /** vite 服务器实例 */
     server: ViteDevServer,
+    /** 请求 url --> /index.html */
     url: string,
+    /** html 文件内容 */
     html: string,
+    /** 原始请求 url --> / */
     originalUrl?: string,
   ): Promise<string> => {
     return applyHtmlTransforms(html, transformHooks, {
@@ -413,27 +425,31 @@ export function indexHtmlMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
+    // writableEnded: 指示是否调用 request.end()
     if (res.writableEnded) {
       return next()
     }
 
-    const url = req.url && cleanUrl(req.url)
-    // htmlFallbackMiddleware appends '.html' to URLs
+    const url = req.url && cleanUrl(req.url) // 请求 url
+    // htmlFallbackMiddleware appends '.html' to URLs htmlFallbackMiddleware 将“.html”附加到 URL
+    // 表明是 .html 文件请求
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       let filePath: string
       if (isDev && url.startsWith(FS_PREFIX)) {
         filePath = decodeURIComponent(fsPathFromId(url))
       } else {
-        filePath = path.join(root, decodeURIComponent(url))
+        filePath = path.join(root, decodeURIComponent(url)) // 请求完整地址: D:\\低代码\\project\\wzb\\源码学习\\vite\\playground\\vue\\index.html
       }
 
+      // 检测文件是否存在
       if (fsUtils.existsSync(filePath)) {
+        // 指定服务器响应的 header。
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers
 
         try {
-          let html = await fsp.readFile(filePath, 'utf-8')
+          let html = await fsp.readFile(filePath, 'utf-8') // 读取文件
           if (isDev) {
             html = await server.transformIndexHtml(url, html, req.originalUrl)
           }

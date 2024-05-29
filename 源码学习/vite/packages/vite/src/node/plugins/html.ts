@@ -1048,12 +1048,14 @@ export type IndexHtmlTransform =
       handler: IndexHtmlTransformHook
     }
 
+// 定义一个预导入映射钩子函数，用于在HTML中检查`<script type="importmap">`的位置，
+// 确保它位于`<script type="module">`和`<link rel="modulepreload">`标签之前。
 export function preImportMapHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
   return (html, ctx) => {
-    const importMapIndex = html.search(importMapRE)
-    if (importMapIndex < 0) return
+    const importMapIndex = html.search(importMapRE) // 搜索 <script type="importmap"> 在HTML中的位置
+    if (importMapIndex < 0) return // 不存在的话, 返回
 
     const importMapAppendIndex = html.search(importMapAppendRE)
     if (importMapAppendIndex < 0) return
@@ -1065,7 +1067,7 @@ export function preImportMapHook(
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(
-            `(!) <script type="importmap"> should come before <script type="module"> and <link rel="modulepreload"> in /${relativeHtml}`,
+            `(!) <script type="importmap"> should come before <script type="module"> and <link rel="modulepreload"> in /${relativeHtml}`, // (!) <script type="importmap"> 应该位于 <script type="module"> 和 <link rel="modulepreload"> 之前
           ),
         ),
       )
@@ -1097,6 +1099,15 @@ export function postImportMapHook(): IndexHtmlTransformHook {
   }
 }
 
+/**
+ * 向HTML中注入CSP（内容安全策略）nonce值的meta标签。
+ * CSP nonce可以用于确保页面内的脚本和样式等资源在加载时具有一个随时间变化的令牌，
+ * 以此加强内容安全策略，防止XSS等安全威胁。
+ *
+ * @param config ResolvedConfig 配置对象，包含具体的HTML配置和CSP nonce值。
+ * @returns IndexHtmlTransformHook 函数，该函数返回一个操作HTML索引的钩子，
+ *          用于在HTML头部注入具有nonce属性的meta标签。
+ */
 export function injectCspNonceMetaTagHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
@@ -1107,7 +1118,7 @@ export function injectCspNonceMetaTagHook(
       {
         tag: 'meta',
         injectTo: 'head',
-        // use nonce attribute so that it's hidden
+        // use nonce attribute so that it's hidden 使用 nonce 属性使其隐藏
         // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
         attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
       },
@@ -1211,6 +1222,7 @@ export function injectNonceAttributeTagHook(
   }
 }
 
+// 解析并组织插件 transformIndexHtml 钩子。
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[],
   logger: Logger,
@@ -1219,36 +1231,38 @@ export function resolveHtmlTransforms(
   IndexHtmlTransformHook[],
   IndexHtmlTransformHook[],
 ] {
-  const preHooks: IndexHtmlTransformHook[] = []
-  const normalHooks: IndexHtmlTransformHook[] = []
-  const postHooks: IndexHtmlTransformHook[] = []
+  const preHooks: IndexHtmlTransformHook[] = [] // 前置插件 transformIndexHtml 钩子处理器
+  const normalHooks: IndexHtmlTransformHook[] = [] // 正常插件 transformIndexHtml 钩子处理器
+  const postHooks: IndexHtmlTransformHook[] = [] // 后置插件 transformIndexHtml 钩子处理器
 
+  // 遍历插件
   for (const plugin of plugins) {
-    const hook = plugin.transformIndexHtml
+    const hook = plugin.transformIndexHtml // 提取插件注册的 transformIndexHtml 钩子
     if (!hook) continue
 
     if (typeof hook === 'function') {
+      // 如果是函数,添加至对应集合
       normalHooks.push(hook)
     } else {
       if (!('order' in hook) && 'enforce' in hook) {
         logger.warnOnce(
           colors.yellow(
-            `plugin '${plugin.name}' uses deprecated 'enforce' option. Use 'order' option instead.`,
+            `plugin '${plugin.name}' uses deprecated 'enforce' option. Use 'order' option instead.`, // 插件“${plugin.name}”使用已弃用的“enforce”选项。请改用“order”选项。
           ),
         )
       }
       if (!('handler' in hook) && 'transform' in hook) {
         logger.warnOnce(
           colors.yellow(
-            `plugin '${plugin.name}' uses deprecated 'transform' option. Use 'handler' option instead.`,
+            `plugin '${plugin.name}' uses deprecated 'transform' option. Use 'handler' option instead.`, // 插件“${plugin.name}”使用已弃用的“transform”选项。使用“handler”选项代替
           ),
         )
       }
 
-      // `enforce` had only two possible values for the `transformIndexHtml` hook
-      // `'pre'` and `'post'` (the default). `order` now works with three values
-      // to align with other hooks (`'pre'`, normal, and `'post'`). We map
-      // both `enforce: 'post'` to `order: undefined` to avoid a breaking change
+      // `enforce` had only two possible values for the `transformIndexHtml` hook “enforce”对于“transformIndexHtml”钩子只有两个可能的值
+      // `'pre'` and `'post'` (the default). `order` now works with three values “pre”和“post”（默认值）`order `现在使用三个值
+      // to align with other hooks (`'pre'`, normal, and `'post'`). We map 与其他钩子对齐（“re”、“normal”和“post”）。我们绘制地图
+      // both `enforce: 'post'` to `order: undefined` to avoid a breaking change 既有“enforce:”post“”也有“order:undefined”，以避免出现中断更改
       const order = hook.order ?? (hook.enforce === 'pre' ? 'pre' : undefined)
       // @ts-expect-error union type
       const handler = hook.handler ?? hook.transform
@@ -1270,11 +1284,14 @@ export async function applyHtmlTransforms(
   hooks: IndexHtmlTransformHook[],
   ctx: IndexHtmlTransformContext,
 ): Promise<string> {
+  // 遍历 transformIndexHtml 钩子
   for (const hook of hooks) {
     const res = await hook(html, ctx)
+    // 如果没有返回值的话, 进行下一个钩子执行
     if (!res) {
       continue
     }
+    // 如果返回字符串的话, 直接使用返回值
     if (typeof res === 'string') {
       html = res
     } else {

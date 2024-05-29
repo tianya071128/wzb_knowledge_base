@@ -250,7 +250,9 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   }
 
   return {
+    // 在 fs.existsSync 方法的基础上包装一层：同步检测路径是否存在
     existsSync(file: string) {
+      // 检查给定的字符串是否包含`node_modules`
       if (isInNodeModules(file)) {
         return fs.existsSync(file)
       }
@@ -260,7 +262,7 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
         direntCache === undefined ||
         (direntCache && direntCache.type === 'symlink')
       ) {
-        // fallback to built-in fs for out-of-root and symlinked files
+        // fallback to built-in fs for out-of-root and symlinked files 对于根外文件和符号链接文件，回退到内置文件系统
         return fs.existsSync(file)
       }
       return !!direntCache

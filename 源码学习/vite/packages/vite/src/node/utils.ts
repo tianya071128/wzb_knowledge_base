@@ -107,6 +107,7 @@ export function isNodeBuiltin(id: string): boolean {
   return nodeBuiltins.includes(id)
 }
 
+// 检查给定的字符串是否包含`node_modules`
 export function isInNodeModules(id: string): boolean {
   return id.includes('node_modules')
 }

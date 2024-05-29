@@ -81,6 +81,7 @@ export function transformMiddleware(
   const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
+    // 如果不是 GET 请求, 或者请求路径是 '/' 或 '/favicon.ico'，则直接略过，会有其他的中间件处理一下
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }

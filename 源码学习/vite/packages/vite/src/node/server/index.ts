@@ -598,6 +598,7 @@ export async function _createServer(
         })
       }
     },
+    // 转换 index.html 文件
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
@@ -996,6 +997,8 @@ export async function _createServer(
 
   // html fallback html 后备
   if (config.appType === 'spa' || config.appType === 'mpa') {
+    // 在 SPA 中, 如果访问的是 /(或/index)，那么在这里就处理一下请求地址，规整成 'xxx/xxx.html'
+    // 例如：访问 '/' --> '/index.html'
     middlewares.use(
       htmlFallbackMiddleware(
         root,
@@ -1035,8 +1038,10 @@ export async function _createServer(
       await container.buildStart({})
       // start deps optimizer after all container plugins are ready 所有容器插件准备就绪后启动 deps 优化器
       if (isDepsOptimizerEnabled(config, false)) {
+        // 启动依赖优化的程序
         await initDepsOptimizer(config, server)
       }
+      // 提前转换和缓存文件以进行预热。可以在服务器启动时提高初始页面加载速度，并防止转换瀑布。
       warmupFiles(server)
       initingServer = undefined
       serverInited = true
