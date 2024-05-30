@@ -21,6 +21,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     resolveId(id, source, { ssr }) {
       if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
+        // 符合条件时， 返回原始 id
         return id
       }
     },

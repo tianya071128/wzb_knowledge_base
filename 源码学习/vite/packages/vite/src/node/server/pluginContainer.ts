@@ -304,11 +304,12 @@ export async function createPluginContainer(
   // we should create a new context for each async hook pipeline so that the 我们应该为每个异步钩子管道创建一个新的上下文，以便
   // active plugin in that pipeline can be tracked in a concurrency-safe manner. 可以以并发安全的方式跟踪该管道中的活动插件
   // using a class to make creating new contexts more efficient 使用类来更有效地创建新上下文
+  // 开发开发环境下, 不会通过 rollup 构建，所以模拟创建一个 RollupPluginContext 来供给插件执行过程中的上下文
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
     _scan = false
-    _activePlugin: Plugin | null
+    _activePlugin: Plugin | null // 当前活动插件
     _activeId: string | null = null
     _activeCode: string | null = null
     _resolveSkips?: Set<Plugin>
@@ -685,27 +686,32 @@ export async function createPluginContainer(
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
-      const skip = options?.skip
+      // 解析选项初始化
+      const skip = options?.skip // 跳过执行的插件
       const ssr = options?.ssr
-      const scan = !!options?.scan
-      const ctx = new Context()
+      const scan = !!options?.scan // 是否为扫描 -- 当在服务器启动时, 会自动扫描寻找依赖
+      const ctx = new Context() // 插件钩子的上下文，可看成是模拟 rollup 在钩子函数中的上下文(this)
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
-      const resolveStart = debugResolve ? performance.now() : 0
+      const resolveStart = debugResolve ? performance.now() : 0 // 开始计时
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
+      // 根据 resolveId 钩子, 得到排好序的插件
       for (const plugin of getSortedPlugins('resolveId')) {
-        if (closed && !ssr) throwClosedServerError()
-        if (!plugin.resolveId) continue
-        if (skip?.has(plugin)) continue
+        if (closed && !ssr) throwClosedServerError() // 如果关闭标记为真, 则发出错误
+        if (!plugin.resolveId) continue // 插件不存在 resolveId 钩子的话
+        if (skip?.has(plugin)) continue // 该插件跳过执行
 
-        ctx._activePlugin = plugin
+        ctx._activePlugin = plugin // 设置当前活动插件
 
         const pluginResolveStart = debugPluginResolve ? performance.now() : 0
-        const handler = getHookHandler(plugin.resolveId)
+        const handler = getHookHandler(plugin.resolveId) // 获取钩子的处理器
+        // 执行钩子处理器
         const result = await handleHookPromise(
+          // 执行钩子处理器 -- 配置项可参考 --> https://cn.rollupjs.org/plugin-development/#resolveid
           handler.call(ctx as any, rawId, importer, {
+            // attributes 告诉你导入中存在哪些导入属性。
             attributes: options?.attributes ?? {},
             custom: options?.custom,
             isEntry: !!options?.isEntry,
@@ -713,11 +719,14 @@ export async function createPluginContainer(
             scan,
           }),
         )
+        // 如果没有返回值，跳过
         if (!result) continue
 
         if (typeof result === 'string') {
+          // 如果返回的是字符串, 那么直接使用
           id = result
         } else {
+          // 返回了对象
           id = result.id
           Object.assign(partial, result)
         }
@@ -728,7 +737,7 @@ export async function createPluginContainer(
           prettifyUrl(id, root),
         )
 
-        // resolveId() is hookFirst - first non-null result is returned.
+        // resolveId() is hookFirst - first non-null result is returned. resolveId() 是 hookFirst - 返回第一个非空结果。
         break
       }
 

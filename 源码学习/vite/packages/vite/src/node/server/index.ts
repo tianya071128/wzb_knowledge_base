@@ -444,6 +444,11 @@ export function createServer(
  *      6.12 用户插件注册的中间件
  *  7. 生成一个服务器选项的配置项 ViteDevServer
  */
+/**
+ * 开发环境下：当存在客户端请求时，会通过启用的服务器通过各个中间件实现各种转换逻辑
+ *  各类中间件请详见下面逻辑，其中有：
+ *    1. indexHtmlMiddleware：用于处理 html 的中间件 --> 读取对应 html 文件, 在开发环境下, 调用 server.transformIndexHtml 方法(会调用插件 transformIndexHtml 钩子)执行转换
+ */
 export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: { hotListen: boolean },
@@ -531,6 +536,8 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
+  // 生成一个模块图
+  // 传入一个获取模块id的解析器
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr }),
   )
@@ -598,7 +605,7 @@ export async function _createServer(
         })
       }
     },
-    // 转换 index.html 文件
+    // 转换 index.html 文件 -- 在这里调用插件的 transformIndexHtml 钩子执行转换机制
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
     },

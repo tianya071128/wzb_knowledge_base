@@ -147,7 +147,7 @@ export function createPluginHookUtils(
   }
 }
 
-// 提取出插件数组提取出对应的钩子数组, 并对这些钩子根据 order 属性进行排序
+// 根据插件的钩子名称对插件根据 order 属性进行排序, 得出排序后的插件(不包含没有对应钩子的插件)
 export function getSortedPluginsByHook<K extends keyof Plugin>(
   hookName: K,
   plugins: readonly Plugin[],

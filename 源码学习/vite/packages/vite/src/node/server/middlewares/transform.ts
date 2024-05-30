@@ -88,6 +88,7 @@ export function transformMiddleware(
 
     let url: string
     try {
+      // 从URL中移除时间戳查询参数等信息, 重新规范 url --> '/src/main.js'
       url = decodeURI(removeTimestampQuery(req.url!)).replace(
         NULL_BYTE_PLACEHOLDER,
         '\0',
@@ -99,8 +100,8 @@ export function transformMiddleware(
     const withoutQuery = cleanUrl(url)
 
     try {
-      const isSourceMap = withoutQuery.endsWith('.map')
-      // since we generate source map references, handle those requests here
+      const isSourceMap = withoutQuery.endsWith('.map') // 如果是 sourceMap 文件的请求
+      // since we generate source map references, handle those requests here 由于我们生成源映射引用，因此在此处处理这些请求
       if (isSourceMap) {
         const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
@@ -156,23 +157,24 @@ export function transformMiddleware(
         }
       }
 
+      // 检查路径是否以公共路径开头, 否则打印警告
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
       }
 
       if (
-        isJSRequest(url) ||
+        isJSRequest(url) || // 是否为 js 类型导入(vue 文件也当成 js 处理)
         isImportRequest(url) ||
-        isCSSRequest(url) ||
+        isCSSRequest(url) || // 是否为 css(或 scss 等) 文件请求
         isHTMLProxy(url)
       ) {
-        // strip ?import
-        url = removeImportQuery(url)
-        // Strip valid id prefix. This is prepended to resolved Ids that are
-        // not valid browser import specifiers by the importAnalysis plugin.
+        // strip ?import 剥离？导入
+        url = removeImportQuery(url) // 从URL中移除 import= 查询字符串
+        // Strip valid id prefix. This is prepended to resolved Ids that are 去掉有效的 ID 前缀。这是在已解析的 ID 之前添加的
+        // not valid browser import specifiers by the importAnalysis plugin. importAnalysis 插件的浏览器导入说明符无效
         url = unwrapId(url)
 
-        // for CSS, we differentiate between normal CSS requests and imports
+        // for CSS, we differentiate between normal CSS requests and imports 对于 CSS，我们区分普通 CSS 请求和导入
         if (isCSSRequest(url)) {
           if (
             req.headers.accept?.includes('text/css') &&
@@ -181,9 +183,9 @@ export function transformMiddleware(
             url = injectQuery(url, 'direct')
           }
 
-          // check if we can return 304 early for CSS requests. These aren't handled
-          // by the cachedTransformMiddleware due to the browser possibly mixing the
-          // etags of direct and imported CSS
+          // check if we can return 304 early for CSS requests. These aren't handled 检查我们是否可以为 CSS 请求提前返回 304。这些不处理
+          // by the cachedTransformMiddleware due to the browser possibly mixing the 由于浏览器可能会混合使用 cachedTransformMiddleware
+          // etags of direct and imported CSS 直接CSS和导入CSS的etag
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
@@ -196,7 +198,7 @@ export function transformMiddleware(
           }
         }
 
-        // resolve, load and transform using the plugin container
+        // resolve, load and transform using the plugin container 使用插件容器解析、加载和转换
         const result = await transformRequest(url, server, {
           html: req.headers.accept?.includes('text/html'),
         })
@@ -275,6 +277,12 @@ export function transformMiddleware(
     next()
   }
 
+  /**
+   * 检查URL中是否显式使用了公共路径，并给出相应的警告信息。
+   * 该函数主要处理导入请求，针对不同情况提供对应的解决方案。
+   *
+   * @param url 待检查的URL字符串
+   */
   function warnAboutExplicitPublicPathInUrl(url: string) {
     let warning: string
 
@@ -282,28 +290,33 @@ export function transformMiddleware(
       const rawUrl = removeImportQuery(url)
       if (urlRE.test(url)) {
         warning =
-          `Assets in the public directory are served at the root path.\n` +
+          `Assets in the public directory are served at the root path.\n` + // 公共目录中的资产在根路径中提供
+          // 使用 ${colors.cyan(rawUrl)} 代替
           `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
             rawUrl.replace(publicPath, '/'),
           )}.`
       } else {
         warning =
-          'Assets in public directory cannot be imported from JavaScript.\n' +
+          'Assets in public directory cannot be imported from JavaScript.\n' + // 公共目录中的资源无法从 JavaScript 导入
+          // 如果您打算导入该资源，请将文件放在 src 目录中，然后使用
           `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
             rawUrl.replace(publicPath, '/src/'),
           )} instead of ${colors.cyan(rawUrl)}.\n` +
+          // 如果您打算使用该资产的 URL，请使用
           `If you intend to use the URL of that asset, use ${colors.cyan(
             injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
           )}.`
       }
     } else {
       warning =
+        // 公共目录中的文件在根路径中提供
         `Files in the public directory are served at the root path.\n` +
         `Instead of ${colors.cyan(url)}, use ${colors.cyan(
           url.replace(publicPath, '/'),
         )}.`
     }
 
+    // 使用服务器配置中的日志记录器发出黄色警告
     server.config.logger.warn(colors.yellow(warning))
   }
 }

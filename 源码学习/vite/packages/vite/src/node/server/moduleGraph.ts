@@ -125,12 +125,14 @@ export class ModuleGraph {
     ) => Promise<PartialResolvedId | null>,
   ) {}
 
+  // 根据URL异步获取模块对象。
   async getModuleByUrl(
     rawUrl: string,
     ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
-    // Quick path, if we already have a module for this rawUrl (even without extension)
-    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    // Quick path, if we already have a module for this rawUrl (even without extension) 快速路径，如果我们已经有这个 rawUrl 的模块（即使没有扩展名）
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl)) // 移除一些内容, 得到原始的 url --> '/src/main.js'
+    // 尝试获取一个未解析的URL对应的模块，如果存在则直接返回
     const mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
     if (mod) {
       return mod

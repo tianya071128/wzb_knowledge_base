@@ -214,6 +214,7 @@ type CssLang =
   | keyof typeof PreprocessLang
   | keyof typeof PostCssDialectLang
 
+// 是否为 css(或 scss 等) 文件请求
 export const isCSSRequest = (request: string): boolean =>
   CSS_LANGS_RE.test(request)
 

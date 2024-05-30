@@ -80,10 +80,17 @@ export function createDevHtmlTransformFn(
     // 以此加强内容安全策略，防止XSS等安全威胁。
     injectCspNonceMetaTagHook(config),
     ...preHooks,
+    // 生成一个用于在HTML中插入环境变量的 transformIndexHtml 钩子函数。
     htmlEnvHook(config),
+    // 在开发环境下转换 html 的钩子
+    // 使用 parse5 解析器解析 html, 并遍历每个节点
+    // 处理一些标签节点
+    // 并且插入一个 script 标签，引入 /@vite/client 文件，用于客户端与服务器通信
     devHtmlHook,
     ...normalHooks,
     ...postHooks,
+    // 向HTML中的特定标签（script, style, 以及具有特定rel属性的link标签）注入nonce（一次性令牌）属性，
+    // 以增强内容安全策略（CSP）。
     injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
@@ -190,41 +197,46 @@ const processNodeUrl = (
     : replacer(url)
   return processedUrl
 }
+
+// 在开发环境下转换 html 的钩子
+// 使用 parse5 解析器解析 html, 并遍历每个节点
+// 处理一些标签节点
+// 并且插入一个 script 标签，引入 /@vite/client 文件，用于客户端与服务器通信
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
   const { config, moduleGraph, watcher } = server!
-  const base = config.base || '/'
+  const base = config.base || '/' // 公共基础路径
 
-  let proxyModulePath: string
+  let proxyModulePath: string // html 文件路径
   let proxyModuleUrl: string
 
-  const trailingSlash = htmlPath.endsWith('/')
+  const trailingSlash = htmlPath.endsWith('/') // html 文件路径不是以 / 结尾的
   if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
     proxyModulePath = htmlPath
     proxyModuleUrl = proxyModulePath
   } else {
-    // There are users of vite.transformIndexHtml calling it with url '/'
-    // for SSR integrations #7993, filename is root for this case
-    // A user may also use a valid name for a virtual html file
-    // Mark the path as virtual in both cases so sourcemaps aren't processed
-    // and ids are properly handled
+    // There are users of vite.transformIndexHtml calling it with url '/' 有 vite.transformIndexHtml 的用户使用 url “/” 调用它
+    // for SSR integrations #7993, filename is root for this case 对于SSR集成#7993，filename 是本例的 root
+    // A user may also use a valid name for a virtual html file 用户还可以使用虚拟html文件的有效名称
+    // Mark the path as virtual in both cases so sourcemaps aren't processed 在这两种情况下都将路径标记为虚拟路径，这样就不会处理源映射
+    // and ids are properly handled 并且id得到了正确的处理
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
     proxyModuleUrl = wrapId(proxyModulePath)
   }
-  proxyModuleUrl = joinUrlSegments(base, proxyModuleUrl)
+  proxyModuleUrl = joinUrlSegments(base, proxyModuleUrl) // 基于 base 处理路径 --> /index.html
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
-  // The key to the proxyHtml cache is decoded, as it will be compared
-  // against decoded URLs by the HTML plugins.
+  // The key to the proxyHtml cache is decoded, as it will be compared proxyHtml 缓存的键被解码，因为它将被比较
+  // against decoded URLs by the HTML plugins. 针对 HTML 插件解码的 URL。
   const proxyCacheUrl = decodeURI(
     cleanUrl(proxyModulePath).replace(normalizePath(config.root), ''),
   )
-  const styleUrl: AssetNode[] = []
-  const inlineStyles: InlineStyleAttribute[] = []
+  const styleUrl: AssetNode[] = [] // 需要处理的内嵌样式
+  const inlineStyles: InlineStyleAttribute[] = [] // 需要处理行内样式集合：处理 url( 和 image-set(
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -267,12 +279,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, base)
   }
 
+  // 使用 parse5 解析器解析 html, 并遍历每个节点
+  // 处理一些标签节点
   await traverseHtml(html, filename, (node) => {
+    // 如果不是元素节点, 则不处理
     if (!nodeIsElement(node)) {
       return
     }
 
-    // script tags
+    // script tags 脚本标签
     if (node.nodeName === 'script') {
       const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
 
@@ -314,9 +329,27 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
 
+    // 当元素中存在 行内样式 时，并且存在 url(、或 image-set( 时，返回其位置以及其 code
+    // 并添加到 inlineStyles 集合中
+    // 例如： <div style="background-image: url('/test.js')"></div>  生成
+    // {
+    //   attr: {
+    //     name: "style",
+    //     value: "background-image: url('/test.js')",
+    //   },
+    //   location: {
+    //     startLine: 11,
+    //     startCol: 10,
+    //     startOffset: 296,
+    //     endLine: 11,
+    //     endCol: 51,
+    //     endOffset: 337,
+    //   },
+    // }
     const inlineStyle = findNeedTransformStyleAttribute(node)
     if (inlineStyle) {
       inlineModuleIndex++
+      // 添加进待处理的行内样式集合
       inlineStyles.push({
         index: inlineModuleIndex,
         location: inlineStyle.location!,
@@ -324,7 +357,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       })
     }
 
+    // 如果是 style 标签, 并且是内嵌样式的
     if (node.nodeName === 'style' && node.childNodes.length) {
+      // 第一个子节点即包含了所有的内嵌样式
       const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
       styleUrl.push({
         start: children.sourceCodeLocation!.startOffset,
@@ -333,8 +368,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       })
     }
 
-    // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
+    // elements with [href/src] attrs 具有 [href/src] 属性的元素
+    const assetAttrs = assetAttrsConfig[node.nodeName] // 具有请求文件的相关元素及属性名称
     if (assetAttrs) {
       for (const p of node.attrs) {
         const attrKey = getAttrKey(p)
@@ -362,7 +397,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     ...styleUrl.map(async ({ start, end, code }, index) => {
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
-      // ensure module in graph after successful load
+      // ensure module in graph after successful load 成功加载后确保图中的模块
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
       ensureWatchedFile(watcher, mod.file, config.root)
 
@@ -385,7 +420,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       s.overwrite(start, end, content)
     }),
     ...inlineStyles.map(async ({ index, location, code }) => {
-      // will transform with css plugin and cache result with css-post plugin
+      // will transform with css plugin and cache result with css-post plugin 将使用 css 插件进行转换并使用 css-post 插件缓存结果
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
@@ -404,6 +439,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   return {
     html,
     tags: [
+      // 插入一个 script 标签，引入 /@vite/client 文件，用于客户端与服务器通信
       {
         tag: 'script',
         attrs: {
@@ -416,6 +452,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   }
 }
 
+// 用于处理 html 的请求中间件
+// 读取对应 html 文件, 在开发环境下, 调用 server.transformIndexHtml 方法(会调用插件 transformIndexHtml 钩子)执行转换
 export function indexHtmlMiddleware(
   root: string,
   server: ViteDevServer | PreviewServer,
@@ -450,6 +488,7 @@ export function indexHtmlMiddleware(
 
         try {
           let html = await fsp.readFile(filePath, 'utf-8') // 读取文件
+          // 如果是开发环境，调用方法转换 index.html 文件 -- 会调用插件的 transformIndexHtml 钩子执行转换机制
           if (isDev) {
             html = await server.transformIndexHtml(url, html, req.originalUrl)
           }

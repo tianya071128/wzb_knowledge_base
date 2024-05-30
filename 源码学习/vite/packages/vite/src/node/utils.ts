@@ -273,6 +273,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
+// 是否为 js 类型导入(vue 文件也当成 js 处理)
 const knownJsSrcRE =
   /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
@@ -303,7 +304,7 @@ export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 // 检查给定的URL是否为内部请求。
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
-
+// 从URL中移除 import= 查询字符串
 export function removeImportQuery(url: string): string {
   return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
 }
@@ -337,7 +338,9 @@ export function injectQuery(url: string, queryToInject: string): string {
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
+// 从URL中移除时间戳查询参数并返回新的URL。
 export function removeTimestampQuery(url: string): string {
+  // 替换URL中的时间戳部分为空字符串
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
@@ -1359,13 +1362,17 @@ function hasCorrectCase(file: string, assets: string): boolean {
   return false
 }
 
+// 拼接两个 URL 片段
 export function joinUrlSegments(a: string, b: string): string {
+  // 如果任一参数为空，返回非空参数；否则继续处理
   if (!a || !b) {
     return a || b || ''
   }
+  // 如果a以斜杠('/')结尾，移除该斜杠
   if (a[a.length - 1] === '/') {
     a = a.substring(0, a.length - 1)
   }
+  // 如果b不以斜杠('/')开头，为其添加斜杠
   if (b[0] !== '/') {
     b = '/' + b
   }

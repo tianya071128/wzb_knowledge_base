@@ -55,33 +55,34 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
-  if (server._restartPromise && !options.ssr) throwClosedServerError()
+  if (server._restartPromise && !options.ssr) throwClosedServerError() // 待续
 
-  const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
+  const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url // 缓存 key
 
-  // This module may get invalidated while we are processing it. For example
-  // when a full page reload is needed after the re-processing of pre-bundled
-  // dependencies when a missing dep is discovered. We save the current time
-  // to compare it to the last invalidation performed to know if we should
-  // cache the result of the transformation or we should discard it as stale.
+  // This module may get invalidated while we are processing it. For example 在处理过程中，此模块可能会失效。例如
+  // when a full page reload is needed after the re-processing of pre-bundled 重新处理预绑定后需要重新加载整页时
+  // dependencies when a missing dep is discovered. We save the current time 当发现丢失的dep时，依赖关系。我们节省当前时间
+  // to compare it to the last invalidation performed to know if we should 将其与上次执行的无效操作进行比较，以了解我们是否应该
+  // cache the result of the transformation or we should discard it as stale. 缓存转换的结果，否则我们应该将其视为过时而丢弃。
   //
-  // A module can be invalidated due to:
-  // 1. A full reload because of pre-bundling newly discovered deps
-  // 2. A full reload after a config change
-  // 3. The file that generated the module changed
-  // 4. Invalidation for a virtual module
+  // A module can be invalidated due to: 模块可能因以下原因而失效：
+  // 1. A full reload because of pre-bundling newly discovered deps 1.由于预绑定新发现的deps而导致完全重新加载
+  // 2. A full reload after a config change 2.配置更改后的完全重新加载
+  // 3. The file that generated the module changed 3.生成模块的文件已更改
+  // 4. Invalidation for a virtual module 4.虚拟模块无效
   //
-  // For 1 and 2, a new request for this module will be issued after
-  // the invalidation as part of the browser reloading the page. For 3 and 4
-  // there may not be a new request right away because of HMR handling.
-  // In all cases, the next time this module is requested, it should be
-  // re-processed.
+  // For 1 and 2, a new request for this module will be issued after 对于1和2，将在之后发出对此模块的新请求
+  // the invalidation as part of the browser reloading the page. For 3 and 4 作为浏览器重新加载页面的一部分的无效。对于3和4
+  // there may not be a new request right away because of HMR handling. 由于 HMR 处理，可能不会立即出现新的请求。
+  // In all cases, the next time this module is requested, it should be 在所有情况下，下次请求此模块时
+  // re-processed. 重新处理。
   //
-  // We save the timestamp when we start processing and compare it with the
-  // last time this module is invalidated
+  // We save the timestamp when we start processing and compare it with the 我们在开始处理时保存时间戳，并将其与
+  // last time this module is invalidated 上次此模块无效时
   const timestamp = Date.now()
 
-  const pending = server._pendingRequests.get(cacheKey)
+  // 检查是否有正在处理的相同请求，如果有，则根据模块是否失效决定是否重用结果或重新处理
+  const pending = server._pendingRequests.get(cacheKey) // 从等待队列中获取当
   if (pending) {
     return server.moduleGraph
       .getModuleByUrl(removeTimestampQuery(url), options.ssr)
@@ -102,6 +103,7 @@ export function transformRequest(
       })
   }
 
+  // 创建转换请求，并在处理完成后清理缓存
   const request = doTransform(url, server, options, timestamp)
 
   // Avoid clearing the cache of future requests if aborted
@@ -129,9 +131,9 @@ async function doTransform(
   options: TransformOptions,
   timestamp: number,
 ) {
-  url = removeTimestampQuery(url)
+  url = removeTimestampQuery(url) // 从URL中移除时间戳查询参数并返回新的URL。 --> '/src/main.js'
 
-  const { config, pluginContainer } = server
+  const { config, pluginContainer } = server // 提取出 配置对象、插件容器
   const ssr = !!options.ssr
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {

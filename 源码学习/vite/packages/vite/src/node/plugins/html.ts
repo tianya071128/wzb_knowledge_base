@@ -136,7 +136,7 @@ export function addToHTMLProxyTransformResult(
   htmlProxyResult.set(hash, code)
 }
 
-// this extends the config in @vue/compiler-sfc with <link href>
+// this extends the config in @vue/compiler-sfc with <link href> 这使用 <link href> 扩展了 @vue/compiler-sfc 中的配置
 export const assetAttrsConfig: Record<string, string[]> = {
   link: ['href'],
   video: ['src', 'poster'],
@@ -162,17 +162,23 @@ export const isAsyncScriptMap = new WeakMap<
   Map<string, boolean>
 >()
 
+// 检查给定的节点是否为元素节点。
 export function nodeIsElement(
   node: DefaultTreeAdapterMap['node'],
 ): node is DefaultTreeAdapterMap['element'] {
+  // 检查节点的 nodeName 字段是否以'#'开头，以判断是否为元素节点。
   return node.nodeName[0] !== '#'
 }
 
+// 遍历给定的节点及其子节点，对每个节点应用提供的访问者函数。
 function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ) {
+  // 应用访问者函数到当前节点
   visitor(node)
+
+  // 如果节点是元素节点，或者是文档节点或文档片段节点，则递归遍历其子节点
   if (
     nodeIsElement(node) ||
     node.nodeName === '#document' ||
@@ -182,20 +188,24 @@ function traverseNodes(
   }
 }
 
+// 遍历HTML字符串并对其AST进行访问
 export async function traverseHtml(
   html: string,
   filePath: string,
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ): Promise<void> {
-  // lazy load compiler
+  // lazy load compiler 延迟加载编译器
   const { parse } = await import('parse5')
+  // 解析HTML字符串为AST
   const ast = parse(html, {
     scriptingEnabled: false, // parse inside <noscript>
     sourceCodeLocationInfo: true,
     onParseError: (e: ParserError) => {
+      // 自定义的错误处理逻辑
       handleParseError(e, html, filePath)
     },
   })
+  // 使用提供的visitor函数遍历和访问AST的每个节点
   traverseNodes(ast, visitor)
 }
 
@@ -238,9 +248,9 @@ export function overwriteAttrValue(
   )
   const valueStart = srcString.match(attrValueStartRE)
   if (!valueStart) {
-    // overwrite attr value can only be called for a well-defined value
+    // overwrite attr value can only be called for a well-defined value 只能为明确定义的值调用覆盖 attr 值
     throw new Error(
-      `[vite:html] internal error, failed to overwrite attribute value`,
+      `[vite:html] internal error, failed to overwrite attribute value`, // [vite:html] 内部错误，无法覆盖属性值
     )
   }
   const wrapOffset = valueStart[1] === '"' || valueStart[1] === "'" ? 1 : 0
@@ -948,8 +958,13 @@ export function parseRelAttr(attr: string): string[] {
   return attr.split(spaceRe).map((v) => v.toLowerCase())
 }
 
-// <tag style="... url(...) or image-set(...) ..."></tag>
-// extract inline styles as virtual css
+// <tag style="... url(...) or image-set(...) ..."></tag> <tag style="... url(...) 或 image-set(...) ..."></tag>
+// extract inline styles as virtual css 提取内联样式作为虚拟 css
+/**
+ * 查找需要转换的 style 属性。
+ * 该函数遍历节点的属性，寻找未定义前缀、名称为'style'、且值中包含'url('或'image-set('的属性。
+ * 只有当属性满足这些条件时，才会返回该属性及其在源代码中的位置信息。
+ */
 export function findNeedTransformStyleAttribute(
   node: DefaultTreeAdapterMap['element'],
 ): { attr: Token.Attribute; location?: Token.Location } | undefined {
@@ -957,10 +972,11 @@ export function findNeedTransformStyleAttribute(
     (prop) =>
       prop.prefix === undefined &&
       prop.name === 'style' &&
-      // only url(...) or image-set(...) in css need to emit file
+      // only url(...) or image-set(...) in css need to emit file 只有 css 中的 url(...) 或 image-set(...) 需要发出文件
       (prop.value.includes('url(') || prop.value.includes('image-set(')),
   )
   if (!attr) return undefined
+  // 尝试获取style属性在源代码中的位置信息
   const location = node.sourceCodeLocation?.attrs?.['style']
   return { attr, location }
 }
@@ -1076,7 +1092,7 @@ export function preImportMapHook(
 }
 
 /**
- * Move importmap before the first module script and modulepreload link
+ * Move importmap before the first module script and modulepreload link 将 importmap 移至第一个模块脚本和 modulepreload 链接之前
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
@@ -1127,14 +1143,15 @@ export function injectCspNonceMetaTagHook(
 }
 
 /**
- * Support `%ENV_NAME%` syntax in html files
+ * Support `%ENV_NAME%` syntax in html files 支持 html 文件中的 `%ENV_NAME%` 语法
+ * 生成一个用于在HTML中插入环境变量的 transformIndexHtml 钩子函数。
  */
 export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   const pattern = /%(\S+?)%/g
   const envPrefix = resolveEnvPrefix({ envPrefix: config.envPrefix })
-  const env: Record<string, any> = { ...config.env }
+  const env: Record<string, any> = { ...config.env } // 可用的环境变量
 
-  // account for user env defines
+  // account for user env defines 用户 env 定义的帐户
   for (const key in config.define) {
     if (key.startsWith(`import.meta.env.`)) {
       const val = config.define[key]
@@ -1150,11 +1167,15 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       }
     }
   }
+  // 返回一个函数，用于替换HTML中的环境变量
   return (html, ctx) => {
+    // pattern：匹配 %xxx% 格式 -- 表示为环境变量
     return html.replace(pattern, (text, key) => {
+      // 如果匹配到了用户的环境变量, 则替换掉
       if (key in env) {
         return env[key]
       } else {
+        // 如果环境变量不存在，且其前缀匹配配置的环境变量前缀，则打印警告
         if (envPrefix.some((prefix) => key.startsWith(prefix))) {
           const relativeHtml = normalizePath(
             path.relative(config.root, ctx.filename),
@@ -1162,8 +1183,8 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
           config.logger.warn(
             colors.yellow(
               colors.bold(
-                `(!) ${text} is not defined in env variables found in /${relativeHtml}. ` +
-                  `Is the variable mistyped?`,
+                `(!) ${text} is not defined in env variables found in /${relativeHtml}. ` + // (!) ${text} 未在 /${relativeHtml} 中找到的环境变量中定义。
+                  `Is the variable mistyped?`, // 变量输入错误吗？
               ),
             ),
           )
@@ -1175,6 +1196,8 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
   }
 }
 
+// 向HTML中的特定标签（script, style, 以及具有特定rel属性的link标签）注入nonce（一次性令牌）属性，
+// 以增强内容安全策略（CSP）。
 export function injectNonceAttributeTagHook(
   config: ResolvedConfig,
 ): IndexHtmlTransformHook {
@@ -1186,13 +1209,16 @@ export function injectNonceAttributeTagHook(
 
     const s = new MagicString(html)
 
+    // 解析 html 为 AST，并遍历
     await traverseHtml(html, filename, (node) => {
+      // 不是元素节点，退出
       if (!nodeIsElement(node)) {
         return
       }
 
       const { nodeName, attrs, sourceCodeLocation } = node
 
+      // 节点为 script、style、link 节点等
       if (
         nodeName === 'script' ||
         nodeName === 'style' ||
@@ -1203,15 +1229,15 @@ export function injectNonceAttributeTagHook(
               parseRelAttr(attr.value).some((a) => processRelType.has(a)),
           ))
       ) {
-        // If we already have a nonce attribute, we don't need to add another one
+        // If we already have a nonce attribute, we don't need to add another one 如果我们已经有一个 nonce 属性，则不需要再添加一个
         if (attrs.some(({ name }) => name === 'nonce')) {
           return
         }
 
         const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
 
-        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
-        // is appended prior to the `/`
+        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce 如果开始标记的结尾包含`/`，则偏移量应为 2，因此随机数
+        // is appended prior to the `/` 添加到 `/` 之前
         const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
 
         s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
@@ -1295,18 +1321,19 @@ export async function applyHtmlTransforms(
     if (typeof res === 'string') {
       html = res
     } else {
+      // 需要额外添加的 html 标签
       let tags: HtmlTagDescriptor[]
       if (Array.isArray(res)) {
         tags = res
       } else {
-        html = res.html || html
-        tags = res.tags
+        html = res.html || html // html 内容
+        tags = res.tags // 需要额外添加的 html 标签
       }
 
-      let headTags: HtmlTagDescriptor[] | undefined
-      let headPrependTags: HtmlTagDescriptor[] | undefined
-      let bodyTags: HtmlTagDescriptor[] | undefined
-      let bodyPrependTags: HtmlTagDescriptor[] | undefined
+      let headTags: HtmlTagDescriptor[] | undefined //  在 head 之后添加
+      let headPrependTags: HtmlTagDescriptor[] | undefined // 在 head 元素之前添加
+      let bodyTags: HtmlTagDescriptor[] | undefined // 在 body 元素末尾添加的标签
+      let bodyPrependTags: HtmlTagDescriptor[] | undefined // 在 body 元素之前添加的标签
 
       for (const tag of tags) {
         switch (tag.injectTo) {
@@ -1324,6 +1351,7 @@ export async function applyHtmlTransforms(
         }
       }
 
+      // 注入到对应位置
       if (headPrependTags) html = injectToHead(html, headPrependTags, true)
       if (headTags) html = injectToHead(html, headTags)
       if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
@@ -1364,6 +1392,7 @@ const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
 
 const doctypePrependInjectRE = /<!doctype html>/i
 
+// 将指定的 HTML 标签注入到 Head 元素中, 根据 preapend 指示注入在头部还是尾部
 function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -1372,7 +1401,7 @@ function injectToHead(
   if (tags.length === 0) return html
 
   if (prepend) {
-    // inject as the first element of head
+    // inject as the first element of head 作为 head 的第一个元素注入
     if (headPrependInjectRE.test(html)) {
       return html.replace(
         headPrependInjectRE,
@@ -1380,15 +1409,15 @@ function injectToHead(
       )
     }
   } else {
-    // inject before head close
+    // inject before head close 头部闭合前注射
     if (headInjectRE.test(html)) {
-      // respect indentation of head tag
+      // respect indentation of head tag 尊重 head 标签的缩进
       return html.replace(
         headInjectRE,
         (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`,
       )
     }
-    // try to inject before the body tag
+    // try to inject before the body tag 尝试在 body 标签之前注入
     if (bodyPrependInjectRE.test(html)) {
       return html.replace(
         bodyPrependInjectRE,
@@ -1396,7 +1425,7 @@ function injectToHead(
       )
     }
   }
-  // if no head tag is present, we prepend the tag for both prepend and append
+  // if no head tag is present, we prepend the tag for both prepend and append 如果不存在 head 标签，我们会在前置和附加中添加该标签
   return prependInjectFallback(html, tags)
 }
 
@@ -1440,7 +1469,7 @@ function injectToBody(
 }
 
 function prependInjectFallback(html: string, tags: HtmlTagDescriptor[]) {
-  // prepend to the html tag, append after doctype, or the document start
+  // prepend to the html tag, append after doctype, or the document start 添加到 html 标签之前，添加到 doctype 之后，或者文档开始处
   if (htmlPrependInjectRE.test(html)) {
     return html.replace(htmlPrependInjectRE, `$&\n${serializeTags(tags)}`)
   }
