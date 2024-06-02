@@ -10,6 +10,7 @@ import { FS_PREFIX } from '../constants'
 import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
 
+// 模块实例类
 export class ModuleNode {
   /**
    * Public served url path, starts with /
@@ -30,6 +31,7 @@ export class ModuleNode {
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
+  /** 模块的 transform 结果, 最终提供给用户的结果值 */
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
@@ -93,14 +95,18 @@ export type ResolvedUrl = [
 ]
 
 export class ModuleGraph {
+  /** url 与 模块实例 */
   urlToModuleMap = new Map<string, ModuleNode>()
+  /** 模块id 与 模块实例 */
   idToModuleMap = new Map<string, ModuleNode>()
+  /** 模块的 ETag 与 模块实例 */
   etagToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries 单个文件可能对应于具有不同查询的多个模块
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
 
   /**
+   * url 与未解析的模块映射关系
    * @internal
    */
   _unresolvedUrlToModuleMap = new Map<
@@ -134,15 +140,27 @@ export class ModuleGraph {
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl)) // 移除一些内容, 得到原始的 url --> '/src/main.js'
     // 尝试获取一个未解析的URL对应的模块，如果存在则直接返回
     const mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
+    // 如果存在的话，直接返回
     if (mod) {
       return mod
     }
 
-    const [url] = await this._resolveUrl(rawUrl, ssr)
-    return this.urlToModuleMap.get(url)
+    const [url] = await this._resolveUrl(rawUrl, ssr) // 解析一下 url
+    return this.urlToModuleMap.get(url) // 尝试从 map 中获取一下模块
   }
 
+  /**
+   * 根据模块ID获取模块实例。
+   *
+   * 此方法旨在通过模块ID检索特定的模块节点。它首先对ID进行处理，移除时间戳查询，
+   * 然后尝试从ID到模块的映射中获取对应的模块节点。如果映射中存在该ID，则返回对应的模块节点，
+   * 否则返回undefined。
+   *
+   * @param id 模块的唯一标识符。这个标识符可能包含一个时间戳查询部分，该部分在查找过程中被移除。
+   * @returns {ModuleNode | undefined} 如果找到对应的模块节点，则返回该节点；如果未找到，则返回undefined。
+   */
   getModuleById(id: string): ModuleNode | undefined {
+    // 移除ID中的时间戳查询部分，以便进行映射查找
     return this.idToModuleMap.get(removeTimestampQuery(id))
   }
 
@@ -360,35 +378,53 @@ export class ModuleGraph {
   }
 
   /**
-   * @internal
+   * 确保从URL创建或获取一个模块实例。
+   *
+   * 此函数的目的是为了确保给定的URL对应有一个模块节点。它首先尝试从缓存中获取已解析的URL对应的模块节点，
+   * 如果不存在，则通过解析URL来创建一个新的模块节点，并将其注册到相关的映射表中。
+   *
+   * @param rawUrl 需要被解析的原始URL。
+   * @param ssr 是否适用于服务器端渲染，默认为undefined。
+   * @param setIsSelfAccepting 是否设置模块节点为自接受，默认为true。
+   * @param resolved 已部分解析的ID，用于优化解析过程，可选。
+   * @returns 返回一个Promise，解析为对应的模块节点。
    */
   async _ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
     setIsSelfAccepting = true,
-    // Optimization, avoid resolving the same url twice if the caller already did it
+    // Optimization, avoid resolving the same url twice if the caller already did it 优化，如果调用者已经解析过相同的 url，则避免两次解析
     resolved?: PartialResolvedId,
   ): Promise<ModuleNode> {
-    // Quick path, if we already have a module for this rawUrl (even without extension)
-    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
+    // Quick path, if we already have a module for this rawUrl (even without extension) 快速路径，如果我们已经有这个 rawUrl 的模块（即使没有扩展名）
+    rawUrl = removeImportQuery(removeTimestampQuery(rawUrl)) // 移除URL中的查询参数和时间戳，以获得标准化的URL。
+    // 尝试从未解析的URL到模块的映射中获取模块节点，如果存在则直接返回。
     let mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
     if (mod) {
       return mod
     }
+    // 异步函数，用于解析URL并创建或获取对应的模块节点。
     const modPromise = (async () => {
+      // 解析URL，获取标准化的URL、解析后的ID和元数据。
       const [url, resolvedId, meta] = await this._resolveUrl(
         rawUrl,
         ssr,
         resolved,
       )
+      // 尝试从ID到模块的映射中获取模块节点，
       mod = this.idToModuleMap.get(resolvedId)
+      // 如果不存在则创建一个新的模块节点。
       if (!mod) {
+        // 创建一个新的模块实例
         mod = new ModuleNode(url, setIsSelfAccepting)
         if (meta) mod.meta = meta
+        // 多个url可以映射到同一个模块和id，请确保我们注册
+        // 此时使用 url 与 模块实例 的映射
         this.urlToModuleMap.set(url, mod)
-        mod.id = resolvedId
-        this.idToModuleMap.set(resolvedId, mod)
-        const file = (mod.file = cleanUrl(resolvedId))
+        mod.id = resolvedId // 模块id
+        this.idToModuleMap.set(resolvedId, mod) // 存储到对应集合中
+        const file = (mod.file = cleanUrl(resolvedId)) // 文件路径："D:/学习/wzb_knowledge_base/源码学习/vite/playground/vue/src/main.js"
+        // 根据文件路径添加到 fileToModulesMap 映射中
         let fileMappedModules = this.fileToModulesMap.get(file)
         if (!fileMappedModules) {
           fileMappedModules = new Set()
@@ -396,17 +432,18 @@ export class ModuleGraph {
         }
         fileMappedModules.add(mod)
       }
-      // multiple urls can map to the same module and id, make sure we register
-      // the url to the existing module in that case
+      // multiple urls can map to the same module and id, make sure we register 多个url可以映射到同一个模块和id，请确保我们注册
+      // the url to the existing module in that case 在这种情况下，现有模块的url
       else if (!this.urlToModuleMap.has(url)) {
         this.urlToModuleMap.set(url, mod)
       }
+      // 将原始URL与模块节点关联起来，用于缓存。
       this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
       return mod
     })()
 
-    // Also register the clean url to the module, so that we can short-circuit
-    // resolving the same url twice
+    // Also register the clean url to the module, so that we can short-circuit 同时将 clean url 注册到模块中，这样我们就可以短路
+    // resolving the same url twice 两次解析同一个url
     this._setUnresolvedUrlToModule(rawUrl, modPromise, ssr)
     return modPromise
   }
@@ -449,19 +486,24 @@ export class ModuleGraph {
     return this._resolveUrl(url, ssr)
   }
 
+  // 根据模块的 Etag 来更新模块的转换结果。
   updateModuleTransformResult(
     mod: ModuleNode,
     result: TransformResult | null,
     ssr: boolean,
   ): void {
+    // 根据SSR模式，更新模块的转换结果
     if (ssr) {
       mod.ssrTransformResult = result
     } else {
+      // 如果之前有转换结果的ETag，从映射中删除该模块
       const prevEtag = mod.transformResult?.etag
       if (prevEtag) this.etagToModuleMap.delete(prevEtag)
 
+      // 更新模块的转换结果
       mod.transformResult = result
 
+      // 如果新的转换结果有ETag，将模块映射到ETag
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
     }
   }
@@ -471,24 +513,32 @@ export class ModuleGraph {
   }
 
   /**
+   * 根据URL获取未解析的模块映射。
    * @internal
    */
   _getUnresolvedUrlToModule(
     url: string,
     ssr?: boolean,
   ): Promise<ModuleNode> | ModuleNode | undefined {
+    // 根据SSR参数选择正确的映射表，并尝试从映射表中获取对应的模块节点。
     return (
       ssr ? this._ssrUnresolvedUrlToModuleMap : this._unresolvedUrlToModuleMap
     ).get(url)
   }
   /**
-   * @internal
+   * 根据URL和模块类型，设置未解析的URL到模块的映射。
+   * 此函数用于内部管理，旨在区分SSR（服务器端渲染）和非SSR场景下模块的未解析URL映射。
+   *
+   * @param url 模块的未解析URL字符串。
+   * @param mod 一个Promise包装的模块节点或直接的模块节点对象。
+   * @param ssr 可选参数，指示当前操作是否针对SSR场景。如果未提供，则默认为false。
    */
   _setUnresolvedUrlToModule(
     url: string,
     mod: Promise<ModuleNode> | ModuleNode,
     ssr?: boolean,
   ): void {
+    // 根据ssr参数的值，选择将未解析的URL到模块的映射存储在SSR映射表或客户端映射表中
     ;(ssr
       ? this._ssrUnresolvedUrlToModuleMap
       : this._unresolvedUrlToModuleMap
@@ -496,6 +546,16 @@ export class ModuleGraph {
   }
 
   /**
+   * 根据给定的URL和SSR状态，解析URL并返回解析后的结果。
+   *
+   * 此函数的目的是为了在构建过程中，将相对或绝对路径转换为完全解析的ID，
+   * 并处理可能的文件扩展名匹配问题。它支持SSR（服务器端渲染）的配置，
+   * 并考虑了特殊字符和虚拟模块的情况。
+   *
+   * @param url 需要解析的URL字符串。
+   * @param ssr 是否在服务器端渲染的上下文中解析URL。
+   * @param alreadyResolved 如果已经解析过ID，可以提供部分解析的结果以避免重复解析。
+   * @returns 返回一个包含解析后的URL、解析后的ID和元信息的Promise对象。
    * @internal
    */
   async _resolveUrl(
@@ -503,14 +563,15 @@ export class ModuleGraph {
     ssr?: boolean,
     alreadyResolved?: PartialResolvedId,
   ): Promise<ResolvedUrl> {
-    const resolved = alreadyResolved ?? (await this.resolveId(url, !!ssr))
+    // 使用已解析的ID或尝试解析给定的URL
+    const resolved = alreadyResolved ?? (await this.resolveId(url, !!ssr)) // 通过 resolveId 获取解析后的 id
     const resolvedId = resolved?.id || url
     if (
       url !== resolvedId &&
       !url.includes('\0') &&
       !url.startsWith(`virtual:`)
     ) {
-      const ext = extname(cleanUrl(resolvedId))
+      const ext = extname(cleanUrl(resolvedId)) // 文件后缀
       if (ext) {
         const pathname = cleanUrl(url)
         if (!pathname.endsWith(ext)) {

@@ -140,7 +140,7 @@ function extractImportedBindings(
 }
 
 /**
- * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
+ * Server-only plugin that lexes, resolves, rewrites and analyzes url imports. 仅服务器插件，用于词法分析、解析、重写和分析 url 导入
  *
  * - Imports are resolved to ensure they exist on disk
  *

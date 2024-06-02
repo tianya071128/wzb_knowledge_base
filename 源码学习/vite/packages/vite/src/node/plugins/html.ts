@@ -209,6 +209,7 @@ export async function traverseHtml(
   traverseNodes(ast, visitor)
 }
 
+// 从给定的元素节点(一般为 script 元素)，提取出脚本相关信息
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   src: Token.Attribute | undefined
   sourceCodeLocation: Token.Location | undefined
@@ -217,18 +218,21 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
 } {
   let src: Token.Attribute | undefined
   let sourceCodeLocation: Token.Location | undefined
-  let isModule = false
-  let isAsync = false
+  let isModule = false // 模块脚本标志
+  let isAsync = false // 异步脚本标志
+  // 遍历节点的属性，寻找'src'、'type'和'async'属性
   for (const p of node.attrs) {
     if (p.prefix !== undefined) continue
     if (p.name === 'src') {
       if (!src) {
-        src = p
-        sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        src = p // 脚本 src
+        sourceCodeLocation = node.sourceCodeLocation?.attrs!['src'] // 尝试获取'src'属性的位置信息
       }
     } else if (p.name === 'type' && p.value && p.value === 'module') {
+      // 如果 script 元素的 attrs 属性中存在 type="module", 那么标注为模块脚本
       isModule = true
     } else if (p.name === 'async') {
+      // 如果 script 元素的 attrs 属性中存在 async，那么标注为异步脚本
       isAsync = true
     }
   }

@@ -146,10 +146,22 @@ export function applySourcemapIgnoreList(
   }
 }
 
+/**
+ * 从给定的代码字符串中提取源映射。
+ *
+ * 此函数尝试从代码字符串本身或其对应的映射文件中提取源映射。
+ * 如果代码字符串中包含源映射注释，则直接从注释中提取；
+ * 否则，尝试根据文件路径找到映射文件，并从映射文件中提取源映射。
+ *
+ * @param code 代码字符串，可能包含源映射注释。
+ * @param filePath 代码文件的路径，用于查找映射文件。
+ * @returns 返回一个包含代码和源映射的对象，如果无法提取源映射则返回undefined。
+ */
 export async function extractSourcemapFromFile(
   code: string,
   filePath: string,
 ): Promise<{ code: string; map: SourceMap } | undefined> {
+  // 尝试从代码字符串中直接提取源映射，如果失败则尝试从映射文件中提取
   const map = (
     convertSourceMap.fromSource(code) ||
     (await convertSourceMap.fromMapFileSource(
@@ -158,6 +170,7 @@ export async function extractSourcemapFromFile(
     ))
   )?.toObject()
 
+  // 如果成功提取源映射，则返回处理后的代码和源映射对象
   if (map) {
     return {
       code: code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer),
@@ -166,6 +179,7 @@ export async function extractSourcemapFromFile(
   }
 }
 
+// 创建一个函数，用于读取指定文件路径的文件内容。
 function createConvertSourceMapReadMap(originalFileName: string) {
   return (filename: string) => {
     return fsp.readFile(

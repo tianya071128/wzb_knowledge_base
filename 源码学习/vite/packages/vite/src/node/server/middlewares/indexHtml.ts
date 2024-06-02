@@ -124,7 +124,9 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   }
 }
 
+// 判断URL是否需要预处理。
 function shouldPreTransform(url: string, config: ResolvedConfig) {
+  // 检查URL是否不是公共文件且是JS或CSS请求
   return (
     !checkPublicFile(url, config) && (isJSRequest(url) || isCSSRequest(url))
   )
@@ -147,8 +149,9 @@ const processNodeUrl = (
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): string => {
-  // prefix with base (dev only, base is never relative)
+  // prefix with base (dev only, base is never relative) 带基数的前缀（仅限开发，基数从来不是相对的）
   const replacer = (url: string) => {
+    // 如果存在模块图的话
     if (server?.moduleGraph) {
       const mod = server.moduleGraph.urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
@@ -158,14 +161,14 @@ const processNodeUrl = (
 
     if (
       (url[0] === '/' && url[1] !== '/') ||
-      // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
-      // path will add `/a/` prefix, it will caused 404.
+      // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets #3230如果一些请求url（localhost:3000/a/b）返回到回退html，则相对资产
+      // path will add `/a/` prefix, it will caused 404. 路径将添加“/a/”前缀，它将导致404。
       //
-      // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace.
+      // skip if url contains `:` as it implies a url protocol or Windows path that we don't want to replace. 如果url包含“：”，则跳过，因为这意味着我们不想替换的url协议或Windows路径。
       //
-      // rewrite `./index.js` -> `localhost:5173/a/index.js`.
-      // rewrite `../index.js` -> `localhost:5173/index.js`.
-      // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`.
+      // rewrite `./index.js` -> `localhost:5173/a/index.js`. 重写index.js`->`localhost:5173/a/index.js`。
+      // rewrite `../index.js` -> `localhost:5173/index.js`. 重写index.js`->`localhost:5173/index.js`。
+      // rewrite `relative/index.js` -> `localhost:5173/a/relative/index.js`. 重写`relative/index.js`->`localhost:5173/a/rerelative/index.js`。
       ((url[0] === '.' || isBareRelative(url)) &&
         originalUrl &&
         originalUrl !== '/' &&
@@ -174,6 +177,9 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
+    // 检查该脚本元素的 src 属性对应的 url 是否需要预处理
+    // 因为当请求了 html 之后, 随之而来的就是这些 html 中的请求资源
+    // 在这里做预处理后, 节省一些浏览器等待时间
     if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
       let preTransformUrl: string | undefined
       if (url[0] === '/' && url[1] !== '/') {
@@ -185,7 +191,9 @@ const processNodeUrl = (
           url,
         )
       }
+      // 需要预处理的 url
       if (preTransformUrl) {
+        // 启动预处理的请求，后台执行，不阻塞主线程的执行
         preTransformRequest(server, preTransformUrl, config.base)
       }
     }
@@ -290,7 +298,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // script tags 脚本标签
     if (node.nodeName === 'script') {
       const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
-
+      // 如果存在 src 的话
       if (src) {
         const processedUrl = processNodeUrl(
           src.value,
@@ -502,15 +510,27 @@ export function indexHtmlMiddleware(
   }
 }
 
+/**
+ * 在发送请求之前对请求进行预处理。
+ * @param server Vite开发服务器实例，用于访问配置和进行请求预热。
+ * @param url 需要处理的请求URL。
+ * @param base 应用的基础URL。
+ * 主要功能是将URL转换为非SSR模式，因为HTML只包括客户端资产。
+ * 如果配置中未启用预处理请求功能，则直接退出。
+ * 使用decodeURI解码URL，并移除基础URL，然后对结果进行处理。
+ * 如果处理过程中出现异常，则忽略不处理。
+ * 最后，使用预热请求功能对处理后的URL进行预热。
+ */
 function preTransformRequest(server: ViteDevServer, url: string, base: string) {
-  if (!server.config.server.preTransformRequests) return
+  if (!server.config.server.preTransformRequests) return // 如果不启用功能的话, 直接退出
 
-  // transform all url as non-ssr as html includes client-side assets only
+  // transform all url as non-ssr as html includes client-side assets only 将所有 url 转换为非 ssr，因为 html 仅包含客户端资产
   try {
     url = unwrapId(stripBase(decodeURI(url), base))
   } catch {
     // ignore
     return
   }
+  // 后台执行，不阻塞主线程的执行
   server.warmupRequest(url)
 }

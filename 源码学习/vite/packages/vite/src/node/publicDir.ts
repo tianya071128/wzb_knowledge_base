@@ -8,7 +8,7 @@ import {
   recursiveReaddir,
 } from './utils'
 
-const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()
+const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>() // 根据配置对象，缓存静态资源文件列表
 
 /**
  * 初始化公共文件
@@ -42,16 +42,18 @@ export async function initPublicFiles(
   return publicFiles
 }
 
+// 根据配置对象尝试提取缓存
 function getPublicFiles(config: ResolvedConfig): Set<string> | undefined {
   return publicFilesMap.get(config)
 }
 
+// 检查给定的 URL 是否指向一个公共文件，并返回其解析后的路径。
 export function checkPublicFile(
   url: string,
   config: ResolvedConfig,
 ): string | undefined {
-  // note if the file is in /public, the resolver would have returned it
-  // as-is so it's not going to be a fully resolved path.
+  // note if the file is in /public, the resolver would have returned it 注意，如果文件在/public中，解析程序会返回它
+  // as-is so it's not going to be a fully resolved path. 因此，这不会是一条完全解决的道路。
   const { publicDir } = config
   if (!publicDir || url[0] !== '/') {
     return
@@ -59,8 +61,8 @@ export function checkPublicFile(
 
   const fileName = cleanUrl(url)
 
-  // short-circuit if we have an in-memory publicFiles cache
-  const publicFiles = getPublicFiles(config)
+  // short-circuit if we have an in-memory publicFiles cache 如果我们有内存中的 publicFiles 缓存，则短路
+  const publicFiles = getPublicFiles(config) // 尝试提取缓存
   if (publicFiles) {
     return publicFiles.has(fileName)
       ? normalizePath(path.join(publicDir, fileName))
@@ -69,7 +71,7 @@ export function checkPublicFile(
 
   const publicFile = normalizePath(path.join(publicDir, fileName))
   if (!publicFile.startsWith(withTrailingSlash(publicDir))) {
-    // can happen if URL starts with '../'
+    // can happen if URL starts with '../' 如果 URL 以“../”开头，则会发生这种情况
     return
   }
 

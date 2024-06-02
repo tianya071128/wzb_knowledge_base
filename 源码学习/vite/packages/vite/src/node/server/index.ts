@@ -587,6 +587,8 @@ export async function _createServer(
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
+    // 对给定的URL进行预热请求处理。
+    // 例如请求 index.html，会扫描文件，对其中的文件请求预先加载
     async warmupRequest(url, options) {
       try {
         await transformRequest(url, server, options)
@@ -595,10 +597,10 @@ export async function _createServer(
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
         ) {
-          // these are expected errors
+          // these are expected errors 这些都是预期的错误
           return
         }
-        // Unexpected error, log the issue but avoid an unhandled exception
+        // Unexpected error, log the issue but avoid an unhandled exception 意外错误，记录问题但避免未处理的异常
         server.config.logger.error(`Pre-transform error: ${e.message}`, {
           error: e,
           timestamp: true,

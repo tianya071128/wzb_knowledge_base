@@ -273,9 +273,10 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-// 是否为 js 类型导入(vue 文件也当成 js 处理)
 const knownJsSrcRE =
   /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
+// 是否为 js 类型导入(vue 文件也当成 js 处理)
+
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -323,7 +324,7 @@ export function removeRawQuery(url: string): string {
 
 const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
-  // encode percents for consistent behavior with pathToFileURL
+  // encode percents for consistent behavior with pathToFileURL 对百分比进行编码以实现与 pathToFileURL 一致的行为
   // see #2614 for details
   const resolvedUrl = new URL(
     url.replace(replacePercentageRE, '%25'),
@@ -752,6 +753,17 @@ function optimizeSafeRealPathSync() {
   })
 }
 
+/**
+ * 确保指定的文件被文件系统观察者监视。
+ *
+ * 此函数的目的是在给定的根目录下，只对那些位于根目录之外且存在的文件进行监视。
+ * 它避免了监视不必要的文件，比如那些位于根目录内的文件，或者根本不存在的文件。
+ * 使用文件系统观察者（FSWatcher）可以实时监控文件系统的变化，这对于构建工具来说是非常重要的。
+ *
+ * @param watcher 文件系统观察者实例，用于添加要监视的文件。
+ * @param file 要检查是否应该被监视的文件路径，可能是绝对路径或相对路径。
+ * @param root 根目录的路径，用于确定文件是否位于根目录之外。
+ */
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
@@ -759,13 +771,13 @@ export function ensureWatchedFile(
 ): void {
   if (
     file &&
-    // only need to watch if out of root
+    // only need to watch if out of root 只需要注意是否脱离root
     !file.startsWith(withTrailingSlash(root)) &&
-    // some rollup plugins use null bytes for private resolved Ids
+    // some rollup plugins use null bytes for private resolved Ids 一些汇总插件使用空字节作为私有解析 ID
     !file.includes('\0') &&
     fs.existsSync(file)
   ) {
-    // resolve file to normalized system path
+    // resolve file to normalized system path 将文件解析为规范化的系统路径
     watcher.add(path.resolve(file))
   }
 }

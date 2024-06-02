@@ -215,20 +215,32 @@ export function serveRawFsMiddleware(
 }
 
 /**
- * Check if the url is allowed to be served, via the `server.fs` config.
+ * Check if the url is allowed to be served, via the `server.fs` config. 通过 `server.fs` 配置检查是否允许提供该 url
+ */
+/**
+ * 检查是否允许服务文件。
+ *
+ * 此函数用于确定是否应该从开发服务器中服务给定的文件URL。它基于配置的文件系统权限规则来决策。
+ * 如果文件系统权限配置为非严格模式，则默认允许服务文件。在严格模式下，它会进一步检查文件是否被明确禁止，
+ * 是否位于安全模块路径中，或者是否被允许的文件路径之一包含。
+ *
+ * @param url 文件的URL，用于定位要检查的文件。
+ * @param server Vite开发服务器实例，包含配置和模块图等信息，用于检查文件服务的权限。
+ * @returns 如果允许服务文件，则返回true；否则返回false。
  */
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
 ): boolean {
-  if (!server.config.server.fs.strict) return true
+  if (!server.config.server.fs.strict) return true // 限制为工作区 root 路径以外的文件的访问。
 
-  const file = fsPathFromUrl(url)
+  const file = fsPathFromUrl(url) // 从URL转换为文件系统路径。
 
-  if (server._fsDenyGlob(file)) return false
+  if (server._fsDenyGlob(file)) return false // 检查文件是否在禁止访问的文件列表中，如果在，则不允许服务该文件。
 
-  if (server.moduleGraph.safeModulesPath.has(file)) return true
+  if (server.moduleGraph.safeModulesPath.has(file)) return true // 如果文件位于安全模块路径中，则允许服务该文件。
 
+  // 检查文件是否位于允许访问的文件路径之一中，或者是否被允许路径的父目录包含，如果是，则允许服务该文件。
   if (
     server.config.server.fs.allow.some(
       (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
@@ -236,6 +248,7 @@ export function isFileServingAllowed(
   )
     return true
 
+  // 如果不符合任何允许的条件，则不允许服务该文件。
   return false
 }
 

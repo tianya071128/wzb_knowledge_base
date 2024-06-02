@@ -285,17 +285,31 @@ export async function createPluginContainer(
     return module.info
   }
 
+  // 更新模块信息。
   function updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+    // 检查是否提供了新的元数据
     if (meta) {
-      const moduleInfo = getModuleInfo(id)
+      const moduleInfo = getModuleInfo(id) // 尝试获取指定ID的模块信息
       if (moduleInfo) {
-        moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+        moduleInfo.meta = { ...moduleInfo.meta, ...meta } // 更新模块的元信息，合并现有元信息与新的元信息
       }
     }
   }
 
+  /**
+   * 更新模块加载时添加的导入
+   *
+   * 该函数用于在模块加载后，记录该模块额外添加的导入内容。这在某些情况下，
+   * 如动态导入或代码生成时，是非常重要的。通过这个函数，我们可以将这些
+   * 导入信息关联到具体的模块节点上，以便后续处理。
+   *
+   * @param id 模块的唯一标识符。使用这个标识符可以从模块图中找到对应的模块。
+   * @param ctx 上下文对象，包含有关模块加载的额外信息。其中，_addedImports
+   *            属性特别重要，它记录了模块加载过程中添加的导入内容。
+   */
   function updateModuleLoadAddedImports(id: string, ctx: Context) {
-    const module = moduleGraph?.getModuleById(id)
+    const module = moduleGraph?.getModuleById(id) // 尝试从模块图中获取指定ID的模块
+    // 如果模块存在，则将该模块加载时添加的导入内容记录下来
     if (module) {
       moduleNodeToLoadAddedImports.set(module, ctx._addedImports)
     }
@@ -685,6 +699,7 @@ export async function createPluginContainer(
       )
     },
 
+    // 异步解析给定的原始ID到一个模块的唯一标识符。
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       // 解析选项初始化
       const skip = options?.skip // 跳过执行的插件
@@ -762,42 +777,61 @@ export async function createPluginContainer(
       }
     },
 
+    // 执行插件的 load 钩子：https://cn.rollupjs.org/plugin-development/#load
     async load(id, options) {
       const ssr = options?.ssr
-      const ctx = new Context()
+      const ctx = new Context() // 创建一个 RollupPluginContext 来供给插件执行过程中的上下文
       ctx.ssr = !!ssr
+
+      // 遍历排序后的插件列表，尝试执行每个插件的load钩子。 -- https://cn.rollupjs.org/plugin-development/#load
       for (const plugin of getSortedPlugins('load')) {
-        if (closed && !ssr) throwClosedServerError()
-        if (!plugin.load) continue
-        ctx._activePlugin = plugin
+        if (closed && !ssr) throwClosedServerError() // 如果模块已关闭且不是服务器端渲染，则抛出错误。
+
+        if (!plugin.load) continue // 如果插件没有定义load钩子，则跳过该插件。
+
+        ctx._activePlugin = plugin // 设置当前活跃的插件。
+
+        // 调用插件的load钩子，并处理返回的Promise。
         const handler = getHookHandler(plugin.load)
         const result = await handleHookPromise(
           handler.call(ctx as any, id, { ssr }),
         )
+        // 如果插件的load钩子返回了非空结果，则处理该结果并返回。
         if (result != null) {
           if (isObject(result)) {
             updateModuleInfo(id, result)
           }
           updateModuleLoadAddedImports(id, ctx)
-          return result
+          return result // 这是一个当存在一个返回结果的, 其他钩子就不会执行的钩子类型
         }
       }
+
+      // 如果所有插件都没有返回结果，则更新模块的加载信息并返回null -- 最终是从文件系统加载的默认行为
       updateModuleLoadAddedImports(id, ctx)
       return null
     },
 
+    // 执行插件的 transform 钩子(用来转换单个模块)。 -- https://cn.rollupjs.org/plugin-development/#transform
     async transform(code, id, options) {
       const inMap = options?.inMap
       const ssr = options?.ssr
+      // transform 钩子执行的插件上下文
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
+      // 遍历排序后的插件列表，尝试执行每个插件的 transform 钩子(用来转换单个模块)。 -- https://cn.rollupjs.org/plugin-development/#transform
       for (const plugin of getSortedPlugins('transform')) {
+        // 检查是否已关闭服务且非SSR模式，如果是，则抛出错误
         if (closed && !ssr) throwClosedServerError()
+        // 跳过没有transform方法的插件
         if (!plugin.transform) continue
+        // 设置当前活跃的插件和代码上下文
         ctx._activePlugin = plugin
         ctx._activeId = id
         ctx._activeCode = code
+        // 记录性能开始时间，如果启用了调试
         const start = debugPluginTransform ? performance.now() : 0
+
+        // 尝试执行插件的transform方法
         let result: TransformResult | string | undefined
         const handler = getHookHandler(plugin.transform)
         try {
@@ -805,27 +839,34 @@ export async function createPluginContainer(
             handler.call(ctx as any, code, id, { ssr }),
           )
         } catch (e) {
+          // 如果发生错误，记录到上下文中
           ctx.error(e)
         }
+        // 如果没有返回结果，则继续下一个插件
         if (!result) continue
+        // 如果启用了调试，记录插件转换耗时
         debugPluginTransform?.(
           timeFrom(start),
           plugin.name,
           prettifyUrl(id, root),
         )
+        // 处理转换结果，更新代码和源映射
         if (isObject(result)) {
           if (result.code !== undefined) {
             code = result.code
             if (result.map) {
+              // 如果启用了调试源映射合并，为源映射添加插件名称
               if (debugSourcemapCombine) {
-                // @ts-expect-error inject plugin name for debug purpose
+                // @ts-expect-error inject plugin name for debug purpose 注入插件名称用于调试目的
                 result.map.name = plugin.name
               }
+              // 将插件的源映射添加到链中
               ctx.sourcemapChain.push(result.map)
             }
           }
           updateModuleInfo(id, result)
         } else {
+          // 如果结果是字符串，直接更新代码
           code = result
         }
       }
