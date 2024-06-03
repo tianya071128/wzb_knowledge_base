@@ -37,33 +37,38 @@ export function send(
   options: SendOptions,
 ): void {
   const {
-    etag = getEtag(content, { weak: true }),
+    etag = getEtag(content, { weak: true }), // 如果没有传入 etag，则根据内容生成一个
     cacheControl = 'no-cache',
     headers,
     map,
   } = options
 
+  // 如果响应已结束，则直接返回。
   if (res.writableEnded) {
     return
   }
 
+  // 如果请求的ETag与生成的ETag匹配，则返回304 Not Modified。
   if (req.headers['if-none-match'] === etag) {
     res.statusCode = 304
     res.end()
     return
   }
 
+  // 设置内容类型、缓存控制和ETag头部。
   res.setHeader('Content-Type', alias[type] || type)
   res.setHeader('Cache-Control', cacheControl)
   res.setHeader('Etag', etag)
 
+  // 如果有自定义头部，则设置它们。
   if (headers) {
     for (const name in headers) {
       res.setHeader(name, headers[name]!)
     }
   }
 
-  // inject source map reference
+  // 根据源映射注入代码。
+  // inject source map reference 注入源映射参考
   if (map && 'version' in map && map.mappings) {
     if (type === 'js' || type === 'css') {
       content = getCodeWithSourcemap(type, content.toString(), map)
@@ -91,6 +96,7 @@ export function send(
     }
   }
 
+  // 设置状态码为200，并结束响应。
   res.statusCode = 200
   res.end(content)
   return

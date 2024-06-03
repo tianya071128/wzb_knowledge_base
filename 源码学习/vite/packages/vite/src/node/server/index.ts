@@ -382,7 +382,7 @@ export interface ViteDevServer {
    */
   _forceOptimizeOnRestart: boolean
   /**
-   * @internal
+   * @internal 正在请求的队列
    */
   _pendingRequests: Map<
     string,
@@ -446,8 +446,12 @@ export function createServer(
  */
 /**
  * 开发环境下：当存在客户端请求时，会通过启用的服务器通过各个中间件实现各种转换逻辑
- *  各类中间件请详见下面逻辑，其中有：
+ *  各类中间件请详见下面逻辑，其中重要的有：
  *    1. indexHtmlMiddleware：用于处理 html 的中间件 --> 读取对应 html 文件, 在开发环境下, 调用 server.transformIndexHtml 方法(会调用插件 transformIndexHtml 钩子)执行转换
+ *    2. 在转换请求时, 会扫描文件中的预请求，调用 serever.warmupRequest -> transformRequest 方法链预热请求
+ *       而在预热请求中的文件时, 会递归重复这一过程, 所以当请求 index.html，服务器会先行一步预热其他所使用的请求
+ *        2.1：对于 html 文件请求, 预热请求可见 indexHtmlMiddleware 中间件，最终会调用 preTransformRequest 方法
+ *        2.2: 对于其他的，可见 importAnalysis 插件
  */
 export async function _createServer(
   inlineConfig: InlineConfig = {},
@@ -584,6 +588,7 @@ export async function _createServer(
     ) {
       return ssrTransform(code, inMap, url, originalCode, server.config)
     },
+    // 对请求URL进行转换处理
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
@@ -794,6 +799,7 @@ export async function _createServer(
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
+    /** 正在请求的队列 */
     _pendingRequests: new Map(),
     _fsDenyGlob: picomatch(
       // matchBase: true does not work as it's documented

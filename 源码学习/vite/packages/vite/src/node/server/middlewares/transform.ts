@@ -51,7 +51,7 @@ export function cachedTransformMiddleware(
     // check if we can return 304 early 检查我们是否可以提前返回 304
     const ifNoneMatch = req.headers['if-none-match'] // HTTP 协商缓存头部字段
     if (ifNoneMatch) {
-      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
+      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch) // 根据ETag获取模块实例。
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
         // For CSS requests, if the same CSS file is imported in a module, 对于CSS请求，如果在模块中导入相同的CSS文件，
         // the browser sends the request for the direct CSS request with the etag 浏览器使用etag发送对直接CSS请求的请求
@@ -204,12 +204,12 @@ export function transformMiddleware(
         })
         if (result) {
           const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
-          const type = isDirectCSSRequest(url) ? 'css' : 'js'
+          const type = isDirectCSSRequest(url) ? 'css' : 'js' // 请求类型
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
           return send(req, res, result.code, type, {
-            etag: result.etag,
-            // allow browser to cache npm deps!
+            etag: result.etag, // 响应 Etag
+            // allow browser to cache npm deps! 允许浏览器缓存 npm deps
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,

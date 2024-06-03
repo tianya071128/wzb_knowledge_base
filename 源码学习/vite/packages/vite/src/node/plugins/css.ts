@@ -221,6 +221,7 @@ export const isCSSRequest = (request: string): boolean =>
 export const isModuleCSSRequest = (request: string): boolean =>
   cssModuleRE.test(request)
 
+// 判断请求是否为直接CSS资源请求。
 export const isDirectCSSRequest = (request: string): boolean =>
   CSS_LANGS_RE.test(request) && directRequestRE.test(request)
 

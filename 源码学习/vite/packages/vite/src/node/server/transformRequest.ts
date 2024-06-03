@@ -50,6 +50,7 @@ export interface TransformOptions {
   html?: boolean
 }
 
+// 对请求URL进行转换处理
 export function transformRequest(
   url: string,
   server: ViteDevServer,
@@ -89,15 +90,15 @@ export function transformRequest(
       .getModuleByUrl(removeTimestampQuery(url), options.ssr)
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
-          // The pending request is still valid, we can safely reuse its result
+          // The pending request is still valid, we can safely reuse its result 待处理的请求仍然有效，我们可以安全地重用其结果
           return pending.request
         } else {
-          // Request 1 for module A     (pending.timestamp)
-          // Invalidate module A        (module.lastInvalidationTimestamp)
-          // Request 2 for module A     (timestamp)
+          // Request 1 for module A     (pending.timestamp) 模块A的请求1（挂起.timestamp）
+          // Invalidate module A        (module.lastInvalidationTimestamp) 使模块A无效（module.lastInvalidationTimestamp）
+          // Request 2 for module A     (timestamp) 模块A的请求2（时间戳）
 
-          // First request has been invalidated, abort it to clear the cache,
-          // then perform a new doTransform.
+          // First request has been invalidated, abort it to clear the cache, 第一个请求已无效，中止它以清除缓存，
+          // then perform a new doTransform. 然后执行新的doTransform。
           pending.abort()
           return transformRequest(url, server, options)
         }
@@ -107,7 +108,7 @@ export function transformRequest(
   // 创建转换请求，并在处理完成后清理缓存
   const request = doTransform(url, server, options, timestamp)
 
-  // Avoid clearing the cache of future requests if aborted
+  // Avoid clearing the cache of future requests if aborted 如果中止，请避免清除未来请求的缓存
   let cleared = false
   const clearCache = () => {
     if (!cleared) {
@@ -116,7 +117,7 @@ export function transformRequest(
     }
   }
 
-  // Cache the request and clear it once processing is done
+  // Cache the request and clear it once processing is done 缓存请求并在处理完成后清除它
   server._pendingRequests.set(cacheKey, {
     request,
     timestamp,
@@ -126,7 +127,9 @@ export function transformRequest(
   return request.finally(clearCache)
 }
 
-//
+// 执行代码转换
+// 首先从 moduleGraph 不同的缓存 Map 中查看缓存是否命中
+// 如果没有缓存, 则调用 loadAndTransform 方法执行代码转换的最终逻辑
 async function doTransform(
   url: string,
   server: ViteDevServer,

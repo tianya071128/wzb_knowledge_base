@@ -507,7 +507,7 @@ export class ModuleGraph {
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
     }
   }
-
+  // 根据ETag获取模块实例。
   getModuleByEtag(etag: string): ModuleNode | undefined {
     return this.etagToModuleMap.get(etag)
   }
