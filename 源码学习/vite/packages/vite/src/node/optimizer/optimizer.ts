@@ -92,7 +92,7 @@ async function createDepsOptimizer(
 
   let debounceProcessingHandle: NodeJS.Timeout | undefined
 
-  let closed = false
+  let closed = false // 关闭标志
 
   // 依赖优化元数据，如果不存在缓存中的话，直接创建一个
   let metadata =
@@ -696,7 +696,7 @@ async function createDepsOptimizer(
   // imports after the first request have been crawled (dynamic imports may also 在抓取第一个请求后导入（动态导入也可以
   // be crawled if the browser requests them right away). 如果浏览器立即请求它们，则将被抓取）。
   async function onCrawlEnd() {
-    // switch after this point to a simple debounce strategy
+    // switch after this point to a simple debounce strategy 在此之后切换到简单的去抖策略
     waitingForCrawlEnd = false
 
     debug?.(colors.green(`✨ static imports crawl ended`)) // 静态导入抓取结束
@@ -706,6 +706,7 @@ async function createDepsOptimizer(
 
     // Await for the scan+optimize step running in the background 等待后台运行的扫描+优化步骤
     // It normally should be over by the time crawling of user code ended 通常应该在用户代码爬取结束时结束
+    // 等待扫描完成，才会继续执行下面的逻辑
     await depsOptimizer.scanProcessing
 
     if (optimizationResult && !config.optimizeDeps.noDiscovery) {

@@ -15,6 +15,7 @@ export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
 
 const debug = createDebugger('vite:optimize-deps')
 
+// MARK
 export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
@@ -26,9 +27,9 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    // this.load({ id }) isn't implemented in PluginContainer
-    // The logic to register an id to wait until it is processed
-    // is in importAnalysis, see call to delayDepsOptimizerUntil
+    // this.load({ id }) isn't implemented in PluginContainer this.load（｛id｝）未在PluginContainer中实现
+    // The logic to register an id to wait until it is processed 注册id以等待处理的逻辑
+    // is in importAnalysis, see call to delayDepsOptimizerUntil 在importAnalysis中，请参阅对delayDepsOptimizerUntil的调用
 
     async load(id, options) {
       const ssr = options?.ssr === true

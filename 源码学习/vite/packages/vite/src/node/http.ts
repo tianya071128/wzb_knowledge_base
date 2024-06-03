@@ -188,6 +188,7 @@ export async function httpServerStart(
 
     httpServer.on('error', onError) // 监听错误事件。
 
+    // 启动服务
     httpServer.listen(port, host, () => {
       httpServer.removeListener('error', onError) // 成功时移除错误监听器。
       resolve(port) // 解析承诺，返回监听的端口号。

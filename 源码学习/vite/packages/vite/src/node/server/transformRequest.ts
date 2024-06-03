@@ -240,6 +240,7 @@ async function getCachedTransformResult(
  *
  *  1. 执行插件的 load 钩子：https://cn.rollupjs.org/plugin-development/#load
  *      --> 如果没有插件的 load 钩子处理的话, 尝试从文件系统加载模块的 code 以及 sourceMap(如果有的话)
+ *      --> 如果碰到
  *  2. 执行插件的 transform 钩子(用来转换单个模块)。 -- https://cn.rollupjs.org/plugin-development/#transform
  *
  *  在此过程中, 将各种信息缓存到 moduleGraph 的对应 Map 中，以供后续使用
@@ -275,6 +276,7 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0 // 记录加载开始时间，用于性能调试。
+
   const loadResult = await pluginContainer.load(id, { ssr }) // 尝试使用插件容器加载模块。
   // 如果加载结果为空，尝试从文件系统加载：https://cn.rollupjs.org/plugin-development/#load
   if (loadResult == null) {

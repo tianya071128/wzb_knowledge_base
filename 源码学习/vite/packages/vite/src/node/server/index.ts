@@ -218,70 +218,70 @@ export type HttpServer = http.Server | Http2SecureServer
 
 export interface ViteDevServer {
   /**
-   * The resolved vite config object
+   * The resolved vite config object 解析后的vite配置对象
    */
   config: ResolvedConfig
   /**
-   * A connect app instance.
-   * - Can be used to attach custom middlewares to the dev server.
-   * - Can also be used as the handler function of a custom http server
-   *   or as a middleware in any connect-style Node.js frameworks
+   * A connect app instance. 连接应用程序实例。
+   * - Can be used to attach custom middlewares to the dev server. 可用于将自定义中间件连接到开发服务器。
+   * - Can also be used as the handler function of a custom http server 也可以用作自定义http服务器的处理程序函数
+   *   or as a middleware in any connect-style Node.js frameworks 或者作为任何连接风格Node.js框架中的中间件
    *
    * https://github.com/senchalabs/connect#use-middleware
    */
   middlewares: Connect.Server
   /**
-   * native Node http server instance
-   * will be null in middleware mode
+   * native Node http server instance 本机节点http服务器实例
+   * will be null in middleware mode 在中间件模式中将为null
    */
   httpServer: HttpServer | null
   /**
-   * chokidar watcher instance
+   * chokidar watcher instance chokidar观察者实例
    * https://github.com/paulmillr/chokidar#api
    */
   watcher: FSWatcher
   /**
-   * web socket server with `send(payload)` method
+   * web socket server with `send(payload)` method 具有“send（payload）”方法的web套接字服务器
    * @deprecated use `hot` instead
    */
   ws: WebSocketServer
   /**
-   * HMR broadcaster that can be used to send custom HMR messages to the client
+   * HMR broadcaster that can be used to send custom HMR messages to the client HMR广播器，可用于向客户端发送自定义HMR消息
    *
-   * Always sends a message to at least a WebSocket client. Any third party can
-   * add a channel to the broadcaster to process messages
+   * Always sends a message to at least a WebSocket client. Any third party can 始终至少向WebSocket客户端发送消息。任何第三方都可以
+   * add a channel to the broadcaster to process messages 向广播添加频道以处理消息
    */
   hot: HMRBroadcaster
   /**
-   * Rollup plugin container that can run plugin hooks on a given file
+   * Rollup plugin container that can run plugin hooks on a given file 可以在给定文件上运行插件挂钩的汇总插件容器
    */
   pluginContainer: PluginContainer
   /**
-   * Module graph that tracks the import relationships, url to file mapping
-   * and hmr state.
+   * Module graph that tracks the import relationships, url to file mapping 跟踪导入关系、url 到文件映射的模块图
+   * and hmr state. 和hmr状态
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode or
-   * before `server.listen` is called.
+   * The resolved urls Vite prints on the CLI. null in middleware mode or 已解析的URL Vite将打印在CLI上。在中间件模式下为null或
+   * before `server.listen` is called. 在调用“server.elisten”之前。
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
-   * Programmatically resolve, load and transform a URL and get the result
-   * without going through the http request pipeline.
+   * Programmatically resolve, load and transform a URL and get the result 以编程方式解析、加载和转换URL并获得结果
+   * without going through the http request pipeline. 而不经过http请求管道
    */
   transformRequest(
     url: string,
     options?: TransformOptions,
   ): Promise<TransformResult | null>
   /**
-   * Same as `transformRequest` but only warm up the URLs so the next request
-   * will already be cached. The function will never throw as it handles and
-   * reports errors internally.
+   * Same as `transformRequest` but only warm up the URLs so the next request 与“transformRequest”相同，但仅预热URL，以便下一个请求
+   * will already be cached. The function will never throw as it handles and 将已被缓存。函数在处理和时永远不会抛出
+   * reports errors internally. 内部报告错误
    */
   warmupRequest(url: string, options?: TransformOptions): Promise<void>
   /**
-   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   * Apply vite built-in HTML transforms and any plugin HTML transforms. 应用vite内置HTML转换和任何插件HTML转换
    */
   transformIndexHtml(
     url: string,
@@ -289,7 +289,7 @@ export interface ViteDevServer {
     originalUrl?: string,
   ): Promise<string>
   /**
-   * Transform module code into SSR format.
+   * Transform module code into SSR format. 将模块代码转换为SSR格式
    */
   ssrTransform(
     code: string,
@@ -298,62 +298,62 @@ export interface ViteDevServer {
     originalCode?: string,
   ): Promise<TransformResult | null>
   /**
-   * Load a given URL as an instantiated module for SSR.
+   * Load a given URL as an instantiated module for SSR. 加载给定的URL作为SSR的实例化模块
    */
   ssrLoadModule(
     url: string,
     opts?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
   /**
-   * Fetch information about the module for Vite SSR runtime.
+   * Fetch information about the module for Vite SSR runtime. 获取有关Vite SSR运行时模块的信息
    * @experimental
    */
   ssrFetchModule(id: string, importer?: string): Promise<FetchResult>
   /**
-   * Returns a fixed version of the given stack
+   * Returns a fixed version of the given stack 返回给定堆栈的固定版本
    */
   ssrRewriteStacktrace(stack: string): string
   /**
-   * Mutates the given SSR error by rewriting the stacktrace
+   * Mutates the given SSR error by rewriting the stacktrace 通过重写堆栈来更改给定的SSR错误
    */
   ssrFixStacktrace(e: Error): void
   /**
-   * Triggers HMR for a module in the module graph. You can use the `server.moduleGraph`
-   * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
+   * Triggers HMR for a module in the module graph. You can use the `server.moduleGraph` 触发模块图中某个模块的HMR。您可以使用`server.moduleGraph`
+   * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op. API检索要重新加载的模块。如果“hmr”为false，则这是一个无操作
    */
   reloadModule(module: ModuleNode): Promise<void>
   /**
-   * Start the server.
+   * Start the server. 启动服务器
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
   /**
-   * Stop the server.
+   * Stop the server. 停止服务器
    */
   close(): Promise<void>
   /**
-   * Print server urls
+   * Print server urls 打印服务器URL
    */
   printUrls(): void
   /**
-   * Bind CLI shortcuts
+   * Bind CLI shortcuts 绑定CLI快捷方式
    */
   bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
   /**
-   * Restart the server.
+   * Restart the server. 重新启动服务器
    *
-   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag 强制优化器重新绑定，与--force-cli标志相同
    */
   restart(forceOptimize?: boolean): Promise<void>
 
   /**
-   * Open browser
+   * Open browser 打开浏览器
    */
   openBrowser(): void
   /**
-   * Calling `await server.waitForRequestsIdle(id)` will wait until all static imports
-   * are processed. If called from a load or transform plugin hook, the id needs to be
-   * passed as a parameter to avoid deadlocks. Calling this function after the first
-   * static imports section of the module graph has been processed will resolve immediately.
+   * Calling `await server.waitForRequestsIdle(id)` will wait until all static imports 调用`wait-server.waitForRequestsIdle（id）`将等待所有静态导入
+   * are processed. If called from a load or transform plugin hook, the id needs to be 被处理。如果从加载或转换插件挂钩调用，则id需要
+   * passed as a parameter to avoid deadlocks. Calling this function after the first 作为参数传递以避免死锁。在第一个之后调用此函数
+   * static imports section of the module graph has been processed will resolve immediately. 静态导入部分的模块图已被处理，将立即解析。
    * @experimental
    */
   waitForRequestsIdle: (ignoredId?: string) => Promise<void>
@@ -571,13 +571,18 @@ export async function _createServer(
   }
 
   let server: ViteDevServer = {
+    /** 配置对象 */
     config,
+    /** 中间件 */
     middlewares,
     httpServer,
+    /** 监听器 */
     watcher,
+    /** 插件执行容器 */
     pluginContainer: container,
     ws,
     hot,
+    /** 模块图 */
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -1043,27 +1048,28 @@ export async function _createServer(
   // httpServer.listen can be called multiple times httpServer.listen 可以被多次调用
   // when port when using next port number 当端口使用下一个端口号时
   // this code is to avoid calling buildStart multiple times 这段代码是为了避免多次调用 buildStart
-  let initingServer: Promise<void> | undefined
-  let serverInited = false
+  let initingServer: Promise<void> | undefined // 服务器正在启动的 Promise
+  let serverInited = false // 服务器是否初始化标志
   const initServer = async () => {
-    if (serverInited) return
-    if (initingServer) return initingServer
+    if (serverInited) return // 如果启动过, 则直接返回
+    if (initingServer) return initingServer // 如果正在启动的话, 直接返回之前的 Promise
 
     initingServer = (async function () {
-      await container.buildStart({})
+      await container.buildStart({}) // 启动执行插件的 buildStart 钩子：https://cn.rollupjs.org/plugin-development/#buildstart */
       // start deps optimizer after all container plugins are ready 所有容器插件准备就绪后启动 deps 优化器
       if (isDepsOptimizerEnabled(config, false)) {
-        // 启动依赖优化的程序
+        // 如果启动预构建优化的话, 执行启动依赖优化的程序
         await initDepsOptimizer(config, server)
       }
       // 提前转换和缓存文件以进行预热。可以在服务器启动时提高初始页面加载速度，并防止转换瀑布。
       warmupFiles(server)
       initingServer = undefined
-      serverInited = true
+      serverInited = true // 服务器启动完成
     })()
     return initingServer
   }
 
+  // 如果不是中间件模式并且存在 http 服务器的话, 重写 listen 方法, 以在启动服务器之前做一些操作
   if (!middlewareMode && httpServer) {
     // overwrite listen to init optimizer before server start 在服务器启动之前覆盖监听 init 优化器
     const listen = httpServer.listen.bind(httpServer)
@@ -1370,8 +1376,8 @@ interface CrawlEndFinder {
 }
 
 function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
-  const registeredIds = new Set<string>()
-  const seenIds = new Set<string>()
+  const registeredIds = new Set<string>() // 正在处理的 id 集合
+  const seenIds = new Set<string>() // 已处理的 id 集合
   const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
 
   let timeoutHandle: NodeJS.Timeout | undefined
@@ -1394,9 +1400,12 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     id: string,
     done: () => Promise<any>,
   ): void {
+    // 检查请求ID是否已被处理过，以避免重复处理相同请求。
     if (!seenIds.has(id)) {
-      seenIds.add(id)
-      registeredIds.add(id)
+      seenIds.add(id) // 将请求ID标记为已处理，防止重复处理。
+      registeredIds.add(id) // 将请求ID注册到处理中的请求列表中。
+      // 执行处理请求的回调函数，并捕获任何可能的错误，确保错误不会影响后续操作。
+      // 最后，无论成功还是失败，都会标记该请求为已完成。
       done()
         .catch(() => {})
         .finally(() => markIdAsDone(id))
