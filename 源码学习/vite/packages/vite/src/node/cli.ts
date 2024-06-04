@@ -60,6 +60,7 @@ export const stopProfiler = (
   })
 }
 
+// 过滤对象中的重复选项。
 const filterDuplicateOptions = <T extends object>(options: T) => {
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value)) {
@@ -361,9 +362,14 @@ cli
         outDir?: string
       } & GlobalCLIOptions,
     ) => {
-      filterDuplicateOptions(options)
+      filterDuplicateOptions(options) // 过滤对象中的重复选项。
       const { preview } = await import('./preview')
       try {
+        // 处理预览模式
+        //   1. 调用 resolveConfig 方法解析配置项，得到一个配置对象
+        //   2. 创建 http 服务器
+        //   3. 注册各类中间件，以处理请求
+        //   4. 启动 http 服务器
         const server = await preview({
           root,
           base: options.base,
@@ -380,13 +386,14 @@ cli
             open: options.open,
           },
         })
-        server.printUrls()
-        server.bindCLIShortcuts({ print: true })
+        server.printUrls() // 打印服务器网址
+        server.bindCLIShortcuts({ print: true }) // 绑定 CLI 快捷方式
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when starting preview server:\n${e.stack}`),
+          colors.red(`error when starting preview server:\n${e.stack}`), // 启动预览服务器时出错：
           { error: e },
         )
+        // 异常时退出进程
         process.exit(1)
       } finally {
         stopProfiler((message) => createLogger(options.logLevel).info(message))

@@ -196,6 +196,7 @@ export async function httpServerStart(
   })
 }
 
+// 设置 TTP服务器 客户端错误处理程序：注册一个事件监听器，以处理HTTP服务器的客户端错误。
 export function setClientErrorHandler(
   server: HttpServer,
   logger: Logger,

@@ -449,6 +449,7 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
 }
 
 /**
+ * 解析配置项，得到一个配置对象
  * 1. 加载配置文件，得出配置信息
  * 2. 运行插件的 config 钩子，给插件提供修改配置项的时机
  * 3. 加载对应模式下的 .env 文件，并提取出能够暴露给客户端源码的环境变量
@@ -475,7 +476,7 @@ export async function resolveConfig(
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode // 模式，默认为 development
   const isNodeEnvSet = !!process.env.NODE_ENV
-  const packageCache: PackageCache = new Map() //
+  const packageCache: PackageCache = new Map() // package 文件解析缓存对象
 
   // some dependencies e.g. @vue/compiler-* relies on NODE_ENV for getting 一些依赖项，例如@vue/compiler-*依赖NODE_ENV来获取
   // production-specific behavior, so set it early on 特定于生产的行为，所以尽早设置

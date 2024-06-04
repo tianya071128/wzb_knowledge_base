@@ -445,13 +445,15 @@ export function createServer(
  *  7. 生成一个服务器选项的配置项 ViteDevServer
  */
 /**
- * 开发环境下：当存在客户端请求时，会通过启用的服务器通过各个中间件实现各种转换逻辑
- *  各类中间件请详见下面逻辑，其中重要的有：
- *    1. indexHtmlMiddleware：用于处理 html 的中间件 --> 读取对应 html 文件, 在开发环境下, 调用 server.transformIndexHtml 方法(会调用插件 transformIndexHtml 钩子)执行转换
- *    2. 在转换请求时, 会扫描文件中的预请求，调用 serever.warmupRequest -> transformRequest 方法链预热请求
- *       而在预热请求中的文件时, 会递归重复这一过程, 所以当请求 index.html，服务器会先行一步预热其他所使用的请求
- *        2.1：对于 html 文件请求, 预热请求可见 indexHtmlMiddleware 中间件，最终会调用 preTransformRequest 方法
- *        2.2: 对于其他的，可见 importAnalysis 插件
+ * 客户端请求资源：当存在客户端请求时，会通过启用的服务器通过各个中间件实现各种转换逻辑
+ *  1. 对于 html 文件：
+ *      -- 转换处理：主要使用 indexHtmlMiddleware 中间件进行处理, 之后 send 请求
+ *      -- 请求预热：预热请求可见 indexHtmlMiddleware 中间件，最终会调用 preTransformRequest -> serever.warmupRequest -> transformRequest 方法调用
+ *  2. 对于 js(vue、ts等)、css(scss、less等) 等文件：
+ *      -- 转换处理：在 transformMiddleware 中间件中会调用 transformRequest -> ... -> loadAndTransform 方法中, 会执行插件的 'load' 和 'transform' 钩子, 调用插件执行转换，之后 send 请求
+ *          --- 依赖的请求(例如: D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps/vue.js?v=d9566fb3):
+ *                会在 optimizedDepsPlugin 插件中, 注册 'load' 钩子处理，等待依赖优化的完成，之后直接读取对应的 依赖文件。
+ *      -- 预热请求：在 importAnalysisPlugin 插件中,注册的 'transform' 钩子中调用 serever.warmupRequest -> transformRequest 方法执行预热请求
  */
 export async function _createServer(
   inlineConfig: InlineConfig = {},

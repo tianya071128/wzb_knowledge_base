@@ -56,6 +56,7 @@ export interface DepsOptimizer {
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
 
+  /** 用于判断给定的模块ID是否指向一个优化过的依赖文件。 */
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
@@ -169,10 +170,14 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
   /**
-   * When doing a re-run, if there are newly discovered dependencies
-   * the page reload will be delayed until the next rerun so we need
-   * to be able to discard the result
+   * When doing a re-run, if there are newly discovered dependencies 重新运行时，如果有新发现的依赖项
+   * the page reload will be delayed until the next rerun so we need 页面重新加载将延迟到下一次重新运行，因此我们需要
+   * to be able to discard the result 能够丢弃结果
    */
+  // 提交
+  // vite 会将一次新构建的依赖文件先存放到一个临时目录，例如："D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_30ccde96"
+  // 此后会在最终确定依赖可用时，生成一份元数据文件 _metadata.json，并且将临时目录转变成缓存目录，例如：D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/dep
+  // 后续在启动，会优先使用缓存的数据，而不会重走耗时的依赖优化。只要这份依赖元数据是新鲜的
   commit: () => Promise<void>
   cancel: () => void
 }
@@ -538,7 +543,7 @@ export function runOptimizeDeps(
   // 依赖的 ids
   const qualifiedIds = Object.keys(depsInfo)
   let cleaned = false // 是否清空标志
-  let committed = false
+  let committed = false // 提交标志
   // 后置处理构建生成的缓存文件夹
   const cleanUp = () => {
     // If commit was already called, ignore the clean up even if a cancel was requested 如果已经调用了commit，则忽略清理，即使请求了取消
@@ -563,7 +568,10 @@ export function runOptimizeDeps(
     metadata,
     // 取消方法
     cancel: cleanUp,
-
+    // 提交
+    // vite 会将一次新构建的依赖文件先存放到一个临时目录，例如："D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps_temp_30ccde96"
+    // 此后会在最终确定依赖可用时，生成一份元数据文件 _metadata.json，并且将临时目录转变成缓存目录，例如：D:/低代码/project/wzb/源码学习/vite/playground/vue/node_modules/.vite/deps
+    // 后续在启动，会优先使用缓存的数据，而不会重走耗时的依赖优化。只要这份依赖元数据是新鲜的
     commit: async () => {
       if (cleaned) {
         throw new Error(
@@ -576,23 +584,26 @@ export function runOptimizeDeps(
 
       // Write metadata file, then commit the processing folder to the global deps cache 写入元数据文件，然后将处理文件夹提交到全局 deps 缓存
       // Rewire the file paths from the temporary processing dir to the final deps cache dir 将文件路径从临时处理目录重新连接到最终 deps 缓存目录
+      // 写入元数据文件路径："D:\\低代码\\project\\wzb\\源码学习\\vite\\playground\\vue\\node_modules\\.vite\\deps_temp_87ea3933\\_metadata.json"
       const dataPath = path.join(processingCacheDir, METADATA_FILENAME)
       debug?.(
         colors.green(`creating ${METADATA_FILENAME} in ${processingCacheDir}`),
       )
+      // 将依赖元数据写入 _metadata.json 文件中
       fs.writeFileSync(
         dataPath,
-        stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
+        stringifyDepsOptimizerMetadata(metadata, depsCacheDir), // 将依赖优化的元数据转换为字符串格式，以便于存储和传输。
       )
 
-      // In order to minimize the time where the deps folder isn't in a consistent state,
-      // we first rename the old depsCacheDir to a temporary path, then we rename the
-      // new processing cache dir to the depsCacheDir. In systems where doing so in sync
-      // is safe, we do an atomic operation (at least for this thread). For Windows, we
-      // found there are cases where the rename operation may finish before it's done
-      // so we do a graceful rename checking that the folder has been properly renamed.
-      // We found that the rename-rename (then delete the old folder in the background)
-      // is safer than a delete-rename operation.
+      // In order to minimize the time where the deps folder isn't in a consistent state, 为了最小化deps文件夹不处于一致状态的时间，
+      // we first rename the old depsCacheDir to a temporary path, then we rename the 我们首先将旧的depsCacheDir重命名为一个临时路径，然后将
+      // new processing cache dir to the depsCacheDir. In systems where doing so in sync 将新的处理缓存目录添加到depsCacheDir。在同步执行的系统中
+      // is safe, we do an atomic operation (at least for this thread). For Windows, we 是安全的，我们做一个原子操作（至少对于这个线程）。对于Windows，我们
+      // found there are cases where the rename operation may finish before it's done 发现在某些情况下，重命名操作可能会在完成之前完成
+      // so we do a graceful rename checking that the folder has been properly renamed. 因此，我们进行了一次优雅的重命名，检查文件夹是否已正确重命名。
+      // We found that the rename-rename (then delete the old folder in the background) 我们发现重命名重命名（然后删除后台的旧文件夹）
+      // is safer than a delete-rename operation. 比删除-重命名操作更安全。
+      // 接下来的操作,
       const temporaryPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
       if (isWindows) {
@@ -615,7 +626,7 @@ export function runOptimizeDeps(
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
-      // Delete temporary path in the background
+      // Delete temporary path in the background 删除后台临时路径
       if (depsCacheDirPresent) {
         debug?.(colors.green(`removing cache temp dir ${temporaryPath}`))
         fsp.rm(temporaryPath, { recursive: true, force: true })
@@ -1031,6 +1042,7 @@ function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
   )
 }
 
+// 生成一个临时文件名后缀。
 function getTempSuffix() {
   return (
     '_temp_' +
@@ -1137,10 +1149,11 @@ function parseDepsOptimizerMetadata(
 }
 
 /**
- * Stringify metadata for deps cache. Remove processing promises
- * and individual dep info browserHash. Once the cache is reload
- * the next time the server start we need to use the global
- * browserHash to allow long term caching
+ * 将依赖优化的元数据转换为字符串格式，以便于存储和传输。
+ * Stringify metadata for deps cache. Remove processing promises 对deps缓存的元数据进行字符串化。删除处理承诺
+ * and individual dep info browserHash. Once the cache is reload 以及个人dep信息浏览器Hash。重新加载缓存后
+ * the next time the server start we need to use the global 下次服务器启动时，我们需要使用全局
+ * browserHash to allow long term caching browserHash 允许长期缓存
  */
 function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
@@ -1428,10 +1441,12 @@ export function optimizedDepInfoFromId(
   )
 }
 
+// 从依赖优化元数据中提取特定文件的优化依赖信息。
 export function optimizedDepInfoFromFile(
   metadata: DepOptimizationMetadata,
   file: string,
 ): OptimizedDepInfo | undefined {
+  // 通过文件名在依赖信息列表中查找匹配的依赖信息。
   return metadata.depInfoList.find((depInfo) => depInfo.file === file)
 }
 
@@ -1515,6 +1530,7 @@ export async function cleanupDepsCacheStaleDirs(
 // created files. The original tried for up to 60 seconds, we only
 // wait for 5 seconds, as a longer time would be seen as an error
 
+// 重命名
 const GRACEFUL_RENAME_TIMEOUT = 5000
 const safeRename = promisify(function gracefulRename(
   from: string,

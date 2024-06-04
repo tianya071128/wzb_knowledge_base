@@ -1,11 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 defineProps({
   msg: String,
-});
+})
 
-const count = ref(5);
+const count = ref(5)
 </script>
 
 <template>
@@ -35,7 +35,12 @@ const count = ref(5);
   <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+.card {
+  button {
+    width: 300px;
+  }
+}
 .read-the-docs {
   color: #888;
 }

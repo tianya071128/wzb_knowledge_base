@@ -273,7 +273,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css',
 
     buildStart() {
-      // Ensure a new cache for every build (i.e. rebuilding in watch mode)
+      // Ensure a new cache for every build (i.e. rebuilding in watch mode) 确保每个构建都有新的缓存（即在监视模式下重建）
       moduleCache = new Map<string, Record<string, string>>()
       cssModulesCache.set(config, moduleCache)
 
@@ -297,6 +297,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       if (urlRE.test(id)) {
         if (isModuleCSSRequest(id)) {
+          // CSS 模块不支持 ?url。 （尝试导入
           throw new Error(
             `?url is not supported with CSS modules. (tried to import ${JSON.stringify(
               id,
@@ -305,7 +306,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
 
         // *.css?url
-        // in dev, it's handled by assets plugin.
+        // in dev, it's handled by assets plugin. 在开发中，它由资产插件处理。
         if (isBuild) {
           id = injectQuery(removeUrlQuery(id), 'transform-only')
           return (
@@ -390,7 +391,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 }
 
 /**
- * Plugin applied after user plugins
+ * Plugin applied after user plugins 在用户插件之后应用插件
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
