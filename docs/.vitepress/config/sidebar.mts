@@ -438,6 +438,25 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/vscode/': [
+    {
+      base: '/vscode/',
+      items: [
+        {
+          text: '设置',
+          link: 'home',
+        },
+        {
+          text: '概述',
+          link: 'summary',
+        },
+        {
+          text: '调试',
+          link: 'debug',
+        },
+      ],
+    },
+  ],
   '/npm/': [
     {
       base: '/npm/',
