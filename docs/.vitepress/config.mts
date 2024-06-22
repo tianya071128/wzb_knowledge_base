@@ -133,7 +133,7 @@ export default defineConfig({
       },
       {
         text: '更多',
-        activeMatch: `/node|devtools/`,
+        activeMatch: `/node|devtools|reg/`,
         items: [
           { text: 'Node.js', link: '/node/home.html', activeMatch: '/node/' },
           {
@@ -141,6 +141,7 @@ export default defineConfig({
             link: '/devtools/shortcuts.html',
             activeMatch: '/devtools/',
           },
+          { text: '正则表达式', link: '/reg/home.html', activeMatch: '/reg/' },
         ],
       },
     ],

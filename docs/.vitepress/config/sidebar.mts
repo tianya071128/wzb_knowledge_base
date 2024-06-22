@@ -879,6 +879,17 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/reg/': [
+    {
+      base: '/reg/',
+      items: [
+        {
+          text: '正则表达式',
+          link: 'home',
+        },
+      ],
+    },
+  ],
 };
 
 export default sidebar;
