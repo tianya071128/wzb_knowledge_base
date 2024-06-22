@@ -17,7 +17,9 @@ on:
 
 # 4 设置权限（文件是可以被读写修改的）
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 # 工作流程运行由一个或多个可以顺序或并行运行的作业组成
 jobs:
@@ -49,10 +51,10 @@ jobs:
       - name: Upload build artifacts (上传构建产物)
         uses: actions/upload-pages-artifact@v2
         with:
-          path: './dist'
+          path: './docs/.vitepress/dist'
 
       # 9 部署 GitHub Pages
-      # - name: Deploy to GitHub Pages(部署到 GitHub Pages)
-      #   uses: actions/deploy-pages@v2
+      - name: Deploy to GitHub Pages(部署到 GitHub Pages)
+        uses: actions/deploy-pages@v2
       #   with:
       #     token: ${{ secrets.GITHUB_TOKEN }}
