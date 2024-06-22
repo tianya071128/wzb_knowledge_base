@@ -63,8 +63,8 @@ export function proxyMiddleware(
 
     // 处理代理错误事件
     proxy.on('error', (err, req, originalRes) => {
-      // When it is ws proxy, res is net.Socket
-      // originalRes can be falsy if the proxy itself errored
+      // When it is ws proxy, res is net.Socket 当是ws代理时，res为net.Socket
+      // originalRes can be falsy if the proxy itself errored 如果代理本身出错，originalRes 可能为假
       const res = originalRes as http.ServerResponse | net.Socket | undefined
       if (!res) {
         config.logger.error(

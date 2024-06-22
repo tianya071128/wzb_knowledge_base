@@ -454,6 +454,12 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '调试',
           link: 'debug',
         },
+        {
+          text: '快捷键',
+          base: '/',
+          link: 'wzb_knowledge_base/other/vscode快捷键.pdf',
+          target: '_blank',
+        },
       ],
     },
   ],
