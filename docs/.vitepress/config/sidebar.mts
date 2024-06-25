@@ -893,6 +893,14 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '正则表达式',
           link: 'home',
         },
+        {
+          text: '元字符',
+          link: 'metachar',
+        },
+        {
+          text: '使用正则表达式',
+          link: 'use',
+        },
       ],
     },
   ],
