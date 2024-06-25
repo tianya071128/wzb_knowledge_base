@@ -775,6 +775,10 @@ const sidebar: DefaultTheme.Sidebar = {
       base: '/devtools/',
       items: [
         {
+          text: 'Chrome 开发者工具',
+          link: 'home',
+        },
+        {
           text: '键盘快捷键',
           link: 'shortcuts',
         },
@@ -851,6 +855,11 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: '性能(Performance)',
           link: 'performance',
+        },
+        {
+          text: '内存(Memory)',
+          link: 'memory',
+          items: [{ text: '内存术语', link: 'memory/term' }],
         },
         {
           text: '渲染(Rendering)',
