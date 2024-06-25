@@ -169,6 +169,8 @@ const rewrites: Record<string, string> = {
   '04_更多/02_开发者工具/29_覆盖率.md': 'devtools/coverage.md',
   '04_更多/02_开发者工具/30_开发者资源.md': 'devtools/developer-resources.md',
   '04_更多/02_开发者工具/31_网络状况.md': 'devtools/netword-conditions.md',
+  '04_更多/02_开发者工具/32_内存.md': 'devtools/memory.md',
+  '04_更多/02_开发者工具/33_内存_内存术语.md': 'devtools/memory/term.md',
   '04_更多/03_正则/01_index.md': 'reg/home.md',
 };
 export default rewrites;
