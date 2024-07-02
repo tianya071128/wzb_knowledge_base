@@ -171,6 +171,8 @@ const rewrites: Record<string, string> = {
   '04_更多/02_开发者工具/31_网络状况.md': 'devtools/netword-conditions.md',
   '04_更多/02_开发者工具/32_内存.md': 'devtools/memory.md',
   '04_更多/02_开发者工具/33_内存_内存术语.md': 'devtools/memory/term.md',
+  '04_更多/02_开发者工具/37_记录器.md': 'devtools/recorder.md',
+  '04_更多/02_开发者工具/38_动画.md': 'devtools/animations.md',
   '04_更多/03_正则/01_index.md': 'reg/home.md',
   '04_更多/03_正则/02_元字符.md': 'reg/metachar.md',
   '04_更多/03_正则/03_使用正则.md': 'reg/use.md',
