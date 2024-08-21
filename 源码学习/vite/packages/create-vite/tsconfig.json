@@ -10,6 +10,8 @@
     "declaration": false,
     "sourceMap": false,
     "noUnusedLocals": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "disableReferencedProjectLoad": false,
+    "disableSourceOfProjectReferenceRedirect": false
   }
 }

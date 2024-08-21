@@ -5,7 +5,7 @@ import { HMRClient, HMRContext } from '../shared/hmr'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
-// injected by the hmr plugin when served
+// injected by the hmr plugin when served 服务时由 hmr 插件注入
 declare const __BASE__: string
 declare const __SERVER_HOST__: string
 declare const __HMR_PROTOCOL__: string | null
@@ -18,13 +18,16 @@ declare const __HMR_ENABLE_OVERLAY__: boolean
 
 console.debug('[vite] connecting...')
 
+// import.meta.url: 将特定上下文的元数据暴露给 JavaScript 模块。它包含了这个模块的信息，例如这个模块的 URL。
 const importMetaUrl = new URL(import.meta.url)
 
-// use server configuration, then fallback to inference
-const serverHost = __SERVER_HOST__
+// use server configuration, then fallback to inference 使用服务器配置，然后退到推理
+const serverHost = __SERVER_HOST__ // localhost:9000/
+// 如果没有注入 ws 协议的, 那么有当前环境决定
 const socketProtocol =
   __HMR_PROTOCOL__ || (importMetaUrl.protocol === 'https:' ? 'wss' : 'ws')
 const hmrPort = __HMR_PORT__
+// 得出 ws 的 host: localhost:9000/
 const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
   hmrPort || importMetaUrl.port
 }${__HMR_BASE__}`
@@ -34,11 +37,11 @@ const base = __BASE__ || '/'
 let socket: WebSocket
 try {
   let fallback: (() => void) | undefined
-  // only use fallback when port is inferred to prevent confusion
+  // only use fallback when port is inferred to prevent confusion 仅在推断端口时使用后备，以防止混淆
   if (!hmrPort) {
     fallback = () => {
-      // fallback to connecting directly to the hmr server
-      // for servers which does not support proxying websocket
+      // fallback to connecting directly to the hmr server 退回到直接连接到HMR服务器
+      // for servers which does not support proxying websocket 对于不支持代理websocket的服务器
       socket = setupWebSocket(socketProtocol, directSocketHost, () => {
         const currentScriptHostURL = new URL(import.meta.url)
         const currentScriptHost =
@@ -69,41 +72,61 @@ try {
   console.error(`[vite] failed to connect to websocket (${error}). `)
 }
 
+/**
+ * 设置WebSocket连接
+ *
+ * @param protocol - WebSocket协议，如wss或ws
+ * @param hostAndPath - WebSocket服务器的主机和路径
+ * @param onCloseWithoutOpen - 可选参数，当WebSocket连接在未打开状态下关闭时调用的回调函数
+ * @returns 返回创建的WebSocket对象
+ */
 function setupWebSocket(
   protocol: string,
   hostAndPath: string,
   onCloseWithoutOpen?: () => void,
 ) {
+  // 创建WebSocket实例，使用传入的协议和服务器地址
   const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
+  // 初始化连接状态标志为false
   let isOpened = false
 
+  // 监听 WebSocket 的打开事件
   socket.addEventListener(
     'open',
     () => {
+      // 连接打开时，将连接状态设置为true，并通知监听器连接已建立
       isOpened = true
       notifyListeners('vite:ws:connect', { webSocket: socket })
     },
     { once: true },
   )
 
-  // Listen for messages
+  // Listen for messages 监听信息
+  // 监听 WebSocket 的消息事件
   socket.addEventListener('message', async ({ data }) => {
+    // 接收到消息时，解析JSON格式的数据，并处理消息
     handleMessage(JSON.parse(data))
   })
 
-  // ping server
+  // ping server ping服务器
+  // 监听 WebSocket 的关闭事件
   socket.addEventListener('close', async ({ wasClean }) => {
+    // wasClean: 表示连接是否完全关闭。
+    // 如果连接正常关闭，则不执行任何操作
     if (wasClean) return
 
+    // 如果连接从未打开过，并且提供了关闭回调函数，则调用该回调函数
     if (!isOpened && onCloseWithoutOpen) {
       onCloseWithoutOpen()
       return
     }
 
+    // 通知监听器WebSocket连接已断开
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
+    // 如果当前环境有document对象，则提示服务器连接丢失，并尝试重新连接
     if (hasDocument) {
-      console.log(`[vite] server connection lost. polling for restart...`)
+      console.log(`[vite] server connection lost. polling for restart...`) // [vite]服务器连接丢失轮询重启
       await waitForSuccessfulPing(protocol, hostAndPath)
       location.reload()
     }
@@ -299,6 +322,16 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
+/**
+ * 通知监听器有新的事件发生
+ *
+ * 此函数的目的是将事件和相关数据传递给hmrClient，由它来通知所有注册了对应事件的监听器
+ * 它不直接操作监听器，而是通过hmrClient来间接通知，这样的设计使得代码更加模块化，易于维护和测试
+ *
+ * @param event string类型的event参数，表示发生的事件名称
+ * @param data any类型的data参数，表示与事件相关的数据，类型为any以便于传递各种不同类型的数据
+ * @returns void此函数没有返回值
+ */
 function notifyListeners<T extends string>(
   event: T,
   data: InferCustomEventPayload<T>,
@@ -384,8 +417,8 @@ function waitForWindowShow() {
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
 
-// collect existing style elements that may have been inserted during SSR
-// to avoid FOUC or duplicate styles
+// collect existing style elements that may have been inserted during SSR 收集可能在SSR期间插入的现有样式元素
+// to avoid FOUC or duplicate styles 避免FOUC或重复样式
 if ('document' in globalThis) {
   document
     .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')

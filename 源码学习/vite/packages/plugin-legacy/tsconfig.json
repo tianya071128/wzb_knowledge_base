@@ -11,6 +11,8 @@
     "sourceMap": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
+    "disableReferencedProjectLoad": false,
+    "disableSourceOfProjectReferenceRedirect": false,
     "paths": {
       "vite": ["../vite/src/node/index.js"]
     }

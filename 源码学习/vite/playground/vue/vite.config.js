@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   server: {
-    port: 8080,
+    port: 9000,
     host: true, // 监听所有地址
     proxy: {
       // ...serverList.reduce((total, item) => {
@@ -18,7 +18,7 @@ export default defineConfig({
       //     },
       //   }
       // }, {}),
-      'test': {
+      test: {
         // target: `http://192.168.9.19:8112/`, // 钟理壮
         // target: `http://192.168.9.21:8112/`, // 袁准
         // target: `http://192.168.9.66:8111/`, // 曾勇
