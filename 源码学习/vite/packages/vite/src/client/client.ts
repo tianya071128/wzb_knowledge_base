@@ -141,9 +141,10 @@ function cleanUrl(pathname: string): string {
   return url.pathname + url.search
 }
 
-let isFirstUpdate = true
+let isFirstUpdate = true // 第一次 HMR 更新标识
 const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
 
+// 防抖重载页面
 const debounceReload = (time: number) => {
   let timer: ReturnType<typeof setTimeout> | null
   return () => {
@@ -159,18 +160,22 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
+  // 使用 console 打印
   console,
   {
     isReady: () => socket && socket.readyState === 1,
     send: (message) => socket.send(message),
   },
+  // 通过 import 请求更新模块
+  // 返回请求结果
   async function importUpdatedModule({
-    acceptedPath,
-    timestamp,
+    acceptedPath, // 请求路径 -- /src/components/HelloWorld.vue
+    timestamp, // 更新时间戳 -- 1724651557368
     explicitImportRequired,
     isWithinCircularImport,
   }) {
     const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
+    // 请求模块
     const importPromise = import(
       /* @vite-ignore */
       base +
@@ -182,9 +187,12 @@ const hmrClient = new HMRClient(
     if (isWithinCircularImport) {
       importPromise.catch(() => {
         console.info(
+          // [hmr]${acceptedPath}未能应用hmr，因为它位于循环导入中。正在重新加载页面以重置执行顺序。
           `[hmr] ${acceptedPath} failed to apply HMR as it's within a circular import. Reloading page to reset the execution order. ` +
+            // 要调试和打破循环导入，如果文件更改触发了循环依赖路径，您可以运行“vite--debug hmr”来记录循环依赖路径。
             `To debug and break the circular import, you can run \`vite --debug hmr\` to log the circular dependency path if a file change triggered it.`,
         )
+        // 重载页面
         pageReload()
       })
     }
@@ -192,38 +200,77 @@ const hmrClient = new HMRClient(
   },
 )
 
+/**
+ * 处理 服务器 发送过来的消息: 根据不同的消息类型执行不同的操作，如连接、更新、自定义、完全重载和修剪
+ * @param payload HMR负载，包含类型和数据
+ * @returns
+ */
 async function handleMessage(payload: HMRPayload) {
+  // 消息类型匹配
   switch (payload.type) {
+    // 连接成功消息
     case 'connected':
       console.debug(`[vite] connected.`)
       hmrClient.messenger.flush()
-      // proxy(nginx, docker) hmr ws maybe caused timeout,
-      // so send ping package let ws keep alive.
+      // proxy(nginx, docker) hmr ws maybe caused timeout, 代理(nginx, docker) HMR可能导致超时
+      // so send ping package let ws keep alive. 所以发送ping包让ws保持活力
       setInterval(() => {
         if (socket.readyState === socket.OPEN) {
           socket.send('{"type":"ping"}')
         }
       }, __HMR_TIMEOUT__)
       break
+    // 模块热替换执行
     case 'update':
       notifyListeners('vite:beforeUpdate', payload)
+      // 是否是浏览器环境
       if (hasDocument) {
-        // if this is the first update and there's already an error overlay, it
-        // means the page opened with existing server compile error and the whole
-        // module script failed to load (since one of the nested imports is 500).
-        // in this case a normal update won't work and a full reload is needed.
+        // if this is the first update and there's already an error overlay, it 如果这是第一次更新，并且已经存在错误覆盖
+        // means the page opened with existing server compile error and the whole 指打开时存在服务器编译错误的页面和整个
+        // module script failed to load (since one of the nested imports is 500). 模块脚本加载失败（因为其中一个嵌套导入为500）。
+        // in this case a normal update won't work and a full reload is needed. 在这种情况下，正常的更新将不起作用，需要完全重新加载。
+
+        // 第一次 HMR 更新 && 存在浏览器错误
         if (isFirstUpdate && hasErrorOverlay()) {
+          // 重载页面
           window.location.reload()
           return
         } else {
+          // 如果启用了错误信息的展示, 那么就清空错误提示的展示
           if (enableOverlay) {
             clearErrorOverlay()
           }
+          // 标记重置
           isFirstUpdate = false
         }
       }
+      // payload 数据示例
+      // {
+      //   type: 'update', 消息类型
+      //   updates: [
+      //     {
+      //       type: 'js-update', // 更新文件类型: js-update 和 css-update
+      //       timestamp: 1724650923887, // 时间轴
+      //       path: '/src/components/HelloWorld.vue', // 更新的文件路径
+      //       acceptedPath: '/src/components/HelloWorld.vue',
+      //       explicitImportRequired: false,
+      //       isWithinCircularImport: false,
+      //       ssrInvalidates: [],
+      //     },
+      //     {
+      //       type: 'js-update',
+      //       timestamp: 1724650923887,
+      //       path: '/src/components/HelloWorld2.vue',
+      //       acceptedPath: '/src/components/HelloWorld2.vue',
+      //       explicitImportRequired: false,
+      //       isWithinCircularImport: false,
+      //       ssrInvalidates: [],
+      //     },
+      //   ],
+      // }
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
+          // 如果是 js 文件更新
           if (update.type === 'js-update') {
             return hmrClient.queueUpdate(update)
           }
@@ -277,13 +324,14 @@ async function handleMessage(payload: HMRPayload) {
       break
     }
     case 'full-reload':
-      notifyListeners('vite:beforeFullReload', payload)
+      notifyListeners('vite:beforeFullReload', payload) // 通知客户端注册的事件
       if (hasDocument) {
         if (payload.path && payload.path.endsWith('.html')) {
-          // if html file is edited, only reload the page if the browser is
-          // currently on that page.
+          // if html file is edited, only reload the page if the browser is 如果HTML文件被编辑，只有在浏览器是当前页面时才重新加载页面
+          // currently on that page. 当前在该页面上
           const pagePath = decodeURI(location.pathname)
           const payloadPath = base + payload.path.slice(1)
+          // 检测当前页面是否为被编辑的 html
           if (
             pagePath === payloadPath ||
             payload.path === '/index.html' ||
@@ -340,7 +388,7 @@ function notifyListeners(event: string, data: any): void {
   hmrClient.notifyListeners(event, data)
 }
 
-const enableOverlay = __HMR_ENABLE_OVERLAY__
+const enableOverlay = __HMR_ENABLE_OVERLAY__ // 开发服务器错误的屏蔽启用标识 -- https://cn.vitejs.dev/config/server-options.html#server-hmr
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
@@ -348,11 +396,26 @@ function createErrorOverlay(err: ErrorPayload['err']) {
   document.body.appendChild(new ErrorOverlay(err))
 }
 
+/**
+ * 清除错误覆盖层
+ *
+ * 此函数负责关闭或隐藏所有具有指定ID的错误覆盖层元素
+ * 通过文档查询选择器来获取所有匹配的元素，并调用它们的关闭方法
+ */
 function clearErrorOverlay() {
   document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
 }
 
+/**
+ * 检查是否有错误覆盖层
+ *
+ * 此函数用于确定当前文档对象模型中是否存在特定的错误覆盖层它通过选择器匹配来查找元素，
+ * 如果找到任何匹配的元素，则表示错误覆盖层存在，函数返回true；否则，返回false。
+ *
+ * @returns {boolean} 如果错误覆盖层存在，则返回true；否则返回false
+ */
 function hasErrorOverlay() {
+  // 通过querySelectorAll检查是否存在具有指定ID的选择器元素，如果存在则返回true，否则返回false
   return document.querySelectorAll(overlayId).length
 }
 
@@ -473,6 +536,15 @@ export function removeStyle(id: string): void {
   }
 }
 
+/**
+ * 在 vite 内部, 如果检测到你使用了 import.meta.hot 相关 API, 那么就会自动注意一些代码:
+ *  import {createHotContext as __vite__createHotContext} from "/@vite/client";
+ *  import.meta.hot = __vite__createHotContext("/src/components/test.js");
+ *
+ *    这样, HMR 的 API 基本上都是 HMRContext 里暴露出来的, 这样就可以收集到所有的 HMR 模块进行处理
+ *
+ * @param ownerPath 模块文件路径
+ */
 export function createHotContext(ownerPath: string): ViteHotContext {
   return new HMRContext(hmrClient, ownerPath)
 }

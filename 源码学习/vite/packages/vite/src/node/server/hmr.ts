@@ -192,7 +192,8 @@ export async function handleHMRUpdate(
   // 获取受文件变更影响的模块集合 -- 单个文件可能对应于具有不同查询的多个模块
   const mods = new Set(moduleGraph.getModulesByFile(file))
   // 如果是创建操作，将有解析失败错误的模块添加到集合中
-  // why?
+  // 例如: 在 HelloWold.vue 中引入了一个文件 test.js, 而 test.js 文件还没有创建
+  // 在 test.js 创建的时候, 那么我们就将 HelloWold.vue 模块设置为更新的模块, 走一遍 HMR 更新
   if (type === 'create') {
     for (const mod of moduleGraph._hasResolveFailedErrorModules) {
       mods.add(mod)
@@ -615,9 +616,9 @@ export function handlePrunedModules(
   mods: Set<ModuleNode>,
   { hot }: ViteDevServer,
 ): void {
-  // update the disposed modules' hmr timestamp
-  // since if it's re-imported, it should re-apply side effects
-  // and without the timestamp the browser will not re-import it!
+  // update the disposed modules' hmr timestamp 更新已处置模块的hmr时间戳
+  // since if it's re-imported, it should re-apply side effects 因为如果重新进口，它应该会重新产生副作用
+  // and without the timestamp the browser will not re-import it! 如果没有时间戳，浏览器将不会重新导入它！
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t

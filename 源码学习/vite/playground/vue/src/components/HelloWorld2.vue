@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import './test.js'
+// import './test2.js'
 </script>
 
 <template>

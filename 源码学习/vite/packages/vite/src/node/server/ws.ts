@@ -185,6 +185,7 @@ export function createWebSocketServer(
         error: err,
       })
     })
+    // 与客户端建立连接后发送一条消息
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
