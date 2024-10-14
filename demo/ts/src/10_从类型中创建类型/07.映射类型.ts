@@ -51,8 +51,10 @@ type User = Concrete<MaybeUser>;
  */
 // demo：利用模板文字类型等功能从以前的属性名称中创建新的属性名称：
 type Getters<Type> = {
-  [Property in keyof Type as `get${Capitalize<string & Property>}`]: Type[Property]
-}
+  [Property in keyof Type as `get${Capitalize<
+    string & Property
+  >}`]: Type[Property];
+};
 interface Person {
   name: string;
   age: number;
@@ -63,12 +65,13 @@ type LazyPerson = Getters<Person>;
 
 // demo：通过条件类型生成 never 来过滤掉键
 type RemoveKindField<Type, Keys extends keyof Type> = {
-  [Property in keyof Type as Property extends Keys ? never : Property]: Type[Property]
-}
+  [Property in keyof Type as Property extends Keys
+    ? never
+    : `get${Exclude<Property, symbol>}`]: Type[Property];
+};
 interface Circle2 {
-    kind: "circle";
-    radius: number;
+  kind: 'circle';
+  radius: number;
 }
- 
-type KindlessCircle = RemoveKindField<Circle2, 'kind'>;
 
+type KindlessCircle = RemoveKindField<Circle2, 'kind'>;

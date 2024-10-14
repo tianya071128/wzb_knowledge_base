@@ -67,3 +67,6 @@ function draw(circle: Colorful & Circle) {
     },
   };
 }
+
+// 当交叉类型为联合类型时，取并集
+type T3 = ('1' | '2') & ('2' | '5'); // "2"

@@ -87,7 +87,7 @@
  */
 {
   // type Omit<T, K extends keyof T> = { [P in keyof T as P extends K ? never : P]: T[P] }
-  type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
+  // type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
   // demo
   interface Todo {
     title: string;
@@ -155,7 +155,8 @@
   // type ConstructorParameters<
   //   T extends new (...args: any) => any
   // > = T extends new (...args: infer P) => any ? P : never;
-  type ConstructorParameters<T extends abstract new (...args: any) => any> = T extends abstract new (...args: infer P) => any ? P : never;
+  type ConstructorParameters<T extends abstract new (...args: any) => any> =
+    T extends abstract new (...args: infer P) => any ? P : never;
 
   type T0 = ConstructorParameters<ErrorConstructor>;
   type T1 = ConstructorParameters<FunctionConstructor>;
@@ -166,12 +167,16 @@
  */
 {
   // type ReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : never;
-  type ReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : any;
+  type ReturnType<T extends (...args: any) => any> = T extends (
+    ...args: any
+  ) => infer R
+    ? R
+    : any;
 
   type T0 = ReturnType<() => string>;
   type T2 = ReturnType<<T>() => T>;
 }
 
 /**
- * 
+ *
  */

@@ -22,3 +22,8 @@ type b = keyof boolean; // type b = "valueOf"
 type s = keyof string; // type s = number | typeof Symbol.iterator | "toString" | "charAt" | "charCodeAt" | "concat" | "indexOf" | "lastIndexOf" | "localeCompare" | "match" | "replace" | "search" | "slice" | ... 37 more ... | "at"
 type a = keyof Array<string>; // 这种类似于 keyof { [n: number]: unknown }
 const aa: a = 2;
+
+/** 对于联合类型，keyof 返回成员共有的键名 */
+type A2 = { a: string; z: boolean };
+type B2 = { b: string; z: boolean };
+type KeyT = keyof (A2 | B2); // 返回 'z'
