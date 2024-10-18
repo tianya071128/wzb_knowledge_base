@@ -1,14 +1,14 @@
 /**
  * 用于将交叉类型进行扁平化处理
  */
-type Simplify<T> = {
+type Simplify<T extends object> = {
   [P in keyof T]: T[P];
 };
 
 /**
  * SetOptional<Type, Keys>：支持把给定的 keys 对应的属性变成可选的？
  */
-type SetOptional<T, K extends keyof T> = Simplify<
+type SetOptional<T extends object, K extends keyof T> = Simplify<
   Partial<Pick<T, K>> & Omit<T, K>
 >;
 {
@@ -28,7 +28,7 @@ type SetOptional<T, K extends keyof T> = Simplify<
 /**
  * SetRequired<Type, Kyes>：把指定的 keys 对应的属性编程必填的
  */
-type SetRequired<T, K extends keyof T> = Simplify<
+type SetRequired<T extends object, K extends keyof T> = Simplify<
   Required<Pick<T, K>> & Omit<T, K>
 >;
 {
