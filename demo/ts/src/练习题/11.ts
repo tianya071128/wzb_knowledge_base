@@ -23,7 +23,7 @@ type IsEqual2<A, B> = [A] extends [B]
   : false;
 
 // 更严谨版2: 还考虑了 any 的问题, 但不是很懂
-type IsEqual3<T, U> = (<G>() => G extends T ? 1 : 2) extends <
+export type IsEqual3<T, U> = (<G>() => G extends T ? 1 : 2) extends <
   G
 >() => G extends U ? 1 : 2
   ? true

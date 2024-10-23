@@ -14,8 +14,10 @@ type H6 = Head<string[]>; // string
 
 // #region ------------ github 实现 ------------
 // 更好的
-// type Head<T extends Array<any>> = T extends [] ? never : T[0];
+export type Head<T extends Array<any>> = T extends [] ? never : T[0];
 // 其他
 // type Head<T extends any[]> = T['length'] extends 0 ? never : T[0];
-type Head<T extends Array<any>> = T[0] extends undefined ? never : T[0]; // H4 无法通过
+// type Head<T extends Array<any>> = T[0] extends undefined ? never : T[0]; // H4 无法通过
 // #endregion
+
+export {};
