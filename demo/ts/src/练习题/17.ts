@@ -35,5 +35,3 @@ type Includes2<T extends Array<any>, E> = T extends [infer A, ...infer B]
 // #endregion
 
 export {};
-
-type ss = string[] extends [infer A, ...infer B] ? true : false;
