@@ -15,10 +15,14 @@ export interface UpdatePayload {
   updates: Update[]
 }
 
+// HMR 更新消息
 export interface Update {
+  /** HMR 边界模块的类型 */
   type: 'js-update' | 'css-update'
+  /** HMR 边界模块的路径 */
   path: string
   acceptedPath: string
+  /** 当次 HMR 更新时间戳 */
   timestamp: number
   /** @internal */
   explicitImportRequired?: boolean

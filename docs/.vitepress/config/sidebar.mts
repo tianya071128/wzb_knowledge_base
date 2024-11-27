@@ -778,10 +778,7 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'Chrome 开发者工具',
           link: 'home',
         },
-        {
-          text: '键盘快捷键',
-          link: 'shortcuts',
-        },
+
         {
           text: '元素(Element)',
           link: 'element',
@@ -862,34 +859,58 @@ const sidebar: DefaultTheme.Sidebar = {
           items: [{ text: '内存术语', link: 'memory/term' }],
         },
         {
-          text: '渲染(Rendering)',
-          link: 'rendering',
+          text: '其他面板',
+          collapsed: false,
           items: [
             {
-              text: '渲染性能问题',
-              link: 'rendering/performance',
+              text: '记录器(Recorder)',
+              link: 'recorder',
             },
             {
-              text: '应用渲染效果',
-              link: 'rendering/effects',
+              text: '渲染(Rendering)',
+              link: 'rendering',
+              items: [
+                {
+                  text: '渲染性能问题',
+                  link: 'rendering/performance',
+                },
+                {
+                  text: '应用渲染效果',
+                  link: 'rendering/effects',
+                },
+                {
+                  text: '模拟 CSS 媒体功能',
+                  link: 'rendering/emulate',
+                },
+              ],
             },
             {
-              text: '模拟 CSS 媒体功能',
-              link: 'rendering/emulate',
+              text: '动画(Animations)',
+              link: 'animations',
+            },
+            {
+              text: '覆盖率(Coverage)',
+              link: 'coverage',
+            },
+            {
+              text: '开发者资源(Developer Resources)',
+              link: 'developer-resources',
+            },
+            {
+              text: '网络状况(Netword conditions)',
+              link: 'netword-conditions',
             },
           ],
         },
         {
-          text: '覆盖率(Coverage)',
-          link: 'coverage',
-        },
-        {
-          text: '开发者资源(Developer Resources)',
-          link: 'developer-resources',
-        },
-        {
-          text: '网络状况(Netword conditions)',
-          link: 'netword-conditions',
+          text: '其他',
+          collapsed: false,
+          items: [
+            {
+              text: '键盘快捷键',
+              link: 'shortcuts',
+            },
+          ],
         },
       ],
     },

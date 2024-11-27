@@ -374,6 +374,7 @@ export interface ViteDevServer {
    */
   _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
+   * 重启服务器 Promise, 一次只允许重启一次
    * @internal
    */
   _restartPromise: Promise<void> | null
@@ -397,6 +398,7 @@ export interface ViteDevServer {
    */
   _fsDenyGlob: Matcher
   /**
+   * 快捷键配置项
    * @internal
    */
   _shortcutsOptions?: BindCLIShortcutsOptions<ViteDevServer>
@@ -725,28 +727,38 @@ export async function _createServer(
         server.config.logger.warn('No URL available to open in browser')
       }
     },
+    /**
+     * 异步关闭服务器
+     * 如果不在中间件模式下，移除信号量和输入流的监听器
+     * 等待所有关闭操作的完成，包括文件系统监视器、热更新、容器、爬虫、依赖优化器以及HTTP服务器的关闭
+     * 等待所有挂起的请求完成，然后清除已解析的URLs
+     */
     async close() {
+      // 如果不在中间件模式下，移除进程退出信号监听器
       if (!middlewareMode) {
         process.off('SIGTERM', exitProcess)
+        // 如果不是在CI环境中，移除标准输入结束的监听器
         if (process.env.CI !== 'true') {
           process.stdin.off('end', exitProcess)
         }
       }
+      // 等待所有关闭操作的Promise同时解决或拒绝
       await Promise.allSettled([
-        watcher.close(),
-        hot.close(),
-        container.close(),
+        watcher.close(), // 文件监听器关闭
+        hot.close(), // hot 关闭
+        container.close(), // 插件容器的关闭
         crawlEndFinder?.cancel(),
-        getDepsOptimizer(server.config)?.close(),
-        getDepsOptimizer(server.config, true)?.close(),
+        getDepsOptimizer(server.config)?.close(), // 优化器的关闭
+        getDepsOptimizer(server.config, true)?.close(), // 优化器的关闭
         closeHttpServer(),
       ])
-      // Await pending requests. We throw early in transformRequest
-      // and in hooks if the server is closing for non-ssr requests,
-      // so the import analysis plugin stops pre-transforming static
-      // imports and this block is resolved sooner.
-      // During SSR, we let pending requests finish to avoid exposing
-      // the server closed error to the users.
+      // Await pending requests. We throw early in transformRequest 等待挂起的请求。我们在 transformRequest 的早期抛出
+      // and in hooks if the server is closing for non-ssr requests, 如果服务器正在关闭非SSR请求，则在钩子中
+      // so the import analysis plugin stops pre-transforming static 所以导入分析插件停止预转换静态
+      // imports and this block is resolved sooner. 并且该块可以更快地解决
+      // During SSR, we let pending requests finish to avoid exposing 在SSR期间，我们让挂起的请求完成以避免暴露
+      // the server closed error to the users. 服务器向用户关闭错误
+      // 等待挂起的请求完成在非SSR请求中会提前抛出异常，以避免暴露服务器已关闭的错误给用户
       while (server._pendingRequests.size > 0) {
         await Promise.allSettled(
           [...server._pendingRequests.values()].map(
@@ -783,10 +795,24 @@ export async function _createServer(
     bindCLIShortcuts(options) {
       bindCLIShortcuts(server, options)
     },
+    /**
+     * 异步重启服务器
+     * 此方法通过优化或强制重启来处理服务器重启请求
+     * 它使用一个承诺（promise）来确保一次只有一个重启过程可以执行
+     * 如果另一个重启过程已经在进行中，这个承诺将会让当前调用等待，直到前一个过程完成
+     *
+     * @param forceOptimize 可选参数，指示是否强制优化服务器状态
+     *                      当此参数为true时，服务器将执行优化步骤，这可能延长重启过程
+     *                      默认情况下，优化步骤将根据服务器的当前状态决定是否执行
+     * @returns 返回一个承诺，该承诺将在重启过程开始时解析
+     */
     async restart(forceOptimize?: boolean) {
+      // 检查是否有重启过程已经在进行中
+      // 如果没有，创建一个新的重启过程，并记录是否需要强制优化
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
         server._restartPromise = restartServer(server).finally(() => {
+          // 重启过程结束后，重置重启相关状态，以允许未来的重启调用
           server._restartPromise = null
           server._forceOptimizeOnRestart = false
         })
@@ -799,8 +825,8 @@ export async function _createServer(
     _onCrawlEnd,
 
     _setInternalServer(_server: ViteDevServer) {
-      // Rebind internal the server variable so functions reference the user
-      // server instance after a restart
+      // Rebind internal the server variable so functions reference the user 在服务器变量内部重新绑定，以便函数引用用户
+      // server instance after a restart 重启后的服务器实例
       server = _server
     },
     _restartPromise: null,
@@ -855,10 +881,12 @@ export async function _createServer(
     }
   }
 
+  // 处理 HMR
   const onHMRUpdate = async (
     type: 'create' | 'delete' | 'update',
     file: string,
   ) => {
+    // hmr 是否禁用
     if (serverConfig.hmr !== false) {
       try {
         await handleHMRUpdate(type, file, server)
@@ -894,11 +922,13 @@ export async function _createServer(
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
-  // 当监视的目录或文件中的某些内容发生更改时触发。
+  // 当监视的目录或文件中的某些内容发生更改时触发
   watcher.on('change', async (file) => {
+    // 变化的文件
     file = normalizePath(file)
+    // 通知插件容器文件变化
     await container.watchChange(file, { event: 'update' })
-    // invalidate module graph cache on file change
+    // invalidate module graph cache on file change 在文件更改时使模块图缓存无效
     moduleGraph.onFileChange(file)
     await onHMRUpdate('update', file)
   })
@@ -1273,12 +1303,22 @@ export function resolveServerOptions(
 
   return server
 }
-
+/**
+ * 异步重启服务器函数
+ * 该函数通过创建一个新的服务器实例来重启服务器，并将新实例的属性赋值给原实例
+ * 这样可以在不更换原服务器实例的情况下，重新加载配置文件，并重新创建插件和中间件
+ *
+ * @param server - 待重启的服务器实例
+ */
 async function restartServer(server: ViteDevServer) {
+  // 记录重启开始时间
   global.__vite_start_time = performance.now()
+  // 获取服务器的快捷键设置
   const shortcutsOptions = server._shortcutsOptions
 
+  // 获取服务器的内联配置
   let inlineConfig = server.config.inlineConfig
+  // 如果服务器强制优化重启，则合并配置以强制优化依赖
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
       optimizeDeps: {
@@ -1287,17 +1327,18 @@ async function restartServer(server: ViteDevServer) {
     })
   }
 
-  // Reinit the server by creating a new instance using the same inlineConfig
-  // This will triger a reload of the config file and re-create the plugins and
-  // middlewares. We then assign all properties of the new server to the existing
-  // server instance and set the user instance to be used in the new server.
-  // This allows us to keep the same server instance for the user.
+  // Reinit the server by creating a new instance using the same inlineConfig 通过使用相同的内联Config创建一个新实例来重新定义服务器
+  // This will triger a reload of the config file and re-create the plugins and 这将触发重新加载配置文件并重新创建插件和
+  // middlewares. We then assign all properties of the new server to the existing 中间件)。然后将新服务器的所有属性分配给现有服务器
+  // server instance and set the user instance to be used in the new server. 服务器实例，并设置在新服务器中使用的用户实例
+  // This allows us to keep the same server instance for the user. 这允许我们为用户保留相同的服务器实例
   {
     let newServer = null
     try {
-      // delay ws server listen
+      // delay ws server listen 延迟ws服务器监听
       newServer = await _createServer(inlineConfig, { hotListen: false })
     } catch (err: any) {
+      // 出错时, 记录一下
       server.config.logger.error(err.message, {
         timestamp: true,
       })
@@ -1305,34 +1346,41 @@ async function restartServer(server: ViteDevServer) {
       return
     }
 
+    // 关闭原服务器
     await server.close()
 
-    // Assign new server props to existing server instance
+    // Assign new server props to existing server instance 将新服务器的属性赋值给原服务器实例
+    // 复用之前服务器已解析的处理
     const middlewares = server.middlewares
     newServer._configServerPort = server._configServerPort
     newServer._currentServerPort = server._currentServerPort
     Object.assign(server, newServer)
 
-    // Keep the same connect instance so app.use(vite.middlewares) works
-    // after a restart in middlewareMode (.route is always '/')
+    // Keep the same connect instance so app.use(vite.middlewares) works 保持相同的连接实例，这样app.use(vite.middleware)才能正常工作
+    // after a restart in middlewareMode (.route is always '/') 在中间件模式下重启后(。路由总是'/')
     middlewares.stack = newServer.middlewares.stack
     server.middlewares = middlewares
 
-    // Rebind internal server variable so functions reference the user server
+    // Rebind internal server variable so functions reference the user server 重新绑定内部服务器变量，以便函数引用用户服务器
     newServer._setInternalServer(server)
   }
 
+  // 获取服务器配置和日志记录器
   const {
     logger,
     server: { port, middlewareMode },
   } = server.config
+  // 如果不是中间件模式，则重新监听指定端口
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
+    // 否则，重新监听热更新
     server.hot.listen()
   }
+  // 记录服务器重启信息
   logger.info('server restarted.', { timestamp: true })
 
+  // 如果存在快捷键设置，则重新绑定快捷键
   if (shortcutsOptions) {
     shortcutsOptions.print = false
     bindCLIShortcuts(server, shortcutsOptions)
@@ -1340,25 +1388,38 @@ async function restartServer(server: ViteDevServer) {
 }
 
 /**
- * Internal function to restart the Vite server and print URLs if changed
+ * Internal function to restart the Vite server and print URLs if changed 重新启动 Vite 服务器并打印 URL（如果更改）的内部函数
+ *
+ * 重启服务器并在URL发生变化时记录日志
+ *
+ * 此函数用于重启服务器并检查重启前后的URL是否发生变化如果发生变化，则记录相应的日志信息
+ * 主要用于开发环境下，当代码发生变化并且需要重启服务器时，能够清晰地反馈服务器状态的变化
+ *
+ * @param server Vite开发服务器实例
+ * @returns 无返回值
  */
 export async function restartServerWithUrls(
   server: ViteDevServer,
 ): Promise<void> {
+  // 检查是否处于中间件模式，如果是，则直接重启服务器
   if (server.config.server.middlewareMode) {
     await server.restart()
     return
   }
 
+  // 提取重启前的服务器端口、主机名和URLs
   const { port: prevPort, host: prevHost } = server.config.server
   const prevUrls = server.resolvedUrls
 
+  // 重启服务器
   await server.restart()
 
+  // 提取重启后的服务器端口、主机名
   const {
     logger,
     server: { port, host },
   } = server.config
+  // 检查重启后的URL是否与之前的不同如果不同，则记录日志并打印新URLs
   if (
     (port ?? DEFAULT_DEV_PORT) !== (prevPort ?? DEFAULT_DEV_PORT) ||
     host !== prevHost ||

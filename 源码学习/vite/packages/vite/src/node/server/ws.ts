@@ -185,6 +185,7 @@ export function createWebSocketServer(
         error: err,
       })
     })
+    // 与客户端建立连接后发送一条消息
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
@@ -263,29 +264,35 @@ export function createWebSocketServer(
     get clients() {
       return new Set(Array.from(wss.clients).map(getSocketClient))
     },
-
+    /** 发送消息 */
     send(...args: any[]) {
-      let payload: HMRPayload
+      let payload: HMRPayload // 定义热模块替换（HMR）的载荷对象
+      // 判断传入的第一个参数是否为字符串，如果是则构建一个自定义事件的载荷
       if (typeof args[0] === 'string') {
         payload = {
           type: 'custom',
           event: args[0],
           data: args[1],
         }
-      } else {
+      }
+      // 否则直接使用传入的参数作为载荷
+      else {
         payload = args[0]
       }
 
+      // 如果是错误类型且没有客户端连接，则缓冲错误信息，避免丢失
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
         return
       }
 
+      // 将载荷对象转换为JSON字符串
       const stringified = JSON.stringify(payload)
+      // 遍历所有WebSocket客户端连接
       wss.clients.forEach((client) => {
-        // readyState 1 means the connection is open
+        // readyState 1 means the connection is open 就绪状态1表示连接是打开的
         if (client.readyState === 1) {
-          client.send(stringified)
+          client.send(stringified) // 发送消息
         }
       })
     },

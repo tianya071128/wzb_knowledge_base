@@ -203,7 +203,12 @@ async function createDepsOptimizer(
     | undefined
 
   async function close() {
+    // 标记为已关闭，防止重复调用
     closed = true
+
+    // 使用Promise.allSettled等待所有操作取消完成
+    // 这里包括发现服务、依赖优化器的扫描处理和优化结果的取消
+    // 使用??操作符来避免undefined的函数调用
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,

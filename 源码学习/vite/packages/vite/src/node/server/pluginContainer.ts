@@ -876,8 +876,10 @@ export async function createPluginContainer(
       }
     },
 
+    // 监听的文件变化
     async watchChange(id, change) {
       const ctx = new Context()
+      // 执行 watchChange 钩子 -- https://cn.rollupjs.org/plugin-development/#watchchange
       await hookParallel(
         'watchChange',
         () => ctx,
@@ -885,16 +887,30 @@ export async function createPluginContainer(
       )
     },
 
+    /**
+     * 异步关闭资源
+     *
+     * 此方法确保在关闭过程中只执行一次关闭操作，并等待所有相关进程结束
+     * 使用Promise.allSettled来等待所有进行中的进程结算，以确保资源正确释放
+     *
+     * @returns {Promise<void>} 表示异步操作完成的Promise对象
+     */
     async close() {
+      // 检查是否已关闭，避免重复关闭操作
       if (closed) return
+      // 设置关闭标志，防止多次调用关闭操作
       closed = true
+      // 使用Promise.allSettled等待所有进行中的进程结束
       await Promise.allSettled(Array.from(processesing))
+      // 创建一个新的上下文对象用于后续操作
       const ctx = new Context()
+      // 调用并行钩子函数'buildEnd'
       await hookParallel(
         'buildEnd',
         () => ctx,
         () => [],
       )
+      // 调用并行钩子函数'closeBundle'
       await hookParallel(
         'closeBundle',
         () => ctx,
