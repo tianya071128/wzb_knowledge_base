@@ -15,38 +15,15 @@
  * @return {number}
  */
 var myPow = function (x, n) {
+  // 递归
   if (n === 0) return 1;
 
-  // 思路: 在于防止精度丢失
+  if (n === 1) return x;
 
-  // 取整
-  function decimal(n) {
-    let base = 1;
-    while (parseInt(n) !== n) {
-      base *= 10;
-      n *= 10;
-    }
+  let abs = Math.abs(n);
+  let res = myPow(x * x, Math.floor(abs / 2)) * (abs % 2 === 1 ? x : 1);
 
-    return {
-      base,
-      n,
-    };
-  }
-  // 乘
-  function multiply(n, n2) {
-    const res1 = decimal(n);
-    const res2 = decimal(n2);
-
-    return (res1.n * res2.n) / (res1.base * res2.base);
-  }
-
-  let isNegative = n < 0;
-  let res = x;
-  for (let index = 1; index < Math.abs(n); index++) {
-    res = multiply(res, x);
-  }
-
-  return isNegative ? 1 / res : res;
+  return n > 0 ? res : 1 / res;
 };
 // @lc code=end
 
@@ -64,3 +41,7 @@ var myPow = function (x, n) {
 // @lcpr case=end
 
  */
+
+// @lcpr-after-debug-begin
+module.exports = myPow;
+// @lcpr-after-debug-end
