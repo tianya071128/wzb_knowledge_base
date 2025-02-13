@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: '知识库'
-  text: '个人学习知识库'
+  text: '个人学习知识库测试'
   # tagline: My great project tagline
   # actions:
   #   - theme: brand
