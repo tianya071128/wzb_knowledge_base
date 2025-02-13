@@ -49,12 +49,12 @@ jobs:
 
       # 上传构建产物（actions/upload-artifact@v3 会上传工作流程中的文件，允许您在作业之间共享数据并在工作流程完成后存储数据）
       - name: Upload build artifacts (上传构建产物)
-        uses: actions/upload-pages-artifact@v3 # 更新到 v3 版本
+        uses: actions/upload-artifact@v4
         with:
-          path: './docs/.vitepress/dist'
+          path: docs/.vitepress/dist
 
       # 9 部署 GitHub Pages
       - name: Deploy to GitHub Pages(部署到 GitHub Pages)
-        uses: actions/deploy-pages@v3
+        uses: peaceiris/actions-gh-pages@v3
       #   with:
       #     token: ${{ secrets.GITHUB_TOKEN }}
