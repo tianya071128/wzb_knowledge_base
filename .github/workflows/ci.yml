@@ -42,7 +42,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs/.vitepress/dist' # 你的构建输出目录
+          path: ./docs/.vitepress/dist # 你的构建输出目录
 
       # 6. (可选) 自动部署到 GitHub Pages
       - name: Deploy to GitHub Pages
