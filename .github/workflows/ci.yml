@@ -6,6 +6,12 @@ on:
   pull_request: # 可选：在 PR 时也触发
     branches: ['main', 'master']
 
+# 必须显式声明 Pages 权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,14 +38,11 @@ jobs:
       - name: Build documentation
         run: npm run docs:build
 
-      # 5. (可选) 上传构建产物
-      # - name: Upload artifact
-      #   if: success()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: vitepress-dist
-      #     path: docs/.vitepress/dist
-      #     retention-days: 1
+      # 5. 上传构建产物
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/.vitepress/dist # 你的构建输出目录
 
       # 6. (可选) 自动部署到 GitHub Pages
       - name: Deploy to GitHub Pages
