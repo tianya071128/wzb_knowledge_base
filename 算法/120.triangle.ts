@@ -10,30 +10,28 @@
 // @lcpr-template-end
 // @lc code=start
 function minimumTotal(triangle: number[][]): number {
-  // 回溯
-  let min = Infinity;
+  // 动态规划
+  // 1. dp 表结构与 triangle 类似
+  const dp = Array(triangle.length)
+    .fill(0)
+    .map<number[]>((item, index) => Array(triangle[index].length).fill(0));
 
-  /**
-   *
-   * @param i 上一行取值的索引
-   * @param rowIndex 上一行的行数
-   * @param n 总和
-   */
-  function dfs(i, rowIndex, total) {
-    // 终止条件: 到达最后一行
-    if (rowIndex === triangle.length - 1) {
-      min = Math.min(min, total);
-      return;
-    }
-
-    // 上一层结点下标 相同或者等于 上一层结点下标 + 1
-    dfs(i, rowIndex + 1, total + triangle[rowIndex + 1][i]);
-    dfs(i + 1, rowIndex + 1, total + triangle[rowIndex + 1][i + 1]);
+  // 2. 初始化 dp 表首项和末尾项
+  for (let i = 0; i < dp.length; i++) {
+    dp[i][0] = triangle[i][0] + (dp[i - 1]?.[0] ?? 0);
+    dp[i][dp[i].length - 1] =
+      (triangle[i].at(-1) ?? 0) + (dp[i - 1]?.at(-1) ?? 0);
   }
 
-  dfs(0, 0, triangle[0][0]);
+  // 3. 状态转移方程
+  // f[i, j] = Min(f[i - 1][j - 1], f[i - 1][j]) + V[i, j]
+  for (let i = 2; i < triangle.length; i++) {
+    for (let j = 1; j < triangle[i].length - 1; j++) {
+      dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j]) + triangle[i][j];
+    }
+  }
 
-  return min;
+  return Math.min(...(dp.at(-1) ?? []));
 }
 // @lc code=end
 
