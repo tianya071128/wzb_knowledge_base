@@ -47,4 +47,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/.vitepress/dist
-          keep_files: true # 保留已有的部署文件
+          destination_dir: ./ # 明确指定部署到根目录
+          force_orphan: true # 确保每次都清空旧内容
+
+      - name: List build output
+        run: ls -la ./docs/.vitepress/dist
+        if: always() # 即使失败也显示目录结构
