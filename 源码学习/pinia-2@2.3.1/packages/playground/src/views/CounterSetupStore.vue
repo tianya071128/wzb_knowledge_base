@@ -17,21 +17,21 @@ const n = ref(0)
 </script>
 
 <template>
-  <h2>Local variables</h2>
+  <h2>本地变量</h2>
 
-  <button @click="n++">Increment local: {{ n }}</button>
+  <button @click="n++">递增本地: {{ n }}</button>
 
-  <h2>Counter Store</h2>
+  <h2>计数器 Store</h2>
 
-  <p>Counter :{{ counter.n }}. Double: {{ counter.double }}</p>
+  <p>计数器 :{{ counter.n }}. 加倍: {{ counter.double }}</p>
 
   <p>
-    Increment the Store <br />
+    增加 Store <br />
 
     <button @click="counter.increment()">+1</button>
     <button @click="counter.increment(10)">+10</button>
     <button @click="counter.increment(100)">+100</button>
-    <button @click="counter.n++">Direct Increment</button>
+    <button @click="counter.n++">直接增量</button>
     <button
       @click="
         counter.$patch((state) => {
@@ -40,15 +40,15 @@ const n = ref(0)
         })
       "
     >
-      Direct patch
+      直接 $patch 修改
     </button>
   </p>
 
   <p>
-    Other actions <br />
+    其他 actions <br />
 
-    <button @click="counter.fail">Fail</button>
-    <button @click="counter.decrementToZero(300)">Decrement to zero</button>
+    <button @click="counter.fail">失败</button>
+    <button @click="counter.decrementToZero(300)">减少到零</button>
     <button @click="counter.changeMe()"><code>counter.changeMe()</code></button>
   </p>
 

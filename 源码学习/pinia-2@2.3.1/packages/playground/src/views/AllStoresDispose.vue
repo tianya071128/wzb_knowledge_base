@@ -1,13 +1,13 @@
 <template>
   <p>
-    I have a store "{{ userStore.name }}". I have
-    {{ cartStore.items.length }} items in the cart.
+    我有一家商店 "{{ userStore.name }}". 我有
+    {{ cartStore.items.length }} 购物车中的物品.
   </p>
   <div>
-    <p>Counter: {{ counterStore.double }} = 2 x {{ counterStore.n }}</p>
-    <button @click="counterStore.increment(10)">Increment</button>
-    <button @click="counterStore.fail()">Fail</button>
-    <button @click="counterStore.decrementToZero(300)">Countdown!</button>
+    <p>计数器: {{ counterStore.double }} = 2 x {{ counterStore.n }}</p>
+    <button @click="counterStore.increment(10)">增量</button>
+    <button @click="counterStore.fail()">失败</button>
+    <button @click="counterStore.decrementToZero(300)">倒数!</button>
   </div>
 </template>
 

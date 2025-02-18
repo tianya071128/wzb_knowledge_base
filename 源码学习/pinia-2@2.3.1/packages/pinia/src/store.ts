@@ -78,22 +78,37 @@ interface MarkedAction<Fn extends _Method = _Method> {
   [ACTION_NAME]: string
 }
 
+/**
+ * 合并两个响应式对象，将 patchToApply 合并到 target 中。
+ * 支持合并普通对象、Map 和 Set 类型。
+ *
+ * @param {T} target - 目标对象，类型可以是普通对象、Map 或 Set。
+ * @param {_DeepPartial<T>} patchToApply - 要应用的补丁对象，类型与目标对象对应且为深度可选。
+ * @returns {T} - 合并后的目标对象。
+ */
 function mergeReactiveObjects<
   T extends Record<any, unknown> | Map<unknown, unknown> | Set<unknown>,
 >(target: T, patchToApply: _DeepPartial<T>): T {
-  // Handle Map instances
+  // Handle Map instances 处理 Map 实例
   if (target instanceof Map && patchToApply instanceof Map) {
+    // 遍历 patchToApply 中的每个键值对，并将其设置到 target 中
     patchToApply.forEach((value, key) => target.set(key, value))
   } else if (target instanceof Set && patchToApply instanceof Set) {
-    // Handle Set instances
+    // Handle Set instances 处理 Set 实例
+    // 遍历 patchToApply 中的每个值，并将其添加到 target 中
     patchToApply.forEach(target.add, target)
   }
 
-  // no need to go through symbols because they cannot be serialized anyway
+  // no need to go through symbols because they cannot be serialized anyway 无需浏览 symbols，因为它们无论如何都不能序列化
+  // 不需要处理 Symbol 类型的属性，因为它们无法被序列化
+  // 遍历 patchToApply 中的每个可枚举属性
   for (const key in patchToApply) {
+    // 检查该属性是否是 patchToApply 对象自身的属性（不是原型链上的属性)
     if (!patchToApply.hasOwnProperty(key)) continue
     const subPatch = patchToApply[key]
     const targetValue = target[key]
+
+    // 如果是对象的话
     if (
       isPlainObject(targetValue) &&
       isPlainObject(subPatch) &&
@@ -101,9 +116,11 @@ function mergeReactiveObjects<
       !isRef(subPatch) &&
       !isReactive(subPatch)
     ) {
-      // NOTE: here I wanted to warn about inconsistent types but it's not possible because in setup stores one might
-      // start the value of a property as a certain type e.g. a Map, and then for some reason, during SSR, change that
-      // to `undefined`. When trying to hydrate, we want to override the Map with `undefined`.
+      // NOTE: here I wanted to warn about inconsistent types but it's not possible because in setup stores one might   注意：在这里，我想警告不一致的类型，但这是不可能的，因为在安装存储中，可能会出现不一致的情况
+      // start the value of a property as a certain type e.g. a Map, and then for some reason, during SSR, change that 将属性的值设置为特定类型，例如Map，然后出于某种原因，在SSR期间更改该值
+      // to `undefined`. When trying to hydrate, we want to override the Map with `undefined`. 变为“未定义”。当试图水合时，我们想用“undefined”覆盖Map。
+
+      // 递归调用 mergeReactiveObjects 合并子对象
       target[key] = mergeReactiveObjects(targetValue, subPatch)
     } else {
       // @ts-expect-error: subPatch is a valid value
@@ -130,7 +147,7 @@ export function skipHydrate<T = any>(obj: T): T {
 }
 
 /**
- * Returns whether a value should be hydrated
+ * Returns whether a value should be hydrated 返回值是否应水合
  *
  * @param obj - target variable
  * @returns true if `obj` should be hydrated
@@ -236,6 +253,9 @@ function createOptionsStore<
   return store as any
 }
 
+/**
+ * 创建一个带有状态、操作和获取器的 setup store
+ */
 function createSetupStore<
   Id extends string,
   SS extends Record<any, unknown>,
@@ -294,9 +314,10 @@ function createSetupStore<
   }
 
   // internal state 内部状态变量
-  let isListening: boolean // set to true at the end
-  let isSyncListening: boolean // set to true at the end
+  let isListening: boolean // set to true at the end 最后设置为true - 用于控制变更状态时是直接变更 $patch 变更
+  let isSyncListening: boolean // set to true at the end 最后设置为true - 用于控制变更状态时是直接变更 $patch 变更
   let subscriptions: SubscriptionCallback<S>[] = []
+  // 当一个 action 即将被调用时之前执行的回调集合
   let actionSubscriptions: StoreOnActionListener<Id, S, G, A>[] = []
   let debuggerEvents: DebuggerEvent[] | DebuggerEvent
 
@@ -317,6 +338,8 @@ function createSetupStore<
 
   const hotState = ref({} as S)
 
+  // $patch: 将一个 state 补丁应用于当前状态。允许传递嵌套值 | 将多个变更分组到一个函数中。
+  // https://pinia.vuejs.org/zh/api/interfaces/pinia._StoreWithState.html#patch
   // avoid triggering too many listeners 避免触发过多的监听器
   // https://github.com/vuejs/pinia/issues/1129
   let activeListener: Symbol | undefined
@@ -329,11 +352,12 @@ function createSetupStore<
   ): void {
     let subscriptionMutation: SubscriptionCallbackMutation<S>
     isListening = isSyncListening = false
-    // reset the debugger events since patches are sync
+    // reset the debugger events since patches are sync 重置调试器事件，因为补丁是同步的
     /* istanbul ignore else */
     if (__DEV__) {
       debuggerEvents = []
     }
+    // 如果是函数形式
     if (typeof partialStateOrMutator === 'function') {
       partialStateOrMutator(pinia.state.value[$id] as UnwrapRef<S>)
       subscriptionMutation = {
@@ -341,8 +365,13 @@ function createSetupStore<
         storeId: $id,
         events: debuggerEvents as DebuggerEvent[],
       }
-    } else {
+    }
+    // 传入值为对象形式
+    else {
+      // 将传入对象合并到 state 中
       mergeReactiveObjects(pinia.state.value[$id], partialStateOrMutator)
+
+      // 构建订阅回调所需的变更信息对象，类型为 patchObject
       subscriptionMutation = {
         type: MutationType.patchObject,
         payload: partialStateOrMutator,
@@ -350,14 +379,20 @@ function createSetupStore<
         events: debuggerEvents as DebuggerEvent[],
       }
     }
+    // 生成一个唯一的监听器 ID，用于确保在异步操作中正确恢复监听
     const myListenerId = (activeListener = Symbol())
     nextTick().then(() => {
+      // 检查当前的活动监听器 ID 是否与之前生成的 ID 相同
       if (activeListener === myListenerId) {
         isListening = true
       }
     })
+
+    // 恢复同步监听
     isSyncListening = true
-    // because we paused the watcher, we need to manually call the subscriptions
+
+    // because we paused the watcher, we need to manually call the subscriptions 因为我们暂停了观察者，所以我们需要手动致电订阅
+    // 手动触发订阅回调，通知所有订阅者状态已发生变更
     triggerSubscriptions(
       subscriptions,
       subscriptionMutation,
@@ -384,11 +419,16 @@ function createSetupStore<
         }
       : noop
 
+  /**
+   * 停止 store 的相关作用域，并从 store 注册表中删除它。
+   *  https://pinia.vuejs.org/zh/api/interfaces/pinia._StoreWithState.html#dispose
+   */
   function $dispose() {
+    // 停止 watch 等的副作用
     scope.stop()
     subscriptions = []
     actionSubscriptions = []
-    pinia._s.delete($id)
+    pinia._s.delete($id) // 从 store 注册表中删除它
   }
 
   /**
@@ -405,19 +445,24 @@ function createSetupStore<
       return fn
     }
 
+    // 对 action 进行封装一层
+    // 主要在 action 执行之前, 执行失败, 执行之后执行相关回调
     const wrappedAction = function (this: any) {
-      setActivePinia(pinia)
+      setActivePinia(pinia) // 设置活跃 Pinia
       const args = Array.from(arguments)
 
       const afterCallbackList: Array<(resolvedReturn: any) => any> = []
       const onErrorCallbackList: Array<(error: unknown) => unknown> = []
+      // 添加 after 执行之后的回调
       function after(callback: _ArrayType<typeof afterCallbackList>) {
         afterCallbackList.push(callback)
       }
+      // 添加当 action 执行失败之后的回调
       function onError(callback: _ArrayType<typeof onErrorCallbackList>) {
         onErrorCallbackList.push(callback)
       }
 
+      // 执行 action 之前的回调，通常为插件执行
       // @ts-expect-error
       triggerSubscriptions(actionSubscriptions, {
         args,
@@ -427,15 +472,18 @@ function createSetupStore<
         onError,
       })
 
+      // 执行 action
       let ret: unknown
       try {
         ret = fn.apply(this && this.$id === $id ? this : store, args)
         // handle sync errors
       } catch (error) {
+        // action 失败之后执行的回调
         triggerSubscriptions(onErrorCallbackList, error)
         throw error
       }
 
+      // 如果 ret 结果值 为 Promise, 等待结果之后执行成功和失败之后的回调
       if (ret instanceof Promise) {
         return ret
           .then((value) => {
@@ -474,9 +522,16 @@ function createSetupStore<
     _p: pinia,
     // _s: scope,
     $id,
+    // 通过调用此方法，可以在一个 action 即将被调用时，添加回调
+    // https://pinia.vuejs.org/zh/api/interfaces/pinia._StoreWithState.html#onaction
     $onAction: addSubscription.bind(null, actionSubscriptions),
     $patch,
     $reset,
+    /**
+     * 设置一个回调，当状态发生变化时被调用:
+     *  - 直接修改状态, store.count++ 时, 会在下面执行 watch
+     *  - 通过 $patch 方法时, 会在 $patch 方法中触发, 此时会根据 isSyncListening 或 isListening 来控制
+     */
     $subscribe(callback, options = {}) {
       const removeSubscription = addSubscription(
         subscriptions,
@@ -558,10 +613,12 @@ function createSetupStore<
       // mark it as a piece of state to be serialized 将其标记为要序列化的状态
       if (__DEV__ && hot) {
         set(hotState.value, key, toRef(setupStore, key))
-        // createOptionStore directly sets the state in pinia.state.value so we
-        // can just skip that
-      } else if (!isOptionsStore) {
-        // in setup stores we must hydrate the state and sync pinia state tree with the refs the user just created
+        // createOptionStore directly sets the state in pinia.state.value so we createOptionStore 直接在 pinia.state.value 中设置状态，因此我们
+        // can just skip that 可以跳过这个
+      }
+      // 当是 组合式state 时
+      else if (!isOptionsStore) {
+        // in setup stores we must hydrate the state and sync pinia state tree with the refs the user just created 在设置存储中，我们必须对状态进行水合处理，并将pinia状态树与用户刚刚创建的ref同步
         if (initialState && shouldHydrate(prop)) {
           if (isRef(prop)) {
             prop.value = initialState[key as keyof UnwrapRef<S>]
@@ -571,7 +628,7 @@ function createSetupStore<
             mergeReactiveObjects(prop, initialState[key])
           }
         }
-        // transfer the ref to the pinia state to keep everything in sync
+        // transfer the ref to the pinia state to keep everything in sync 将ref转换为pinia状态，以保持一切同步
         /* istanbul ignore if */
         if (isVue2) {
           set(pinia.state.value[$id], key, prop)
@@ -1046,12 +1103,13 @@ export function defineStore(
     }
 
     if (__DEV__ && IS_CLIENT) {
+      // 获取当前活跃组件
       const currentInstance = getCurrentInstance()
-      // save stores in instances to access them devtools
+      // save stores in instances to access them devtools 在实例中保存商店，以访问它们
       if (
         currentInstance &&
         currentInstance.proxy &&
-        // avoid adding stores that are just built for hot module replacement
+        // avoid adding stores that are just built for hot module replacement 避免添加仅用于热模块更换的商店
         !hot
       ) {
         const vm = currentInstance.proxy
@@ -1060,7 +1118,7 @@ export function defineStore(
       }
     }
 
-    // StoreGeneric cannot be casted towards Store
+    // StoreGeneric cannot be casted towards Store StoreGeneric 不能转换为 Store
     return store as any
   }
 

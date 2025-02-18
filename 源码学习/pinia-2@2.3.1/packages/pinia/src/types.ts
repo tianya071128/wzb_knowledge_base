@@ -13,6 +13,7 @@ import { Pinia } from './rootStore'
  */
 export type StateTree = Record<PropertyKey, any>
 
+/** 检测一个对象是否为朴素的对象 */
 export function isPlainObject<S extends StateTree>(
   value: S | unknown
 ): value is S
@@ -38,11 +39,11 @@ export type _DeepPartial<T> = { [K in keyof T]?: _DeepPartial<T[K]> }
 
 // TODO: can we change these to numbers?
 /**
- * Possible types for SubscriptionCallback
+ * Possible types for SubscriptionCallback 订阅 SubscriptionCallback 的类型
  */
 export enum MutationType {
   /**
-   * Direct mutation of the state:
+   * Direct mutation of the state: 直接变更
    *
    * - `store.name = 'new name'`
    * - `store.$state.name = 'new name'`
@@ -51,20 +52,20 @@ export enum MutationType {
   direct = 'direct',
 
   /**
-   * Mutated the state with `$patch` and an object
+   * Mutated the state with `$patch` and an object 用“$patch”和一个对象修改了状态
    *
    * - `store.$patch({ name: 'newName' })`
    */
   patchObject = 'patch object',
 
   /**
-   * Mutated the state with `$patch` and a function
+   * Mutated the state with `$patch` and a function 用“$patch”和函数修改状态
    *
    * - `store.$patch(state => state.name = 'newName')`
    */
   patchFunction = 'patch function',
 
-  // maybe reset? for $state = {} and $reset
+  // maybe reset? for $state = {} and $reset 也许重置？对于$state={}和$reset
 }
 
 /**
