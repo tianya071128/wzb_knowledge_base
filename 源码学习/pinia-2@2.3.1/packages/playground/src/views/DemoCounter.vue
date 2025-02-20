@@ -1,15 +1,13 @@
 <template>
-  <h2>Counter Store</h2>
+  <h2>计数器 Store</h2>
 
-  <p>Counter :{{ counter.n }}. Double: {{ counter.double }}</p>
+  <p>计数器 :{{ counter.n }}. 双倍: {{ counter.double }}</p>
 
-  <button @click="counter.n++">Increment</button>
+  <button @click="counter.n++">增量</button>
 
   <hr />
 
-  <p>
-    <code>counter.$state</code>:
-  </p>
+  <p><code>counter.$state</code>:</p>
 
   <pre>{{ counter.$state }}</pre>
 </template>

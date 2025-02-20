@@ -37,9 +37,9 @@ const jokes = useJokes()
 // const jokes = useJokesSetup()
 
 const texts = {
-  loading: 'Fetching the joke...',
-  waiting: 'Wait for it...',
-  ready: 'Another one?',
+  loading: '读取 joke...',
+  waiting: '等待中...',
+  ready: '另一个?',
 }
 
 const state = ref<'waiting' | 'loading' | 'ready'>('waiting')

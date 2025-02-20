@@ -1,9 +1,9 @@
 <template>
   <section>
-    <h2>Nasa Picture of the day</h2>
+    <h2>NASA 今天的图片</h2>
 
     <section class="py-4 text-center date-selector">
-      <button @click="decrementDay(currentDate)">Previous Day</button>
+      <button @click="decrementDay(currentDate)">前一天</button>
       <p class="inline-block mx-2">
         <input type="date" v-model="currentDate" />
       </p>
@@ -11,7 +11,7 @@
         @click="incrementDay(currentDate)"
         :disabled="currentDate >= today"
       >
-        Next Day
+        下一天
       </button>
     </section>
 

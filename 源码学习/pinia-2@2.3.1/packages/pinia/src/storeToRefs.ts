@@ -79,29 +79,33 @@ export type StoreToRefs<SS extends StoreGeneric> =
     : never
 
 /**
- * Creates an object of references with all the state, getters, and plugin-added
- * state properties of the store. Similar to `toRefs()` but specifically
- * designed for Pinia stores so methods and non reactive properties are
+ * Creates an object of references with all the state, getters, and plugin-added 创建一个引用对象，包含 store 的所有 state、 getter 和 plugin 添加的 state 属性。
+ * state properties of the store. Similar to `toRefs()` but specifically 类似于`toRefs（）`，
+ * designed for Pinia stores so methods and non reactive properties are 但专为 Pinia store 设计，所以 method 和非响应式属性会被完全忽略。
  * completely ignored.
- *
+ *  https://pinia.vuejs.org/zh/api/modules/pinia.html#storetorefs
  * @param store - store to extract the refs from
  */
 export function storeToRefs<SS extends StoreGeneric>(
   store: SS
 ): StoreToRefs<SS> {
   // See https://github.com/vuejs/pinia/issues/852
-  // It's easier to just use toRefs() even if it includes more stuff
+  // It's easier to just use toRefs() even if it includes more stuff 即使 toRefs（）包含更多内容，也更容易使用
   if (isVue2) {
     // @ts-expect-error: toRefs include methods and others
     return toRefs(store)
   } else {
+    // 获取存储的原始对象，避免响应式代理带来的影响
     const rawStore = toRaw(store)
 
     const refs = {} as StoreToRefs<SS>
     for (const key in rawStore) {
       const value = rawStore[key]
-      // There is no native method to check for a computed
+      // There is no native method to check for a computed 没有本机方法可以检查计算的
       // https://github.com/vuejs/core/pull/4165
+
+      // 由于没有原生方法来检查一个属性是否为计算属性
+      // 通过检查属性是否有 effect 来判断它是否为计算属性
       if (value.effect) {
         // @ts-expect-error: too hard to type correctly
         refs[key] =
@@ -113,6 +117,7 @@ export function storeToRefs<SS extends StoreGeneric>(
             },
           })
       } else if (isRef(value) || isReactive(value)) {
+        // 建立链接
         // @ts-expect-error: the key is state or getter
         refs[key] =
           // ---

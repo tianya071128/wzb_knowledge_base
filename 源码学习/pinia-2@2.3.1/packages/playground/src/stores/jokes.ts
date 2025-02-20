@@ -12,13 +12,13 @@ export const useJokes = defineStore('jokes', {
     async fetchJoke() {
       if (
         this.current &&
-        // if the request below fails, avoid adding it twice
+        // if the request below fails, avoid adding it twice 如果下面的请求失败，请避免添加两次
         !this.jokes.includes(this.current)
       ) {
         this.jokes.push(this.current)
       }
 
-      // NOTE: Avoid patching an object because it's recursive
+      // NOTE: Avoid patching an object because it's recursive 避免修补对象，因为它是递归的
       // this.$patch({ current: await getRandomJoke() })
       this.current = await getRandomJoke()
     },

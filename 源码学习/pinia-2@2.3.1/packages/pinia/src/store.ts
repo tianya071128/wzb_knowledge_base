@@ -612,6 +612,7 @@ function createSetupStore<
     if ((isRef(prop) && !isComputed(prop)) || isReactive(prop)) {
       // mark it as a piece of state to be serialized 将其标记为要序列化的状态
       if (__DEV__ && hot) {
+        // 如果是 hot 下, 在值添加到 hotState 中
         set(hotState.value, key, toRef(setupStore, key))
         // createOptionStore directly sets the state in pinia.state.value so we createOptionStore 直接在 pinia.state.value 中设置状态，因此我们
         // can just skip that 可以跳过这个
@@ -722,12 +723,22 @@ function createSetupStore<
   // add the hotUpdate before plugins to allow them to override it 在插件之前添加hotupdate，以允许它们覆盖它
   /* istanbul ignore else */
   if (__DEV__) {
+    /**
+     * hot 更新方法
+     *  调用者 store 为旧的 store, 但是里面的数据是最新的
+     *  newStore: 最新的 store, 但是里面的数据是初始值, 因为是根据新模块重新创建的 store
+     */
     store._hotUpdate = markRaw((newStore) => {
-      store._hotUpdating = true
+      store._hotUpdating = true // 标识正在 hot 更新
+
+      // 类似于 ['n', 'incrementedTimes', 'decrementedTimes', 'numbers']
+      // 只对数据进行处理，计算属性以及action在这里不做处理
       newStore._hmrPayload.state.forEach((stateKey) => {
         if (stateKey in store.$state) {
-          const newStateTarget = newStore.$state[stateKey]
-          const oldStateSource = store.$state[stateKey as keyof UnwrapRef<S>]
+          const newStateTarget = newStore.$state[stateKey] // 新的 state 对应 key 的值
+          const oldStateSource = store.$state[stateKey as keyof UnwrapRef<S>] // 旧的
+
+          // 如果是对象的话, 则比对对象处理
           if (
             typeof newStateTarget === 'object' &&
             isPlainObject(newStateTarget) &&
@@ -739,19 +750,20 @@ function createSetupStore<
             newStore.$state[stateKey] = oldStateSource
           }
         }
-        // patch direct access properties to allow store.stateProperty to work as
+        // patch direct access properties to allow store.stateProperty to work as 补丁直接访问属性允许 Store.StateProperty 作为工作
         // store.$state.stateProperty
         set(store, stateKey, toRef(newStore.$state, stateKey))
       })
 
-      // remove deleted state properties
+      // remove deleted state properties 删除已删除的状态属性
       Object.keys(store.$state).forEach((stateKey) => {
         if (!(stateKey in newStore.$state)) {
           del(store, stateKey)
         }
       })
 
-      // avoid devtools logging this as a mutation
+      // avoid devtools logging this as a mutation 避免将其记录为突变
+      // 将 isListening、isSyncListening 置为 false, 这样的话, 即使更新 state, 也不会触发更新回调
       isListening = false
       isSyncListening = false
       pinia.state.value[$id] = toRef(newStore._hmrPayload, 'hotState')
@@ -760,13 +772,15 @@ function createSetupStore<
         isListening = true
       })
 
+      // 处理 action
       for (const actionName in newStore._hmrPayload.actions) {
         const actionFn: _Method = newStore[actionName]
 
         set(store, actionName, action(actionFn, actionName))
       }
 
-      // TODO: does this work in both setup and option store?
+      // TODO: does this work in both setup and option store? 这在设置和选项商店中是否有效?
+      // 处理  Getter 选项
       for (const getterName in newStore._hmrPayload.getters) {
         const getter: _Method = newStore._hmrPayload.getters[getterName]
         const getterValue = isOptionsStore
@@ -780,21 +794,21 @@ function createSetupStore<
         set(store, getterName, getterValue)
       }
 
-      // remove deleted getters
+      // remove deleted getters 删除已删除的Getters
       Object.keys(store._hmrPayload.getters).forEach((key) => {
         if (!(key in newStore._hmrPayload.getters)) {
           del(store, key)
         }
       })
 
-      // remove old actions
+      // remove old actions 删除已删除的 actions
       Object.keys(store._hmrPayload.actions).forEach((key) => {
         if (!(key in newStore._hmrPayload.actions)) {
           del(store, key)
         }
       })
 
-      // update the values used in devtools and to allow deleting new properties later on
+      // update the values used in devtools and to allow deleting new properties later on 更新DevTools中使用的值，并允许以后删除新属性
       store._hmrPayload = newStore._hmrPayload
       store._getters = newStore._getters
       store._hotUpdating = false
@@ -1088,16 +1102,19 @@ export function defineStore(
     }
 
     const store: StoreGeneric = pinia._s.get(id)!
-
+    // 开发环境下, 如果是 HMR 的, 走这个逻辑
     if (__DEV__ && hot) {
+      // 重建一个 Store, id标识加上特殊标识
       const hotId = '__hot:' + id
       const newStore = isSetupStore
         ? createSetupStore(hotId, setup, options, pinia, true)
         : createOptionsStore(hotId, assign({}, options) as any, pinia, true)
 
+      // 调用 _hotUpdate 方法更新旧的 store
       hot._hotUpdate(newStore)
 
-      // cleanup the state properties and the store from the cache
+      // 使用完后将其销毁
+      // cleanup the state properties and the store from the cache 清理状态属性和从缓存中的商店
       delete pinia.state.value[hotId]
       pinia._s.delete(hotId)
     }
