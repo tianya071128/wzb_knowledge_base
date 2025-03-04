@@ -6,7 +6,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.12.7",
+    "@types/node": "^20.17.22",
     "vitepress": "^1.1.0"
   },
   "scripts": {
@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "element-plus": "^2.6.3",
+    "koa": "^2.16.0",
+    "koa-router": "^13.0.1",
     "medium-zoom": "^1.1.0"
   }
 }
