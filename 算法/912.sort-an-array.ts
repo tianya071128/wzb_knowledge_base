@@ -86,44 +86,188 @@
 /**
  * 快速排序: 基于分治策略的排序算法。选择数组中的某个元素作为“基准数”，将所有小于基准数的元素移到其左侧，而大于基准数的元素移到其右侧。
  */
+// function sortArray(nums: number[]): number[] {
+//   /**
+//    * 1. 选取数组最左端元素作为基准数，初始化两个指针 i 和 j 分别指向数组的两端。
+//    * 2. 设置一个循环，在每轮中使用 i（j）分别寻找第一个比基准数大（小）的元素，然后交换这两个元素。
+//    * 3. 循环执行步骤 2. ，直到 i 和 j 相遇时停止，最后将基准数交换至两个子数组的分界线。
+//    * 4. 得到未排序的左子数组和右子数组。
+//    * 5. 然后，对左子数组和右子数组分别递归执行“哨兵划分”。
+//    * 6. 持续递归，直至子数组长度为 1 时终止，从而完成整个数组的排序。
+//    */
+//   let temp = 0;
+//   /** 交换元素 */
+//   function swap(left: number, right: number) {
+//     temp = nums[left];
+//     nums[left] = nums[right];
+//     nums[right] = temp;
+//   }
+
+//   /** 哨兵划分: 执行一轮 */
+//   function partition(left: number, right: number) {
+//     let baseIndex = left;
+//     let base = nums[baseIndex];
+
+//     while (right > left) {
+//       // 从 [left + 1, right] 两端分别寻找第一个比基准数大（小）的元素，然后交换这两个元素。
+//       // 先从右边开始找到第一个比基准数小的元素
+//       while (right >= left) {
+//         // 找到了比基准数小的元素
+//         if (nums[right] <= base) break;
+//         right--;
+//       }
+
+//       // 从左边开始找第一个比基准数大的元素
+//       while (left < right) {
+//         if (nums[left] > base) break;
+
+//         left++;
+//       }
+
+//       // 交互元素
+//       if (left < right) {
+//         swap(left, right);
+//       }
+//     }
+
+//     // 交换基准元素
+//     if (left !== baseIndex) {
+//       swap(baseIndex, left);
+//     }
+
+//     return left;
+//   }
+
+//   /** 排序: 递归执行 */
+//   function quickSort(left: number, right: number) {
+//     // 结束条件
+//     if (left >= right) return;
+
+//     // 找到基准数的位置
+//     const baseIndex = partition(left, right);
+
+//     // 分治左侧
+//     quickSort(left, baseIndex - 1);
+//     // 分治右侧
+//     quickSort(baseIndex + 1, right);
+//   }
+
+//   quickSort(0, nums.length - 1);
+//   return nums;
+// }
+
+/**
+ * 归并排序:
+ *  划分阶段：通过递归不断地将数组从中点处分开，将长数组的排序问题转换为短数组的排序问题。
+ *  合并阶段：当子数组长度为 1 时终止划分，开始合并，持续地将左右两个较短的有序数组合并为一个较长的有序数组，直至结束。
+ */
+// function sortArray(nums: number[]): number[] {
+//   function merge(nums: number[]) {
+//     if (nums.length === 1) return nums;
+
+//     // 划分阶段
+//     let mid = Math.floor((nums.length - 1) / 2);
+//     let left = merge(nums.slice(0, mid + 1));
+//     let right = merge(nums.slice(mid + 1));
+
+//     // 合并阶段
+//     let ans: number[] = [],
+//       i = 0,
+//       j = 0;
+//     while (i < left.length || j < right.length) {
+//       if ((left[i] ?? Infinity) <= (right[j] ?? Infinity)) {
+//         ans.push(left[i]);
+//         i++;
+//       } else {
+//         ans.push(right[j]);
+//         j++;
+//       }
+//     }
+
+//     return ans;
+//   }
+
+//   return merge(nums);
+// }
+
+/**
+ * 桶排序: 分治策略的一个典型应用 --> 排序的关键是如何划分桶, 以及快速定位到桶
+ *  1. 通过设置一些具有大小顺序的桶，每个桶对应一个数据范围，将数据平均分配到各个桶中
+ *  2. 在每个桶内部分别执行排序
+ *  3. 最终按照桶的顺序将所有数据合并
+ */
+// function sortArray(nums: number[]): number[] {
+//   // 找出最大值和最小值
+//   const max = Math.max(...nums),
+//     min = Math.min(...nums),
+//     // 桶的数量
+//     bucketCount = Math.max(Math.floor(nums.length / 2), 1),
+//     // 桶的大小
+//     bucketSize = Math.ceil(((max - min) / bucketCount) * 100) / 100,
+//     bucket = new Array(bucketCount).fill(0).map<number[]>((item) => []);
+
+//   // 分配桶
+//   for (const item of nums) {
+//     bucket[
+//       bucketSize === 0 || item === min
+//         ? 0
+//         : Math.ceil((item - min) / bucketSize) - 1
+//     ].push(item);
+//   }
+
+//   // 排序桶
+//   for (const item of bucket) {
+//     item.sort((a, b) => a - b);
+//   }
+
+//   // 合并桶
+//   return bucket.reduce((total, item) => [...total, ...item]);
+// }
+
+/**
+ * 计数排序: 只适合整数数组
+ *  1. 找出最大值, 然后创建创建一个长度为 max + 1 的辅助数组 counter 。
+ *  2. 借助 counter 统计 nums 中各数字的出现次数
+ *  3. 由于 counter 的各个索引天然有序，因此相当于所有数字已经排序好了
+ *
+ * 局限性:
+ *  1. 计数排序只适用于非负整数，将负数往辅助数组最后添加
+ *  2. 计数排序适用于数据量大但数据范围较小的情况
+ */
 function sortArray(nums: number[]): number[] {
-  /**
-   * 1. 选取数组最左端元素作为基准数，初始化两个指针 i 和 j 分别指向数组的两端。
-   * 2. 设置一个循环，在每轮中使用 i（j）分别寻找第一个比基准数大（小）的元素，然后交换这两个元素。
-   * 3. 循环执行步骤 2. ，直到 i 和 j 相遇时停止，最后将基准数交换至两个子数组的分界线。
-   * 4. 得到未排序的左子数组和右子数组。
-   * 5. 然后，对左子数组和右子数组分别递归执行“哨兵划分”。
-   * 6. 持续递归，直至子数组长度为 1 时终止，从而完成整个数组的排序。
-   */
+  const max = Math.max(...nums);
+  const min = Math.min(...nums);
+  const list = Array<number>(max + (min < 0 ? -min : 0) + 1).fill(0);
 
-  /** 哨兵划分: 执行一轮 */
-  function partition(left, right) {
-    let base = nums[left];
+  for (const item of nums) {
+    list[item < 0 ? max - item : item]++;
+  }
 
-    while (right > left) {
-      // 从 [left + 1, right] 两端分别寻找第一个比基准数大（小）的元素，然后交换这两个元素。
-      // 先从右边开始找到第一个比基准数小的元素
-      while (right >= left) {}
+  let cur = 0;
+  // 先处理负数
+  for (let i = list.length - 1; i > max; i--) {
+    for (let j = 0; j < list[i]; j++) {
+      nums[cur++] = max - i;
+    }
+  }
+  // 处理整数
+  for (let i = 0; i <= max; i++) {
+    for (let j = 0; j < list[i]; j++) {
+      nums[cur++] = i;
     }
   }
 
-  /** 排序: 递归执行 */
-  function quickSort(left, right) {
-    // 结束条件
-    if (left >= right) return;
-
-    // 找到基准数的位置
-    const baseIndex = partition(left, right);
-  }
-
-  quickSort(0, nums.length - 1);
   return nums;
 }
 // @lc code=end
 
 /*
 // @lcpr case=start
-// [5,2,3,1]\n
+// [5, 3, 1, 2]\n
+// @lcpr case=end
+
+// @lcpr case=start
+// [-5, 3, -1, -2]\n
 // @lcpr case=end
 
 // @lcpr case=start
