@@ -27,12 +27,31 @@ var isIsomorphic = function (s, t) {
    *      |||
    *      add
    */
+  // 双向都要同一映射
+  const cache = {};
+  const reverseCache = {};
+
+  for (let i = 0; i < s.length; i++) {
+    const sub1 = s[i];
+    const sub2 = t[i];
+
+    if (
+      (cache[sub1] && cache[sub1] !== sub2) ||
+      (reverseCache[sub2] && reverseCache[sub2] !== sub1)
+    )
+      return false;
+
+    cache[sub1] = sub2;
+    reverseCache[sub2] = sub1;
+  }
+
+  return true;
 };
 // @lc code=end
 
 /*
 // @lcpr case=start
-// "egg"\n"add"\n
+// "badc"\n"baba"\n
 // @lcpr case=end
 
 // @lcpr case=start
