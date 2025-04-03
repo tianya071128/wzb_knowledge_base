@@ -66,6 +66,7 @@ const nav: DefaultTheme.NavItem[] = [
         activeMatch: '/devtools/',
       },
       { text: '正则表达式', link: '/reg/home.html', activeMatch: '/reg/' },
+      { text: '算法', link: '/algo/home.html', activeMatch: '/algo/' },
     ],
   },
 ];
