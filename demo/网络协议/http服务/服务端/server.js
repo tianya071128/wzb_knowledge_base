@@ -8,6 +8,12 @@ const router = new Router();
 router.get('/', async (ctx) => {
   ctx.body = 'Home Page';
 });
+
+router.get('/401', async (ctx) => {
+  ctx.status = 401;
+  ctx.set('www-authenticate', 'Basic realm="Usagidesign Auth');
+  ctx.body = 'Home Page';
+});
 // #endregion
 
 app.use(router.routes());

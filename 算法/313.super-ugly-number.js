@@ -1,8 +1,8 @@
 /*
- * @lc app=leetcode.cn id=264 lang=javascript
+ * @lc app=leetcode.cn id=313 lang=javascript
  * @lcpr version=30204
  *
- * [264] 丑数 II
+ * [313] 超级丑数
  */
 
 // @lcpr-template-start
@@ -11,13 +11,13 @@
 // @lc code=start
 /**
  * @param {number} n
+ * @param {number[]} primes
  * @return {number}
  */
-var nthUglyNumber = function (n) {
+var nthSuperUglyNumber = function (n, primes) {
   // 照抄至: https://leetcode.cn/problems/ugly-number-ii/solutions/712102/chou-shu-ii-by-leetcode-solution-uoqd/
   // 稍做修改
-  let primes = [2, 3, 5],
-    p = [0, 0, 0], // 对应的指数
+  let p = primes.map((item) => 0), // 对应的指数
     ans = [1];
 
   for (let i = 1; i <= n; i++) {
@@ -39,15 +39,11 @@ var nthUglyNumber = function (n) {
 
 /*
 // @lcpr case=start
-// 15\n
+// 12\n[2,7,13,19]\n
 // @lcpr case=end
 
 // @lcpr case=start
-// 1\n
+// 1\n[2,3,5]\n
 // @lcpr case=end
 
  */
-
-// @lcpr-after-debug-begin
-module.exports = nthUglyNumber;
-// @lcpr-after-debug-end
