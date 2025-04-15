@@ -735,6 +735,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '抓包分析',
           link: 'capture',
         },
+        {
+          text: 'HTTPS 问题',
+          link: 'issue',
+        },
       ],
     },
   ],
