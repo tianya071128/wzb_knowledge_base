@@ -43,6 +43,11 @@ const nav: DefaultTheme.NavItem[] = [
         link: '/browserslist/home.html',
         activeMatch: '/browserslist/',
       },
+      {
+        text: 'pnpm',
+        link: '/pnpm/home.html',
+        activeMatch: '/pnpm/',
+      },
       // { text: '其他', link: '/otherEngineering/' },
     ],
   },

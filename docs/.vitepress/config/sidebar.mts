@@ -463,6 +463,17 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/pnpm/': [
+    {
+      base: '/pnpm/',
+      items: [
+        {
+          text: '介绍',
+          link: 'home',
+        },
+      ],
+    },
+  ],
   '/npm/': [
     {
       base: '/npm/',

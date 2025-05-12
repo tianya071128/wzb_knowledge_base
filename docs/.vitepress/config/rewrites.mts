@@ -116,6 +116,7 @@ const rewrites: Record<string, string> = {
   '02_工程化/06_npm/35_命令_test_运行test脚本.md': 'npm/npm-test.md',
   '02_工程化/06_npm/36_命令_start_运行start脚本.md': 'npm/npm-start.md',
   '02_工程化/06_npm/37_命令_stop_运行stop脚本.md': 'npm/npm-stop.md',
+  '02_工程化/10_pnpm/01_pnpm.md': 'pnpm/home.md',
   '02_工程化/01_vscode/01_设置.md': 'vscode/home.md',
   '02_工程化/01_vscode/02_概述.md': 'vscode/summary.md',
   '02_工程化/01_vscode/03_调试.md': 'vscode/debug.md',
