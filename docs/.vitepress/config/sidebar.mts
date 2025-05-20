@@ -471,6 +471,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '介绍',
           link: 'home',
         },
+        {
+          text: '工作空间（Workspace）',
+          link: 'workspaces',
+        },
       ],
     },
   ],
