@@ -32,7 +32,7 @@ const nav: DefaultTheme.NavItem[] = [
         link: '/vscode/home.html',
         activeMatch: '/vscode/',
       },
-      { text: 'webpack', link: '/webpack/' },
+      { text: 'webpack', link: '/webpack/home.html', activeMatch: '/webpack/' },
       {
         text: 'prettier',
         link: '/prettier/home.html',
