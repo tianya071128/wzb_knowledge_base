@@ -180,5 +180,8 @@ const rewrites: Record<string, string> = {
   '04_更多/03_正则/02_元字符.md': 'reg/metachar.md',
   '04_更多/03_正则/03_使用正则.md': 'reg/use.md',
   '04_更多/04_算法/01_index.md': 'algo/home.md',
+  '04_更多/05_ts/01_index.md': 'ts/home.md',
+  '04_更多/05_ts/02_types.md': 'ts/types.md',
+  '04_更多/05_ts/03_lib.md': 'ts/lib.md',
 };
 export default rewrites;

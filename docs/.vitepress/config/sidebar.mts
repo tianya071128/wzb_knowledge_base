@@ -953,6 +953,25 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/ts/': [
+    {
+      base: '/ts/',
+      items: [
+        {
+          text: '介绍',
+          link: 'home',
+        },
+        {
+          text: '@types',
+          link: 'types',
+        },
+        {
+          text: 'lib:内置声明文件',
+          link: 'lib',
+        },
+      ],
+    },
+  ],
 };
 
 export default sidebar;
