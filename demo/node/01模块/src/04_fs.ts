@@ -4,6 +4,8 @@
 import path, { dirname, join } from 'node:path';
 import fsPromise from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { createServer } from 'node:http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -252,4 +254,72 @@ try {
 //   console.error('打开文件操作过程中异常', e);
 // }
 
+// #endregion
+
+// #region ------------ 读取流和写入流 ------------
+/**
+ * 读取文件流: 以流（Stream）的方式读取文件
+ *  - 与传统的 fs.readFile 一次性读取整个文件不同，流读取会将文件分成多个小块（chunk），逐块处理，特别适合处理大文件
+ *  - 如果不监听 data 事件，文件仍然会被读取，但数据不会被消费（processed）。
+ *     - 不监听 data 事件：流会保持在暂停模式，数据会累积在缓冲区中。
+ *     - 若缓冲区满（达到 highWaterMark），流会暂停读取，直到缓冲区被消费。
+ */
+{
+  // 创建可读流
+  // const readStream = createReadStream(join(__dirname, '../public/test.json'), {
+  //   encoding: 'utf8', // 字符编码（可选）
+  //   highWaterMark: 64 * 1024, // 缓冲区大小（默认 64KB）
+  // });
+  // // 监听数据事件（每次读取一个 chunk）
+  // readStream.on('data', (chunk) => {
+  //   console.log(chunk);
+  //   console.log(`读取了 ${chunk.length} 字节`);
+  //   // 处理数据（如写入另一个流、解析 JSON 等）
+  // });
+  // // 监听读取完成事件
+  // readStream.on('end', () => {
+  //   console.log('文件读取完成');
+  // });
+  // // 监听错误事件
+  // readStream.on('error', (err) => {
+  //   console.error('读取文件时出错:', err);
+  // });
+}
+
+/**
+ * 文件写入流: 以流（Stream）的方式写入文件
+ *  - 与传统的 fs.writeFile 一次性写入整个文件不同，流写入允许你分块写入数据，特别适合处理大文件或需要逐步生成的内容。
+ */
+{
+  // 创建可写流
+  const writeStream = createWriteStream(
+    join(__dirname, '../public/writeStream.txt'),
+    {
+      encoding: 'utf8', // 字符编码（可选）
+      highWaterMark: 16 * 1024, // 缓冲区大小（默认 16KB）
+      /**
+       * 默认从头开始写入
+       * 可设置为 'a' --> 表示追加文件模式
+       */
+      flags: 'a', // 文件打开标志（默认 'w' 表示写入）
+    }
+  );
+
+  // 写入数据
+  writeStream.write('第一行数据\n');
+  writeStream.write('第二行数据\n');
+
+  // 标记写入完成
+  writeStream.end('最后一行数据\n');
+
+  // 监听完成事件
+  writeStream.on('finish', () => {
+    console.log('文件写入完成');
+  });
+
+  // 监听错误事件
+  writeStream.on('error', (err) => {
+    console.error('写入文件时出错:', err);
+  });
+}
 // #endregion
