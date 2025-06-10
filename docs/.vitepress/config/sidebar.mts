@@ -979,6 +979,10 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'home',
         },
         {
+          text: '模块',
+          link: 'modules',
+        },
+        {
           text: '@types',
           link: 'types',
         },

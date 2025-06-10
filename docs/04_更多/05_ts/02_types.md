@@ -27,6 +27,24 @@ import * as $ from 'jquery'; // 此时 ts 就知道 $ 的类型定义
 
 `compilerOptions.types` 用于**精确控制全局类型声明的加载范围**。它的主要作用是限制 TypeScript 编译器自动包含的类型包（`@types`），从而优化编译性能并避免类型冲突。
 
+### 语法
+
+**注意: **一般资料上都说 **只能指定包名，不能指定具体文件路径**，但实测可以指定文件路径，也是奇了怪
+
+```json
+{
+  "compilerOptions": {
+    // 会自动在 typeRoots 配置的文件夹, 默认为 node_modules/@types
+    "types": ["node", "jest", "express"],
+      
+     // 也可以指定文件路径, 实测是有效的, 不知道是为什么, 难道是版本(测试版本为 5.8.3)更新问题?
+     "types": ["./test"] // test.d.ts 文件
+  }
+}
+```
+
+
+
 ### 核心作用
 
 1. **缩小类型扫描范围**
