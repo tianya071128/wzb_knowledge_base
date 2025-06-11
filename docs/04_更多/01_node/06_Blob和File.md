@@ -133,4 +133,47 @@
   });
   ```
 
-### blob
+### 实例属性
+
+#### blob.size: 总大小
+
+* **blob.size**: `Blob` 的总大小（以字节为单位）。
+
+#### blob.type: 内容类型
+
+* **blob.type**: `Blob` 的内容类型。
+
+
+
+## File 类
+
+在 Node.js 中，**`File` 类是[浏览器 `File API` ](https://developer.mozilla.org/zh-CN/docs/Web/API/File)的服务器端实现**，用于表示文件对象。它继承自 `Blob`，并添加了与文件系统相关的元数据（如文件名、修改时间）。
+
+### 核心作用
+
+1. **继承了 Blob 的方法**: 支持流式处理、切片等操作，适合大文件处理
+2. **模拟浏览器文件对象**：使 Node.js 能够处理与浏览器一致的文件 API，便于编写跨平台代码。
+3. **文件元数据管理**：提供文件名、大小、修改时间等属性，无需直接访问文件系统。
+
+### 创建 File
+
+在 Node.js 中，`new buffer.File()` 用于创建 `File` 的构造函数。
+
+* **语法**: `new buffer.File(sources, fileName[, options])`
+
+  * **作用**: 创建 File 对象
+  * **参数**: 
+    * **sources（必需）**: 一个数组，文件内容的数据源，会按顺序合并为文件内容。包含字符串、`Buffer`、`Uint8Array` 或其他 `Blob` 对象
+    * **fileName（必需）**：文件的名称（包含扩展名），用于元数据。
+    * **`options`（可选）**：
+      * **type**：文件的 MIME 类型（小写），默认值为空字符串。
+      * **lastModified**：文件的最后修改时间，默认值为当前时间。
+
+  
+
+
+
+
+
+
+

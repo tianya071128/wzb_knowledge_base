@@ -803,6 +803,10 @@ const sidebar: DefaultTheme.Sidebar = {
             },
           ],
         },
+        {
+          text: 'events 事件触发器',
+          link: 'events',
+        },
       ],
     },
   ],

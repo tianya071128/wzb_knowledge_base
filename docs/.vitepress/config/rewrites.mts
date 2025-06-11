@@ -145,6 +145,7 @@ const rewrites: Record<string, string> = {
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/05_buffer.md': 'node/buffer.md',
   '04_更多/01_node/06_Blob和File.md': 'node/blobAndFile.md',
+  '04_更多/01_node/07_events.md': 'node/events.md',
   '04_更多/02_开发者工具/01_index.md': 'devtools/home.md',
   '04_更多/02_开发者工具/07_元素.md': 'devtools/element.md',
   '04_更多/02_开发者工具/08_样式.md': 'devtools/style.md',
