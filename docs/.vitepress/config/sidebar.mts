@@ -994,6 +994,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'lib:内置声明文件',
           link: 'lib',
         },
+        {
+          text: '声明文件:.d.ts',
+          link: 'declaration',
+        },
       ],
     },
   ],

@@ -9,25 +9,58 @@
 1. **实现高效的事件发布 - 订阅模式**
 2. **模块间通信**: 实现不同模块间的松耦合交互。
 
+## 类：`EventEmitter`
 
+`EventEmitter` 是 Node.js 中实现**事件驱动编程**的核心类，它基于**发布 - 订阅模式**（Publish-Subscribe Pattern），允许对象之间通过事件进行松耦合通信。
 
+### 创建 EventEmitter 实例
 
+* **语法**: `new EventEmitter([options])`
+  * **参数**:
+    * `options`: 可选
+      * `captureRejections`: 用于捕获对 `promise `的拒绝
 
+### 事件监听方法
 
+#### emitter.on
 
+#### emitter.once
 
+#### emitter.prependListener
 
+#### emitter.prependOnceListener
 
+### 事件触发方法
 
+#### emit
 
+### 事件移除方法
 
+#### removeListener
 
+#### removeAllListeners
 
+### 事件查询方法
 
+#### listeners
 
+#### listenerCount
 
+#### eventNames
 
+### 高级控制方法
 
+#### setMaxListeners
+
+#### getMaxListeners
+
+### 内置事件
+
+#### 事件：'newListener'
+
+#### 事件：'removeListener'
+
+#### 事件：'error'
 
 
 

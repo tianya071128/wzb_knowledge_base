@@ -585,12 +585,127 @@ declare function PromiseAll<T extends readonly unknown[]>(
    */
 
   // 示例
-  type capitalized = Capitalize<'hello world'>; // expected to be 'Hello world'
+  type capitalized = MyCapitalize<''>; // expected to be 'Hello world'
+
+  /**
+   * 实现
+   *  1. 提取出第一个字母
+   *  2. 将第一个字母转为大写
+   */
+  // 小写字母到大写字母的映射
+  interface CapitalizeMap {
+    a: 'A';
+    b: 'B';
+    c: 'C';
+    d: 'D';
+    e: 'E';
+    f: 'F';
+    g: 'G';
+    h: 'H';
+    i: 'I';
+    j: 'J';
+    k: 'K';
+    l: 'L';
+    m: 'M';
+    n: 'N';
+    o: 'O';
+    p: 'P';
+    q: 'Q';
+    r: 'R';
+    s: 'S';
+    t: 'T';
+    u: 'U';
+    v: 'V';
+    w: 'W';
+    x: 'X';
+    y: 'Y';
+    z: 'Z';
+  }
+  type SingleCapitalize<S extends string> = S extends keyof CapitalizeMap
+    ? CapitalizeMap[S]
+    : S;
+  type MyCapitalize<S extends string> = S extends `${infer P}${infer O}`
+    ? `${SingleCapitalize<P>}${O}`
+    : S;
+}
+
+// #endregion
+
+// #region ------------ 25. CapitalizeWords<T> ------------
+{
+  /**
+   * 题目: 实现CapitalizeWords<T>，它将字符串的每个单词的第一个字母转换为大写，其余部分保持原样。
+   */
+
+  // 示例:
+  type capitalized = CapitalizeWords<'foo bar.hello,world'>; // 预期为 'Hello World, My Friends'
 
   /**
    * 实现
    */
-  type MyCapitalize<S extends string> = any;
+  type IsLetter =
+    | 'a'
+    | 'b'
+    | 'c'
+    | 'd'
+    | 'e'
+    | 'f'
+    | 'g'
+    | 'h'
+    | 'i'
+    | 'j'
+    | 'k'
+    | 'l'
+    | 'm'
+    | 'n'
+    | 'o'
+    | 'p'
+    | 'q'
+    | 'r'
+    | 's'
+    | 't'
+    | 'u'
+    | 'v'
+    | 'w'
+    | 'x'
+    | 'y'
+    | 'z'
+    | 'A'
+    | 'B'
+    | 'C'
+    | 'D'
+    | 'E'
+    | 'F'
+    | 'G'
+    | 'H'
+    | 'I'
+    | 'J'
+    | 'K'
+    | 'L'
+    | 'M'
+    | 'N'
+    | 'O'
+    | 'P'
+    | 'Q'
+    | 'R'
+    | 'S'
+    | 'T'
+    | 'U'
+    | 'V'
+    | 'W'
+    | 'X'
+    | 'Y'
+    | 'Z';
+  type CapitalizeWords<
+    S extends string,
+    F extends boolean = true
+  > = S extends `${infer P}${infer O}`
+    ? P extends IsLetter // 是否为字母
+      ? F extends true // 是否为首字母
+        ? `${Uppercase<P>}${CapitalizeWords<O, false>}` // 是首字母的话, 那么就转换首字母大写 --> 之后的字母当成不是首字母
+        : `${P}${CapitalizeWords<O, false>}` // 不是首字母, 继续递归处理其他字符 --> 之后的字母当成不是首字母
+      : `${P}${CapitalizeWords<O, true>}` // 不是字母的话, 那么递归处理其他字符
+    : S;
 }
 
 // #endregion

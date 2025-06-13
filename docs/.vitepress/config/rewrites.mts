@@ -187,5 +187,6 @@ const rewrites: Record<string, string> = {
   '04_更多/05_ts/02_types.md': 'ts/types.md',
   '04_更多/05_ts/03_lib.md': 'ts/lib.md',
   '04_更多/05_ts/04_模块.md': 'ts/modules.md',
+  '04_更多/05_ts/05_声明文件.md': 'ts/declaration.md',
 };
 export default rewrites;
