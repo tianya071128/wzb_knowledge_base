@@ -794,7 +794,15 @@ const sidebar: DefaultTheme.Sidebar = {
       base: '/node/',
       items: [
         {
-          text: 'Buffer',
+          text: 'Path 路径',
+          link: 'path',
+        },
+        {
+          text: 'Url 网址',
+          link: 'url',
+        },
+        {
+          text: 'Buffer 缓冲区',
           link: 'buffer',
           items: [
             {
@@ -806,6 +814,16 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'events 事件触发器',
           link: 'events',
+          items: [
+            {
+              text: 'EventEmitter 类',
+              link: 'eventEmitter',
+            },
+            {
+              text: 'EventTarget 和 Event',
+              link: 'eventTargetAndEvent',
+            },
+          ],
         },
       ],
     },

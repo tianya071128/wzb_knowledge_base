@@ -9,62 +9,26 @@
 1. **实现高效的事件发布 - 订阅模式**
 2. **模块间通信**: 实现不同模块间的松耦合交互。
 
-## 类：`EventEmitter`
+## 参数
 
-`EventEmitter` 是 Node.js 中实现**事件驱动编程**的核心类，它基于**发布 - 订阅模式**（Publish-Subscribe Pattern），允许对象之间通过事件进行松耦合通信。
+`eventEmitter.emit()` 方法允许将任意一组参数传给监听器函数。
 
-### 创建 EventEmitter 实例
+监听方法的回调函数会接受这些参数
 
-* **语法**: `new EventEmitter([options])`
-  * **参数**:
-    * `options`: 可选
-      * `captureRejections`: 用于捕获对 `promise `的拒绝
+```js
+class MyEmitter extends EventEmitter {}
+const myEmitter = new MyEmitter();
+myEmitter.on('event', function (a, b) {
+  console.log(a, b); // 打印 a b
+});
+myEmitter.emit('event', 'a', 'b');
+```
 
-### 事件监听方法
+## this 指向
 
-#### emitter.on
+- 调用普通的监听器函数时，标准的 `this` 关键字会被有意地设置为引用监听器绑定到的 `EventEmitter` 实例。
+- 使用 ES6 箭头函数作为监听器，但是，这样做时，`this` 关键字将不再引用 `EventEmitter` 实例
 
-#### emitter.once
+## 错误处理
 
-#### emitter.prependListener
-
-#### emitter.prependOnceListener
-
-### 事件触发方法
-
-#### emit
-
-### 事件移除方法
-
-#### removeListener
-
-#### removeAllListeners
-
-### 事件查询方法
-
-#### listeners
-
-#### listenerCount
-
-#### eventNames
-
-### 高级控制方法
-
-#### setMaxListeners
-
-#### getMaxListeners
-
-### 内置事件
-
-#### 事件：'newListener'
-
-#### 事件：'removeListener'
-
-#### 事件：'error'
-
-
-
-
-
-
-
+待续
