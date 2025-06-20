@@ -743,8 +743,14 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'security',
         },
         {
-          text: 'TLS 的连接过程',
+          text: 'TLS',
           link: 'tls',
+          items: [
+            {
+              text: 'TLS1.2 连接过程',
+              link: 'tls_handshake',
+            },
+          ],
         },
         {
           text: '抓包分析',
