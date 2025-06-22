@@ -151,6 +151,8 @@ const rewrites: Record<string, string> = {
   '04_更多/01_node/08_EventEmitter.md': 'node/eventEmitter.md',
   '04_更多/01_node/09_EventTargetAndEvent.md': 'node/eventTargetAndEvent.md',
   '04_更多/01_node/10_url.md': 'node/url.md',
+  '04_更多/01_node/11_URL类.md': 'node/url_class.md',
+  '04_更多/01_node/12_URLSearchParams.md': 'node/URLSearchParams.md',
   '04_更多/02_开发者工具/01_index.md': 'devtools/home.md',
   '04_更多/02_开发者工具/07_元素.md': 'devtools/element.md',
   '04_更多/02_开发者工具/08_样式.md': 'devtools/style.md',

@@ -806,6 +806,16 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'Url 网址',
           link: 'url',
+          items: [
+            {
+              text: 'URL 类',
+              link: 'url_class',
+            },
+            {
+              text: 'URLSearchParams 类',
+              link: 'URLSearchParams',
+            },
+          ],
         },
         {
           text: 'Buffer 缓冲区',

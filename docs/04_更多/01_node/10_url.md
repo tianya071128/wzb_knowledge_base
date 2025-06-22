@@ -17,144 +17,101 @@
 | 相对路径解析 | 需显式提供 `base` 参数               | 内置 `url.resolve()` 方法           |
 | 支持的协议   | 仅支持标准协议（如 `http`, `https`） | 支持任意协议                        |
 
-## URL 类
+## `url` 模块方法
 
-`URL` 类是 WHATWG URL API 的核心组件，用于解析、构建和操作 URL。
+以下方法是 `url` 模块导出的, 不是全局方法
 
-### 创建 URL 对象
+### url.fileURLToPath(url[, options])
 
-#### new URL(input[, base])
+* **方法**: `url.fileURLToPath(url[, options])`
 
-* **方法**: `new URL(input[, base])`
-
-  * **作用**: 使用 `URL` 类（基于 WHATWG URL 标准）创建和操作 URL 对象
+  * **作用**: 将 `file://` 开头的 URL 转换为本地文件系统路径，自动处理不同操作系统的路径格式差异
   * **参数**：
-    - `input`（必需）：URL 字符串或相对路径。
-    - `base`（可选）：基础 URL，当 `input` 为相对路径时使用。
+    - `url`（URL 对象或字符串）- 要转换的 `file://` URL。
+    - `options`（可选对象）：
+      - `windows`（布尔值）- 如果 `path` 应作为 Windows 文件路径返回，则为 `true`；对于 posix，则返回 `false`；对于系统默认值，则返回 `undefined`。默认值：`undefined`。
+  * **返回值**：转换后的文件系统路径（字符串）。
 
-* **特性**
+* **查询参数和哈希值会被忽略**
 
-  * 网址构造函数可作为全局对象的属性访问。也可以从内置的 url 模块中导入：
+  ```js
+  import { fileURLToPath } from 'node:url';
+  
+  const fileUrl = new URL('file://home/user/docs/index.html?lang=en#section');
+  const filePath = fileURLToPath(fileUrl);
+  
+  console.log(filePath); // 输出: \\home\user\docs\index.html 查询参数和哈希值被忽略
+  ```
 
-    ```js
-    console.log(URL === require('node:url').URL); // true
-    ```
+* **将 `import.meta.url` 转换为文件路径**: 在 `ESM` 模块中, 不支持 `__dirname` 全局变量，此时可转换 `import.meta.url` 获取当前文件的路径
 
-  * **创建相对 URL**: 当 `input` 是相对路径时，必须提供 `base` 参数
+  ```js
+  import { fileURLToPath } from 'node:url';
+  
+  const __dirname = fileURLToPath(import.meta.url);
+  
+  console.log(__dirname); // 输出: D:\demo\node\src\test.ts
+  ```
 
-  * **编码与特殊字符**: `URL` 类会自动处理特殊字符的编码
+### url.pathToFileURL(path[, options])
 
-    ```js
-    const url = new URL('https://example.com');
-    url.pathname = '/path with spaces';
-    
-    console.log(url.href);// https://example.com/path%20with%20spaces
-    ```
+* **方法**: `url.pathToFileURL(path[, options])`
 
-  * **如果 `input` 或 `base` 不是有效的网址，则将抛出 `TypeError`**
+  * **作用**: 将本地文件系统路径转换为标准的 `file://` URL，自动处理不同操作系统的路径格式差异
+  * **参数**：
+    - `path`（字符串）- 要转换的文件系统路径。
+    - `options`（可选对象）：
+      - `windows`（布尔值）- 如果 path 应该被视为 Windows 文件路径，则为 true；对于 posix，则为 false；对于系统默认值，则为 undefined。默认值：undefined。
+  * **返回值**：转换后的 `file://` URL 对象。
 
-    ```js
-    try {
-      // 缺少协议
-      const url = new URL('example.com'); // 抛出 TypeError
-    } catch (error) {
-      console.error('无效的 URL:', error.message);
-    }
-    ```
+* **相对路径**: 会自动根据当前目录规范为绝对路径
 
-### 操作 URL 组件
+  ```js
+  import { pathToFileURL } from 'node:url';
+  
+  const fileUrl = pathToFileURL('docs/README.md');
+  
+  console.log(fileUrl.href); // file:///D:/wzb_knowledge_base/demo/node/docs/README.md
+  ```
 
-创建 URL 对象后，可以对其组件属性读写
+* **自动编码**: 特殊字符会被自动编码
 
-```tex
-# 旧版 URL
-┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                              href                                              │
-├──────────┬──┬─────────────────────┬────────────────────────┬───────────────────────────┬───────┤
-│ protocol │  │        auth         │          host          │           path            │ hash  │
-│          │  │                     ├─────────────────┬──────┼──────────┬────────────────┤       │
-│          │  │                     │    hostname     │ port │ pathname │     search     │       │
-│          │  │                     │                 │      │          ├─┬──────────────┤       │
-│          │  │                     │                 │      │          │ │    query     │       │
-"  https:   //    user   :   pass   @ sub.example.com : 8080   /p/a/t/h  ?  query=string   #hash "
-│          │  │          │          │    hostname     │ port │          │                │       │
-│          │  │          │          ├─────────────────┴──────┤          │                │       │
-│ protocol │  │ username │ password │          host          │          │                │       │
-├──────────┴──┼──────────┴──────────┼────────────────────────┤          │                │       │
-│   origin    │                     │         origin         │ pathname │     search     │ hash  │
-├─────────────┴─────────────────────┴────────────────────────┴──────────┴────────────────┴───────┤
-│                                              href                                              │
-└────────────────────────────────────────────────────────────────────────────────────────────────┘
-# WHATWG URL
+* **路径规范化**: 路径会自动规范化
+
+  ```js
+  import { pathToFileURL } from 'node:url';
+  
+  const filePath = '/home/user/../docs/file.txt';
+  const fileUrl = pathToFileURL(filePath);
+  
+  console.log(fileUrl.href); // 输出: file:///D:/home/docs/file.txt（已规范化）
+  ```
+
+### url.domainToASCII(domain)
+
+* **方法**: `url.domainToASCII(domain)`
+  * **作用**: 将包含非 ASCII 字符的域名转换为 Punycode 编码的 ASCII 字符串（即 "xn--" 格式），确保域名能被互联网基础设施正确处理
+  * **参数**：
+    - `domain`（字符串）- 要转换的国际化域名（如 `example.中国`）。
+  * **返回值**：转换后的 Punycode 编码字符串（如 `example.xn--fiqs8s`）。
+  * **依赖**：内部使用 `punycode` 模块（Node.js 内置）进行转换。
+
+```js
+import { domainToASCII } from 'node:url';
+
+const asciiDomain = domainToASCII('example.中国');
+console.log(asciiDomain); // 输出: example.xn--fiqs8s
 ```
 
+### url.domainToUnicode(domain)
 
+* **方法**: `url.domainToUnicode(domain)`
+  * **作用**: 将**Punycode 编码的 ASCII 域名（如 "xn--" 格式）转换为人类可读的 Unicode 形式**。
+  * **参数**：
+    - `domain`（字符串）- 要转换的 Punycode 编码域名（如 `xn--fiqs8s.com`）。
+  * **返回值**：转换后的 Unicode 域名（如 `中文.com`）。
+  * **依赖**：内部使用 `punycode` 模块（Node.js 内置）进行转换。
 
-#### url.href: 序列化的网址
+## 旧版 URL API
 
-* **属性**: `url.href`
-
-  * **作用**：获取或设置完整的 URL 字符串。
-  * **类型**：字符串。
-
-* **特性**
-
-  * **支持读写**
-
-    ```js
-    const url = new URL('https://user:pass@example.com:8080/api');
-    
-    console.log(url.href);
-    // 输出: https://user:pass@example.com:8080/api
-    ```
-
-  * 将此属性的值设置为新值相当于使用 [`new URL(value)`](https://nodejs.cn/api/v22/url.html#new-urlinput-base) 创建新的 `URL` 对象。**`URL` 对象的每个属性都将被修改**。
-
-    ```js
-    const url = new URL('https://example.com');
-    
-    // 修改 href
-    url.href = 'http://api.example.com:8080/path?query=1#hash';
-    
-    console.log(url.protocol); // 输出: http:
-    console.log(url.hostname); // 输出: api.example.com
-    console.log(url.port); // 输出: 8080
-    ```
-
-  * 如果分配给 `href` 属性的值不是有效的网址，则将抛出 `TypeError`。
-
-#### url.origin
-
-#### url.protocol
-
-#### url.username
-
-#### url.password
-
-#### url.host
-
-#### url.pathname
-
-#### url.search
-
-#### url.hash
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+已过时, 改用 `WHATWG URL API`。

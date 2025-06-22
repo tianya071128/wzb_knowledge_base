@@ -1,8 +1,6 @@
-const url = new URL('https://example.com');
+import { pathToFileURL } from 'node:url';
 
-// 修改 href
-url.href = 'http://api.example.com:8080/path?query=1#hash';
+const filePath = '/home/user/../docs/file.txt';
+const fileUrl = pathToFileURL(filePath);
 
-console.log(url.protocol); // 输出: http:
-console.log(url.hostname); // 输出: api.example.com
-console.log(url.port); // 输出: 8080
+console.log(fileUrl.href); // 输出: file:///D:/home/docs/file.txt（已规范化）
