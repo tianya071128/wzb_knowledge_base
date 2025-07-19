@@ -750,6 +750,14 @@ const sidebar: DefaultTheme.Sidebar = {
               text: 'TLS1.2 连接过程',
               link: 'tls_handshake',
             },
+            {
+              text: '证书',
+              link: 'tls_certificate',
+            },
+            {
+              text: 'TLS 相关概念',
+              link: 'tls_concept',
+            },
           ],
         },
         {
