@@ -852,6 +852,12 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'Stream 流',
           link: 'Stream',
+          items: [
+            {
+              text: '可读流（Readable）',
+              link: 'StreamReadable',
+            },
+          ],
         },
       ],
     },
