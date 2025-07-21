@@ -192,10 +192,13 @@ const rewrites: Record<string, string> = {
   '04_更多/03_正则/02_元字符.md': 'reg/metachar.md',
   '04_更多/03_正则/03_使用正则.md': 'reg/use.md',
   '04_更多/04_算法/01_index.md': 'algo/home.md',
+  '04_更多/04_算法/02_字典树.md': 'algo/trie.md',
   '04_更多/05_ts/01_index.md': 'ts/home.md',
   '04_更多/05_ts/02_types.md': 'ts/types.md',
   '04_更多/05_ts/03_lib.md': 'ts/lib.md',
   '04_更多/05_ts/04_模块.md': 'ts/modules.md',
   '04_更多/05_ts/05_声明文件.md': 'ts/declaration.md',
+  '04_更多/06_git/01_index.md': 'git/home.md',
+  '04_更多/06_git/02_git基础.md': 'git/basis.md',
 };
 export default rewrites;

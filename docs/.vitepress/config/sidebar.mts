@@ -1016,6 +1016,21 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/algo/': [
+    {
+      base: '/algo/',
+      items: [
+        {
+          text: '字典树(前缀树)',
+          link: 'trie',
+        },
+        {
+          text: '其他',
+          link: 'home',
+        },
+      ],
+    },
+  ],
   '/ts/': [
     {
       base: '/ts/',
@@ -1039,6 +1054,21 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: '声明文件:.d.ts',
           link: 'declaration',
+        },
+      ],
+    },
+  ],
+  '/git/': [
+    {
+      base: '/git/',
+      items: [
+        {
+          text: '介绍',
+          link: 'home',
+        },
+        {
+          text: 'Git 基础',
+          link: 'basis',
         },
       ],
     },

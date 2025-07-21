@@ -73,6 +73,7 @@ const nav: DefaultTheme.NavItem[] = [
       { text: '正则表达式', link: '/reg/home.html', activeMatch: '/reg/' },
       { text: '算法', link: '/algo/home.html', activeMatch: '/algo/' },
       { text: 'TypeScript', link: '/ts/home.html', activeMatch: '/ts/' },
+      { text: 'Git', link: '/git/home.html', activeMatch: '/git/' },
     ],
   },
 ];
