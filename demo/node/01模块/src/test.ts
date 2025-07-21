@@ -1,6 +1,16 @@
-import { pathToFileURL } from 'node:url';
+import { createReadStream } from 'node:fs';
 
-const filePath = '/home/user/../docs/file.txt';
-const fileUrl = pathToFileURL(filePath);
+// 创建文件可读流
+const readStream = createReadStream('./01_path.ts', {
+  encoding: 'utf8', // 字符编码（可选）
+});
 
-console.log(fileUrl.href); // 输出: file:///D:/home/docs/file.txt（已规范化）
+readStream.on('readable', () => {
+  // readStream.read() 手动读取数据, 返回的是文件内容
+  // 当 readStream.read() 返回 null, 之后, 会触发 end 事件
+  console.log(`readable: ${readStream.read()}`);
+});
+
+readStream.on('end', () => {
+  console.log('end'); // 当
+});

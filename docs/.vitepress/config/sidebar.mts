@@ -836,7 +836,7 @@ const sidebar: DefaultTheme.Sidebar = {
           ],
         },
         {
-          text: 'events 事件触发器',
+          text: 'Events 事件触发器',
           link: 'events',
           items: [
             {
@@ -846,6 +846,16 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: 'EventTarget 和 Event',
               link: 'eventTargetAndEvent',
+            },
+          ],
+        },
+        {
+          text: 'Stream 流',
+          link: 'Stream',
+          items: [
+            {
+              text: '可读流（Readable）',
+              link: 'StreamReadable',
             },
           ],
         },
