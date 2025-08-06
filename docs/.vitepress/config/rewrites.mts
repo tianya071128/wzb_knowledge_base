@@ -202,5 +202,6 @@ const rewrites: Record<string, string> = {
   '04_更多/05_ts/05_声明文件.md': 'ts/declaration.md',
   '04_更多/06_git/01_index.md': 'git/home.md',
   '04_更多/06_git/02_git基础.md': 'git/basis.md',
+  '04_更多/06_git/03_git分支.md': 'git/branch.md',
 };
 export default rewrites;

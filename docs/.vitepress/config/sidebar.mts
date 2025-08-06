@@ -1080,6 +1080,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'Git 基础',
           link: 'basis',
         },
+        {
+          text: 'Git 分支',
+          link: 'branch',
+        },
       ],
     },
   ],
