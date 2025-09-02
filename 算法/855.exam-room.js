@@ -34,7 +34,7 @@ ExamRoom.prototype.seat = function () {
   // 只落座一人
   else if (this.seats.length === 1) {
     // 落座到最后
-    if (this.seatTotal - 1 - this.seat[0] > this.seat[0]) {
+    if (this.seatTotal - 1 - this.seats[0] > this.seats[0]) {
       this.seats.push(this.seatTotal - 1);
       return this.seatTotal - 1;
     } else {
@@ -93,4 +93,12 @@ ExamRoom.prototype.leave = function (p) {
 // ["ExamRoom", "seat", "seat", "seat", "seat", "leave", "seat"]\n[[10], [], [], [], [], [4], []]\n
 // @lcpr case=end
 
+// @lcpr case=start
+// ["ExamRoom","seat","leave","seat","leave","seat","leave","seat","leave","seat","leave"]\n[[1000000000],[],[0],[],[0],[],[0],[],[0],[],[0]]\n
+// @lcpr case=end
+
  */
+
+// @lcpr-after-debug-begin
+module.exports = ExamRoom;
+// @lcpr-after-debug-end
