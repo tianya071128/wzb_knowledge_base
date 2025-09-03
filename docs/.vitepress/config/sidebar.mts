@@ -1086,6 +1086,25 @@ const sidebar: DefaultTheme.Sidebar = {
         },
       ],
     },
+    {
+      text: 'Git 命令',
+      base: '/git/',
+      items: [
+        {
+          text: '获取和创建项目',
+          items: [
+            {
+              text: '初始化项目: git init',
+              link: 'git-init',
+            },
+            {
+              text: '克隆项目: git clone',
+              link: 'git-clone',
+            },
+          ],
+        },
+      ],
+    },
   ],
 };
 
