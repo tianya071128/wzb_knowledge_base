@@ -1110,6 +1110,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '显示工作树状态: git status',
               link: 'git-status',
             },
+            {
+              text: '添加至暂存区: git add',
+              link: 'git-add',
+            },
           ],
         },
       ],

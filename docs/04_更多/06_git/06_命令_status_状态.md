@@ -12,8 +12,8 @@ git status [<选项>…​] [--] [<路径规范>…​]
 
 ## 描述
 
-* 显示暂存区和当前HEAD提交有差异的路径，工作区和暂存区有差异的路径，以及工作区中不被Git追踪的路径（也不被[gitignore[5\]](https://git-scm.com/docs/gitignore/zh_HANS-CN)忽略）。
-* `git status` 只显示**工作区与暂存区**、**暂存区与本地仓库**的差异，不显示本地仓库与远程仓库的差异
+- 显示暂存区和当前 HEAD 提交有差异的路径，工作区和暂存区有差异的路径，以及工作区中不被 Git 追踪的路径（也不被[gitignore[5\]](https://git-scm.com/docs/gitignore/zh_HANS-CN)忽略）。
+- `git status` 只显示**工作区与暂存区**、**暂存区与本地仓库**的差异，不显示本地仓库与远程仓库的差异
 
 ## 输出内容
 
@@ -47,8 +47,8 @@ On branch master
 Your branch is up to date with 'origin/master'.
 ```
 
-* 显示当前检出的分支（如 `master`）。
-* 提示本地分支与远程对应分支的同步状态（如 “已同步”“超前 N 次提交”“落后 M 次提交”）。
+- 显示当前检出的分支（如 `master`）。
+- 提示本地分支与远程对应分支的同步状态（如 “已同步”“超前 N 次提交”“落后 M 次提交”）。
 
 ### 暂存区状态（待提交的修改）
 
@@ -58,8 +58,8 @@ Changes to be committed:
         modified:   docs/.vitepress/config/rewrites.mts
 ```
 
-* 显示已通过 `git add` 加入暂存区的文件，这些文件将在 `git commit` 时被提交。
-* 操作提示：可通过 `git restore --staged ` 将文件从暂存区移除（取消暂存）。
+- 显示已通过 `git add` 加入暂存区的文件，这些文件将在 `git commit` 时被提交。
+- 操作提示：可通过 `git restore --staged ` 将文件从暂存区移除（取消暂存）。
 
 ### 工作区状态（未暂存的修改）
 
@@ -96,7 +96,7 @@ Your branch is up to date with 'origin/release/2.0.0-20250821'.
 nothing to commit, working tree clean
 ```
 
-* 表示工作区和暂存区完全一致，且与本地仓库最新提交同步，没有需要提交的修改。
+- 表示工作区和暂存区完全一致，且与本地仓库最新提交同步，没有需要提交的修改。
 
 ## 简短输出内容
 
@@ -107,12 +107,12 @@ XY PATH
 XY ORIG_PATH -> PATH
 ```
 
-* `XY`是一个双字母的状态代码
-  * X: 左侧符号，表示文件在暂存区与本地仓库的差异（是否已暂存）。
-  * Y: 右侧符号，表示文件在工作区与暂存区的差异（是否有未暂存的修改）。
-  * 若文件状态无需两个符号描述，未使用的位置会以空格填充。
-* `ORIG_PATH`是重命名/复制的内容的来源，只有在条目被重命名或复制时才会显示
-* `PATH`是文件路径
+- `XY`是一个双字母的状态代码
+  - X: 左侧符号，表示文件在暂存区与本地仓库的差异（是否已暂存）。
+  - Y: 右侧符号，表示文件在工作区与暂存区的差异（是否有未暂存的修改）。
+  - 若文件状态无需两个符号描述，未使用的位置会以空格填充。
+- `ORIG_PATH`是重命名/复制的内容的来源，只有在条目被重命名或复制时才会显示
+- `PATH`是文件路径
 
 ### 符合含义
 
@@ -126,14 +126,14 @@ D  tests/old.test.js  # 已删除且暂存
  R images/logo.png -> images/new-logo.png  # 已重命名且暂存
 ```
 
-* *M* = 修改过的
-* *A*=添加
-* *D* = 删除
-* *R* = 重命名
-* *T* = 文件类型已更改（常规文件、符号链接或子模块）
-* *C* = 已复制（如果配置选项 `status.renames` 设置为 “副本”）
-* *U*=更新但未合并
-* *??*=未跟踪文件
+- _M_ = 修改过的
+- _A_=添加
+- _D_ = 删除
+- _R_ = 重命名
+- _T_ = 文件类型已更改（常规文件、符号链接或子模块）
+- _C_ = 已复制（如果配置选项 `status.renames` 设置为 “副本”）
+- _U_=更新但未合并
+- _??_=未跟踪文件
 
 ## 选项
 
@@ -145,7 +145,7 @@ D  tests/old.test.js  # 已删除且暂存
 
   ```bash
   $ git status -s
-  
+
   M  docs/.vitepress/config/rewrites.mts
    M docs/.vitepress/config/sidebar.mts
    M "docs/test.md"
@@ -155,13 +155,3 @@ D  tests/old.test.js  # 已删除且暂存
 ### `--branch, -b`: 显示分支信息
 
 - **作用**：在精简输出（`-s`）中额外显示当前分支及与远程分支的同步状态（默认精简输出不显示分支信息）。
-
-  
-
-
-  
-
-
-
-
-
