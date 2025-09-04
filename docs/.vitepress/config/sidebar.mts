@@ -1103,6 +1103,15 @@ const sidebar: DefaultTheme.Sidebar = {
             },
           ],
         },
+        {
+          text: '基础命令',
+          items: [
+            {
+              text: '显示工作树状态: git status',
+              link: 'git-status',
+            },
+          ],
+        },
       ],
     },
   ],
