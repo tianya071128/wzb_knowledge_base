@@ -157,6 +157,10 @@ const rewrites: Record<string, string> = {
   '04_更多/01_node/12_URLSearchParams.md': 'node/URLSearchParams.md',
   '04_更多/01_node/13_Stream.md': 'node/Stream.md',
   '04_更多/01_node/14_Stream_Readable.md': 'node/StreamReadable.md',
+  '04_更多/01_node/15_Stream_Writable.md': 'node/StreamWritable.md',
+  '04_更多/01_node/16_Stream_Duplex_Transform.md':
+    'node/StreamDuplexAndTransform.md',
+  '04_更多/01_node/17_Steam_模块API.md': 'node/StreamAPI.md',
   '04_更多/02_开发者工具/01_index.md': 'devtools/home.md',
   '04_更多/02_开发者工具/07_元素.md': 'devtools/element.md',
   '04_更多/02_开发者工具/08_样式.md': 'devtools/style.md',

@@ -854,8 +854,20 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'Stream',
           items: [
             {
+              text: 'Stream API',
+              link: 'StreamAPI',
+            },
+            {
               text: '可读流（Readable）',
               link: 'StreamReadable',
+            },
+            {
+              text: '可写流（Writable）',
+              link: 'StreamWritable',
+            },
+            {
+              text: '双工流（Duplex）和转换流（Transform）',
+              link: 'StreamDuplexAndTransform',
             },
           ],
         },
