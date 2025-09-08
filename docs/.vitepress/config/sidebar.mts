@@ -1126,6 +1126,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '添加至暂存区: git add',
               link: 'git-add',
             },
+            {
+              text: '提交修改: git commit',
+              link: 'git-commit',
+            },
           ],
         },
       ],

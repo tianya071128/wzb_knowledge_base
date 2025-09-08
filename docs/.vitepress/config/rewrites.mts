@@ -211,5 +211,6 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/05_命令_clone_克隆.md': 'git/git-clone.md',
   '04_更多/06_git/06_命令_status_状态.md': 'git/git-status.md',
   '04_更多/06_git/07_命令_add_添加到暂存区.md': 'git/git-add.md',
+  '04_更多/06_git/08_命令_commit_提交.md': 'git/git-commit.md',
 };
 export default rewrites;
