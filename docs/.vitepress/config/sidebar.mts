@@ -1130,6 +1130,14 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '提交修改: git commit',
               link: 'git-commit',
             },
+            {
+              text: '删除文件: git rm',
+              link: 'git-rm',
+            },
+            {
+              text: '移动或重命名: git mv',
+              link: 'git-mv',
+            },
           ],
         },
       ],
