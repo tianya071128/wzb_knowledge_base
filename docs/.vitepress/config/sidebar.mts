@@ -1138,6 +1138,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '移动或重命名: git mv',
               link: 'git-mv',
             },
+            {
+              text: '恢复文件的状态: git restore',
+              link: 'git-restore',
+            },
           ],
         },
       ],

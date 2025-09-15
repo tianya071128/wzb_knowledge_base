@@ -214,5 +214,6 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/08_命令_commit_提交.md': 'git/git-commit.md',
   '04_更多/06_git/09_命令_rm_删除.md': 'git/git-rm.md',
   '04_更多/06_git/10_命令_mv_移动.md': 'git/git-mv.md',
+  '04_更多/06_git/11_命令_restore_恢复文件的状态.md': 'git/git-restore.md',
 };
 export default rewrites;
