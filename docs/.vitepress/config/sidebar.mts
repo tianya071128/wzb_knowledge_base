@@ -1103,6 +1103,15 @@ const sidebar: DefaultTheme.Sidebar = {
       base: '/git/',
       items: [
         {
+          text: '设置和配置',
+          items: [
+            {
+              text: '设置和配置项目: git config',
+              link: 'git-config',
+            },
+          ],
+        },
+        {
           text: '获取和创建项目',
           items: [
             {
@@ -1141,6 +1150,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: '恢复文件的状态: git restore',
               link: 'git-restore',
+            },
+            {
+              text: '重置HEAD指针: git reset',
+              link: 'git-reset',
             },
           ],
         },
