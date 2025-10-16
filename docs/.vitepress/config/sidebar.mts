@@ -1109,6 +1109,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '设置和配置项目: git config',
               link: 'git-config',
             },
+            {
+              text: '显示帮助信息: git help',
+              link: 'git-help',
+            },
           ],
         },
         {
@@ -1154,6 +1158,15 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: '重置HEAD指针: git reset',
               link: 'git-reset',
+            },
+          ],
+        },
+        {
+          text: '分支和合并',
+          items: [
+            {
+              text: '分支操作: git branch',
+              link: 'git-branch',
             },
           ],
         },
