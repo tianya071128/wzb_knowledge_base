@@ -1168,6 +1168,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '分支操作: git branch',
               link: 'git-branch',
             },
+            {
+              text: '切换分支: git switch',
+              link: 'git-switch',
+            },
           ],
         },
       ],

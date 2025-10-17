@@ -219,5 +219,6 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/13_命令_config_配置.md': 'git/git-config.md',
   '04_更多/06_git/14_命令_help_帮助.md': 'git/git-help.md',
   '04_更多/06_git/15_命令_branch_分支.md': 'git/git-branch.md',
+  '04_更多/06_git/16_命令_switch_分支.md': 'git/git-switch.md',
 };
 export default rewrites;
