@@ -54,7 +54,7 @@ git switch -C feature/payment
 
 ## 选项
 
-### `-discard-changes,-f,--force`: 丢弃工作区、暂存区修改
+### `--discard-changes,-f,--force`: 丢弃工作区、暂存区修改
 
 - **作用**：切换分支时，**强制丢弃工作区和暂存区的修改。**即使不会有冲突，也会丢弃掉
 

@@ -1165,12 +1165,16 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '分支和合并',
           items: [
             {
-              text: '分支操作: git branch',
+              text: '操作分支: git branch',
               link: 'git-branch',
             },
             {
               text: '切换分支: git switch',
               link: 'git-switch',
+            },
+            {
+              text: '合并分支: git merge',
+              link: 'git-merge',
             },
           ],
         },
