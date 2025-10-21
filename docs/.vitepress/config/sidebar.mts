@@ -1176,6 +1176,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '合并分支: git merge',
               link: 'git-merge',
             },
+            {
+              text: '标签: git tag',
+              link: 'git-tag',
+            },
           ],
         },
       ],
