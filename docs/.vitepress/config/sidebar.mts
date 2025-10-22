@@ -1180,6 +1180,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '标签: git tag',
               link: 'git-tag',
             },
+            {
+              text: '暂存: git stash',
+              link: 'git-stash',
+            },
           ],
         },
       ],
