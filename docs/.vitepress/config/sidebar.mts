@@ -1186,6 +1186,19 @@ const sidebar: DefaultTheme.Sidebar = {
             },
           ],
         },
+        {
+          text: '共享和更新项目',
+          items: [
+            {
+              text: '管理远程仓库: git remote',
+              link: 'git-remote',
+            },
+            {
+              text: '从远程仓库获取信息: git fetch',
+              link: 'git-fetch',
+            },
+          ],
+        },
       ],
     },
   ],
