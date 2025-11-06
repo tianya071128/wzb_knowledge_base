@@ -14,22 +14,7 @@
  * @param {number[]} costs
  * @return {number}
  */
-var mincostTickets = function (days, costs) {
-  let dp = new Array(days.length + 1).fill(0);
-  let j = 0;
-  for (let i = 1; i <= days.length; i++) {
-    dp[i] = dp[i - 1] + costs[0];
-    while (j < days.length && days[j] < days[i - 1]) {
-      j++;
-    }
-    dp[i] = Math.min(
-      dp[i],
-      dp[j] + costs[1],
-      dp[Math.max(j - 6, 0)] + costs[2]
-    );
-  }
-  return dp[days.length];
-};
+var mincostTickets = function (days, costs) {};
 // @lc code=end
 
 /*
