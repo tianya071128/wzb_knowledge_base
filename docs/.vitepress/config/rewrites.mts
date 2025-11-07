@@ -199,6 +199,8 @@ const rewrites: Record<string, string> = {
   '04_更多/03_正则/03_使用正则.md': 'reg/use.md',
   '04_更多/04_算法/01_index.md': 'algo/home.md',
   '04_更多/04_算法/02_字典树.md': 'algo/trie.md',
+  '04_更多/04_算法/03_图.md': 'algo/graph.md',
+  '04_更多/04_算法/04_拓扑排序.md': 'algo/topological-sort.md',
   '04_更多/05_ts/01_index.md': 'ts/home.md',
   '04_更多/05_ts/02_types.md': 'ts/types.md',
   '04_更多/05_ts/03_lib.md': 'ts/lib.md',

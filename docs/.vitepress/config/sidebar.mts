@@ -1047,7 +1047,12 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'trie',
         },
         {
-          text: '其他',
+          text: '图',
+          link: 'graph',
+          items: [{ text: '拓扑排序', link: 'topological-sort' }],
+        },
+        {
+          text: '更多',
           link: 'home',
         },
       ],
