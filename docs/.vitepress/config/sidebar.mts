@@ -1101,6 +1101,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'Git 分支',
           link: 'branch',
         },
+        {
+          text: '引用规范',
+          link: 'refspec',
+        },
       ],
     },
     {
