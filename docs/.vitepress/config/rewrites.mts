@@ -229,5 +229,6 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/21_命令_fetch_获取远程仓库信息.md': 'git/git-fetch.md',
   '04_更多/06_git/22_命令_pull_拉取.md': 'git/git-pull.md',
   '04_更多/06_git/23_引用规范.md': 'git/refspec.md',
+  '04_更多/06_git/24_命令_push_推送.md': 'git/git-push.md',
 };
 export default rewrites;

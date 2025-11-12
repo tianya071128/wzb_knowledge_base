@@ -1207,8 +1207,12 @@ const sidebar: DefaultTheme.Sidebar = {
               link: 'git-fetch',
             },
             {
-              text: '从远程仓库获取更新并合并到当前分支: git pull',
+              text: '拉取: git pull',
               link: 'git-pull',
+            },
+            {
+              text: '推送: git push',
+              link: 'git-push',
             },
           ],
         },
