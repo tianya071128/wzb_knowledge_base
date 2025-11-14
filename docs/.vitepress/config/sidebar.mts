@@ -1216,6 +1216,19 @@ const sidebar: DefaultTheme.Sidebar = {
             },
           ],
         },
+        {
+          text: '补丁',
+          items: [
+            {
+              text: '挑拣提交: git cherry-pick',
+              link: 'git-cherry-pick',
+            },
+            {
+              text: '还原: git revert',
+              link: 'git-revert',
+            },
+          ],
+        },
       ],
     },
   ],
