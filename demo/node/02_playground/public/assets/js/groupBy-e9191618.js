@@ -1,0 +1,1 @@
+import{fN as t}from"./index-b80d5ef5.js";import{c as p}from"./_createAggregator-d66ed64c.js";var s=Object.prototype,e=s.hasOwnProperty,c=p(function(o,a,r){e.call(o,r)?o[r].push(a):t(o,r,[a])});const f=c;export{f as g};

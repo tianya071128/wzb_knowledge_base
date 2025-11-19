@@ -1,0 +1,1 @@
+import{dj as t,gv as e}from"./index-b80d5ef5.js";const s={toDoMessageNotifier:[{id:"charger",type:t.dynamic}],toDoMessages:[{title:"待办通知",content:"您有一条新的待办，请及时处理",notice:e.mail}]};e.mail;t.dynamic,e.mail;t.dynamic,e.mail;export{s as t};

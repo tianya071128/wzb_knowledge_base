@@ -1,0 +1,1 @@
+import{aV as o,r as a,y as s,B as i}from"./index-b80d5ef5.js";function m(u){const t=o(),r=a(),n=a(t.name);return s(()=>{const e=t.query[i(u)];return Array.isArray(e)?e==null?void 0:e[0]:e},e=>{t.name===n.value&&(r.value=e)},{immediate:!0}),r}export{m as u};

@@ -1,0 +1,18 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4218" clip-path="url(#clip0_4199_2298)">
+<g id="Frame">
+<path id="Vector" d="M14.0003 11.8334C16.3936 11.8334 18.3337 9.89332 18.3337 7.50008C18.3337 5.10685 16.3936 3.16675 14.0003 3.16675C11.6071 3.16675 9.66699 5.10685 9.66699 7.50008C9.66699 9.89332 11.6071 11.8334 14.0003 11.8334Z" fill="#2778FF" stroke="#2778FF" stroke-width="2.5625" stroke-linecap="square" stroke-linejoin="round"/>
+<g id="Vector_2">
+<path d="M23.75 24.8333C23.75 19.4485 19.3848 15.0833 14 15.0833C8.61524 15.0833 4.25 19.4485 4.25 24.8333" fill="#2778FF"/>
+<path d="M23.75 24.8333C23.75 19.4485 19.3848 15.0833 14 15.0833C8.61524 15.0833 4.25 19.4485 4.25 24.8333H23.75Z" stroke="#2778FF" stroke-width="2.5625" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+<path id="Polygon 25" d="M27.5 24.4522L22 27.4314L16.5 24.4522L16.5 18.5478L22 15.5686L27.5 18.5478L27.5 24.4522Z" fill="#2778FF" stroke="white"/>
+<circle id="Ellipse 555" cx="22" cy="21.5" r="2" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_4199_2298">
+<rect width="28" height="28" fill="white"/>
+</clipPath>
+</defs>
+</svg>

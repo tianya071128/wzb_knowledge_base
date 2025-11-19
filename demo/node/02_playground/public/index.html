@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="module" crossorigin src="./assets/js/polyfills-efd5c9b6.js"></script>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="renderer" content="webkit" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="icon" href="./favicon.png" />
+    <title>悦文云</title>
+    <!-- <script src="./tinymce/tinymce.min.js" referrerpolicy="origin"></script> -->
+    <!--[if lt IE 11]>
+      <script>
+        window.location.href = '/html/ie.html';
+      </script>
+    <![endif]-->
+    <style>
+      #loading-wrapper {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #f2f3f5;
+        z-index: 99;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+                flex-direction: column;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+            -ms-flex-align: center;
+                align-items: center;
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+            -ms-flex-pack: center;
+                justify-content: center;
+      }
+      .loading-wrapper-tip {
+        color: #2778ff;
+        margin-top: 10px;
+        font-size: 16px;
+      }
+      .cube-grid {
+        width: 80px;
+        height: 80px;
+      }
+
+      .cube-grid .cube {
+        width: 33.33%;
+        height: 33.33%;
+        background-color: #2778ff;
+        float: left;
+        -webkit-animation: cubeGridScaleDelay 1.3s infinite ease-in-out;
+        animation: cubeGridScaleDelay 1.3s infinite ease-in-out;
+      }
+      .cube-grid .cube1 {
+        -webkit-animation-delay: 0.2s;
+        animation-delay: 0.2s;
+      }
+      .cube-grid .cube2 {
+        -webkit-animation-delay: 0.3s;
+        animation-delay: 0.3s;
+      }
+      .cube-grid .cube3 {
+        -webkit-animation-delay: 0.4s;
+        animation-delay: 0.4s;
+      }
+      .cube-grid .cube4 {
+        -webkit-animation-delay: 0.1s;
+        animation-delay: 0.1s;
+      }
+      .cube-grid .cube5 {
+        -webkit-animation-delay: 0.2s;
+        animation-delay: 0.2s;
+      }
+      .cube-grid .cube6 {
+        -webkit-animation-delay: 0.3s;
+        animation-delay: 0.3s;
+      }
+      .cube-grid .cube7 {
+        -webkit-animation-delay: 0s;
+        animation-delay: 0s;
+      }
+      .cube-grid .cube8 {
+        -webkit-animation-delay: 0.1s;
+        animation-delay: 0.1s;
+      }
+      .cube-grid .cube9 {
+        -webkit-animation-delay: 0.2s;
+        animation-delay: 0.2s;
+      }
+
+      @-webkit-keyframes cubeGridScaleDelay {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scale3D(1, 1, 1);
+          transform: scale3D(1, 1, 1);
+        }
+        35% {
+          -webkit-transform: scale3D(0, 0, 1);
+          transform: scale3D(0, 0, 1);
+        }
+      }
+
+      @keyframes cubeGridScaleDelay {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scale3D(1, 1, 1);
+          transform: scale3D(1, 1, 1);
+        }
+        35% {
+          -webkit-transform: scale3D(0, 0, 1);
+          transform: scale3D(0, 0, 1);
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/js/index-b80d5ef5.js"></script>
+    <link rel="stylesheet" href="./assets/css/index-13cb634b.css">
+  <script>
+          console.info('构建时间：', "2025-11-14 09:28:42");
+          console.info('构建版本：', "v2.2.0");
+        </script>
+        </head>
+  <body>
+    <!-- 初始动画 -->
+    <div id="loading-wrapper">
+      <div class="cube-grid">
+        <div class="cube cube1"></div>
+        <div class="cube cube2"></div>
+        <div class="cube cube3"></div>
+        <div class="cube cube4"></div>
+        <div class="cube cube5"></div>
+        <div class="cube cube6"></div>
+        <div class="cube cube7"></div>
+        <div class="cube cube8"></div>
+        <div class="cube cube9"></div>
+      </div>
+      <div class="loading-wrapper-tip">正在加载系统资源，请耐心等待...</div>
+    </div>
+    <div id="app"></div>
+    
+    <script>
+      /* 阻止火狐浏览器在 vue-draggable组件时拖动 打开新窗口 */
+      document.body.ondrop = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+    </script>
+  </body>
+</html>

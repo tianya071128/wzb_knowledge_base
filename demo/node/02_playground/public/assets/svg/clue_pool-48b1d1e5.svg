@@ -1,0 +1,23 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4223" clip-path="url(#clip0_2888_766)">
+<g id="Frame 2551(6)" clip-path="url(#clip1_2888_766)">
+<path id="Rectangle 1936" d="M10.6825 0.307617H3.61523V18.7692L26.6922 19.3461V3.76916L14.1152 3.46815L10.6825 0.307617Z" fill="#BFDAFD"/>
+<path id="Rectangle 828" d="M7.41091 2.9231H0.154297V27.5275H26.6928V6.03346L10.9355 6.08363L7.41091 2.9231Z" fill="url(#paint0_linear_2888_766)"/>
+<path id="Vector" d="M16.1538 12H11.0454C10.3636 12 9 12.3813 9 13.9867C9 15.592 10.3636 15.9963 11.0454 15.9963H16.9985C17.6803 15.9963 19 16.3886 19 17.994C19 19.5993 17.6803 20 16.9985 20H10.6154" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+<circle id="Ellipse 495" cx="17.5" cy="12.5" r="1.5" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+<circle id="Ellipse 496" cx="9.5" cy="19.5" r="1.5" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_2888_766" x1="13.4235" y1="-3.51169" x2="13.4235" y2="25.3846" gradientUnits="userSpaceOnUse">
+<stop stop-color="#7EA3FA"/>
+<stop offset="1" stop-color="#0E52F6"/>
+</linearGradient>
+<clipPath id="clip0_2888_766">
+<rect width="28" height="28" fill="white"/>
+</clipPath>
+<clipPath id="clip1_2888_766">
+<rect width="30" height="27.6923" fill="white" transform="translate(-1)"/>
+</clipPath>
+</defs>
+</svg>

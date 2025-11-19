@@ -1,0 +1,23 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="word&#230;&#168;&#161;&#230;&#157;&#191;">
+<rect id="Rectangle 1849" width="48" height="48" rx="4" fill="#E4EFFF"/>
+<g id="Group 4485">
+<path id="Rectangle 1974" d="M3 11H45V39C45 40.1046 44.1046 41 43 41H5C3.89543 41 3 40.1046 3 39V11Z" fill="url(#paint0_linear_2557_10566)"/>
+<path id="Rectangle 1977" d="M7.75 15.75H20.25V35.25H7.75V15.75Z" stroke="white" stroke-width="1.5"/>
+<path id="Rectangle 1978" d="M23.75 15.75H40.25V26.25H23.75V15.75Z" stroke="white" stroke-width="1.5"/>
+<path id="Rectangle 1980" d="M23.75 29.75H40.25V35.25H23.75V29.75Z" stroke="white" stroke-width="1.5"/>
+<path id="Rectangle 1976" d="M3 8C3 6.89543 3.89543 6 5 6H43C44.1046 6 45 6.89543 45 8V11H3V8Z" fill="#AAC4FF"/>
+<g id="Group 4486">
+<path id="Vector" d="M10.1485 9.39368C10.642 9.39368 11.0421 8.99359 11.0421 8.50006C11.0421 8.00653 10.642 7.60645 10.1485 7.60645C9.65497 7.60645 9.25488 8.00653 9.25488 8.50006C9.25488 8.99359 9.65497 9.39368 10.1485 9.39368Z" fill="white"/>
+<path id="Vector_2" d="M13.7237 9.39368C14.2172 9.39368 14.6173 8.99359 14.6173 8.50006C14.6173 8.00653 14.2172 7.60645 13.7237 7.60645C13.2302 7.60645 12.8301 8.00653 12.8301 8.50006C12.8301 8.99359 13.2302 9.39368 13.7237 9.39368Z" fill="white"/>
+<path id="Vector_3" d="M6.57428 9.39368C7.06781 9.39368 7.4679 8.99359 7.4679 8.50006C7.4679 8.00653 7.06781 7.60645 6.57428 7.60645C6.08075 7.60645 5.68066 8.00653 5.68066 8.50006C5.68066 8.99359 6.08075 9.39368 6.57428 9.39368Z" fill="white"/>
+</g>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_2557_10566" x1="24" y1="11" x2="24" y2="37.7882" gradientUnits="userSpaceOnUse">
+<stop stop-color="#7BA1FA"/>
+<stop offset="1" stop-color="#0F53F6"/>
+</linearGradient>
+</defs>
+</svg>

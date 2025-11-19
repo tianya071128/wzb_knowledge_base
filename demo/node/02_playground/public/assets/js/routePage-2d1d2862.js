@@ -1,0 +1,1 @@
+import{d as o,o as _,f as c,k as s,_ as r}from"./index-b80d5ef5.js";const l=o({__name:"routePage",setup(p){const n=t=>{var e,a;(a=(e=t.target)==null?void 0:e.files)==null||a[0]};return(t,e)=>(_(),c("div",null,[s("input",{type:"file",onChange:n},null,32)]))}});const u=r(l,[["__scopeId","data-v-c87d84bc"]]);export{u as default};

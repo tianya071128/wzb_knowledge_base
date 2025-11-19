@@ -1,0 +1,1 @@
+import{d8 as e}from"./index-b80d5ef5.js";const t=r=>e.value.request.post(`${e.value.SYSTEMURL}/user/page`,r),u=r=>e.value.request.post(`${e.value.SYSTEMURL}/user/getPersonalCenter`,r),a=()=>e.value.request.get(`${e.value.SYSTEMURL}/user/count`);export{u as a,t as p,a as q};

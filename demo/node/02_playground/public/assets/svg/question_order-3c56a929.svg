@@ -1,0 +1,23 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4236">
+<g id="Frame 2551(6)">
+<path id="Rectangle 794" d="M23.7497 2.40625H15.7637L21.5902 9.0625L23.7497 11.5469V2.40625Z" fill="#BFDAFD"/>
+<path id="Rectangle 828" d="M14.5156 1H3V27H25V1H14.5156Z" fill="#FF5738"/>
+<path id="Rectangle 825" d="M25 7H3V9H25V7Z" fill="white"/>
+<path id="Rectangle 827" d="M10.8586 3H5V5H10.8586V3Z" fill="white"/>
+<path id="Rectangle 830" d="M22 12H6V14H22V12Z" fill="#FFC5BA"/>
+<path id="Rectangle 831" d="M12 17H6V19H12V17Z" fill="#FFC5BA"/>
+<path id="Rectangle 829" d="M16 3H13V5H16V3Z" fill="white"/>
+</g>
+<g id="Frame" clip-path="url(#clip0_4199_3042)">
+<path id="Vector" d="M17.9997 24.1666C19.1503 24.1666 20.1919 23.7002 20.9459 22.9462C21.7 22.1922 22.1663 21.1505 22.1663 19.9999C22.1663 18.8493 21.7 17.8077 20.9459 17.0536C20.1919 16.2996 19.1503 15.8333 17.9997 15.8333C16.8491 15.8333 15.8074 16.2996 15.0534 17.0536C14.2994 17.8077 13.833 18.8493 13.833 19.9999C13.833 21.1505 14.2994 22.1922 15.0534 22.9462C15.8074 23.7002 16.8491 24.1666 17.9997 24.1666Z" fill="white"/>
+<path id="Vector_2" d="M18 20.9635V20.1301C18.6904 20.1301 19.25 19.5705 19.25 18.8801C19.25 18.1898 18.6904 17.6301 18 17.6301C17.3096 17.6301 16.75 18.1898 16.75 18.8801" stroke="#FF5738" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_3" fill-rule="evenodd" clip-rule="evenodd" d="M18.0003 22.8385C18.288 22.8385 18.5212 22.6054 18.5212 22.3177C18.5212 22.0301 18.288 21.7969 18.0003 21.7969C17.7127 21.7969 17.4795 22.0301 17.4795 22.3177C17.4795 22.6054 17.7127 22.8385 18.0003 22.8385Z" fill="#FF5738"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4199_3042">
+<rect width="10" height="10" fill="white" transform="translate(13 15)"/>
+</clipPath>
+</defs>
+</svg>

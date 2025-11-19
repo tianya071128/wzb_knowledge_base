@@ -1,0 +1,19 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4218">
+<g id="Frame 2551(6)" clip-path="url(#clip0_2888_998)">
+<path id="Rectangle 794" d="M23.7497 2.40625H15.7637L21.5902 9.0625L23.7497 11.5469V2.40625Z" fill="#FDE4BF"/>
+<path id="Rectangle 828" d="M14.5226 1H2.85742V29H25.1431V11.3102L14.5226 1Z" fill="#F58E24"/>
+<path id="Rectangle 825" d="M16.2234 6.99976H7.24316V8.64038H16.2234V6.99976Z" fill="white"/>
+<path id="Rectangle 827" d="M13.1017 12.7419H7.24316V14.3826H13.1017V12.7419Z" fill="white"/>
+<g id="Group">
+<path id="Vector" d="M15.8574 17.3704L20.3345 22.0132" stroke="white" stroke-width="2" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_2" d="M15.8574 22.0132L20.3345 17.3704" stroke="white" stroke-width="2" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2888_998">
+<rect width="26" height="26" fill="white" transform="translate(1 1)"/>
+</clipPath>
+</defs>
+</svg>

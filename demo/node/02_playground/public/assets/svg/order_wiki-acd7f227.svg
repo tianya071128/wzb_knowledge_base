@@ -1,0 +1,18 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="WIKI">
+<path id="Rectangle 34624146" d="M25 27L9 27L3 20L3 0.999998L25 1L25 27Z" fill="#8454FD"/>
+<path id="Rectangle 34624147" d="M9 27L3 20L9 20L9 27Z" fill="#D4BDEC"/>
+<path id="Rectangle 829" d="M18 9H7V11H18V9Z" fill="#D4BDEC"/>
+<path id="Rectangle 830" d="M7 7L21 7L21 5L7 5L7 7Z" fill="#D4BDEC"/>
+<g id="Frame" clip-path="url(#clip0_6295_1909)">
+<path id="Vector" d="M13.4546 14.6816V16.4998H15.2728" stroke="white" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_2" d="M13 19C13 21.7614 15.2386 24 18 24C20.7614 24 23 21.7614 23 19C23 16.2386 20.7614 14 18 14C16.1495 14 14.5338 15.0053 13.6692 16.4995" stroke="white" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_3" d="M18.0013 16L18.001 19.0022L20.1208 21.1221" stroke="white" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_6295_1909">
+<rect width="12" height="12" fill="white" transform="translate(12 13)"/>
+</clipPath>
+</defs>
+</svg>

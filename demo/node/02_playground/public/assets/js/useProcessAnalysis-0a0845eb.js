@@ -1,0 +1,1 @@
+import{bI as t,bK as n,bJ as c}from"./index-b80d5ef5.js";const r=Symbol("ProcessAnalysis_Key"),l=s=>{const a=s||{sourceId:"",readonlySource:!1},e=t(r,void 0);if(e)return e;{const o=n(a);return c(r,o),o}};export{l as u};

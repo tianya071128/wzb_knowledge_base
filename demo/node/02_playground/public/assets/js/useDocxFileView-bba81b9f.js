@@ -1,0 +1,1 @@
+import{r as l}from"./docx-preview-5c53b8db.js";import{wy as n}from"./index-b80d5ef5.js";function c(e){const{getFileBold:o,loadingDataRef:t,fileBlob:i}=n(e);return{loadFile:async()=>{await o(),setTimeout(()=>{l(i.value,document.getElementById("document-container"))})},loadingDataRef:t}}export{c as u};

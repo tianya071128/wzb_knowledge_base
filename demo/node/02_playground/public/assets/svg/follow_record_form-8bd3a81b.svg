@@ -1,0 +1,25 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4226">
+<g id="Frame 2551(6)" clip-path="url(#clip0_4100_8930)">
+<path id="Rectangle 794" d="M23.7497 2.40625H15.7637L21.5902 9.0625L23.7497 11.5469V2.40625Z" fill="#BFDAFD"/>
+<path id="Rectangle 828" d="M14.5226 1H2.85742V29H25.1431V11.3102L14.5226 1Z" fill="#1F79FF"/>
+<path id="Rectangle 825" d="M16.2234 6.99976H7.24316V8.64038H16.2234V6.99976Z" fill="white"/>
+<path id="Rectangle 827" d="M13.1017 12.7419H7.24316V14.3826H13.1017V12.7419Z" fill="white"/>
+</g>
+<g id="Frame" clip-path="url(#clip1_4100_8930)">
+<path id="Vector" d="M22.5 20.5V19.1154C22.5 16.5664 20.4853 14.5 18 14.5C15.5147 14.5 13.5 16.5664 13.5 19.1154V20.5" stroke="white" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_2" d="M20.5 21C20.5 20.4477 20.9477 20 21.5 20H22.5V23.5H21.5C20.9477 23.5 20.5 23.0523 20.5 22.5V21Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+<path id="Vector_3" d="M22.5 21H23C23.2762 21 23.5 21.2239 23.5 21.5V22C23.5 22.2761 23.2762 22.5 23 22.5H22.5V21Z" fill="white"/>
+<path id="Vector_4" d="M13.5 21H13C12.7239 21 12.5 21.2239 12.5 21.5V22C12.5 22.2761 12.7239 22.5 13 22.5H13.5V21Z" fill="white"/>
+<path id="Vector_5" d="M13.5 20H14.5C15.0523 20 15.5 20.4477 15.5 21V22.5C15.5 23.0523 15.0523 23.5 14.5 23.5H13.5V20Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4100_8930">
+<rect width="26" height="26" fill="white" transform="translate(1 1)"/>
+</clipPath>
+<clipPath id="clip1_4100_8930">
+<rect width="12" height="12" fill="white" transform="translate(12 13)"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,13 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<path id="Vector" d="M20.417 13.9999C20.417 13.3556 20.9393 12.8333 21.5837 12.8333H23.917C24.5613 12.8333 25.0837 13.3556 25.0837 13.9999V23.9166C25.0837 24.8831 24.3002 25.6666 23.3337 25.6666H20.417V13.9999Z" fill="#FDE4BF"/>
+<path id="Vector_2" d="M2.91699 4.08325C2.91699 3.11676 3.7005 2.33325 4.66699 2.33325H20.667C21.6335 2.33325 22.417 3.11676 22.417 4.08325V25.6666H4.66699C3.7005 25.6666 2.91699 24.8831 2.91699 23.9166V4.08325Z" fill="#F58E24"/>
+<path id="Vector_3" d="M6.41699 7H11.0837" stroke="white" stroke-width="2" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_4" opacity="0.4" d="M6.41699 11.0833H13.417" stroke="white" stroke-width="2" stroke-linecap="square" stroke-linejoin="round"/>
+<g id="Frame_2">
+<path id="Vector_5" d="M15.5 17.75C16.3284 17.75 17 17.0784 17 16.25C17 15.4216 16.3284 14.75 15.5 14.75C14.6716 14.75 14 15.4216 14 16.25C14 17.0784 14.6716 17.75 15.5 17.75Z" fill="white"/>
+<path id="Vector_6" d="M18.875 22.25C18.875 20.386 17.364 18.875 15.5 18.875C13.636 18.875 12.125 20.386 12.125 22.25" fill="white"/>
+<path id="Vector_7" d="M15.5 22.25L16.25 21.3125L15.5 18.875L14.75 21.3125L15.5 22.25Z" fill="#F58E24"/>
+</g>
+</g>
+</svg>

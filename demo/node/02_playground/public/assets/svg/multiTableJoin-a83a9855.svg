@@ -1,0 +1,15 @@
+<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+    <g id="Frame 3056">
+        <rect id="Rectangle 2506" x="2" y="2" width="7" height="8" stroke="#002851" stroke-linecap="round"
+            stroke-linejoin="round" />
+        <rect id="Rectangle 2507" x="4" y="4" width="8" height="9" fill="white" stroke="#002851" stroke-linecap="round"
+            stroke-linejoin="round" />
+        <rect id="Rectangle 2508" x="6" y="8" width="7" height="6" fill="white" />
+        <path id="Vector 923" d="M6 6.5625H10" stroke="#002851" stroke-linecap="round" stroke-linejoin="round" />
+        <path id="Ellipse 402" d="M9 9.5H8.5C7.67157 9.5 7 10.1716 7 11C7 11.8284 7.67157 12.5 8.5 12.5H9"
+            stroke="#002851" stroke-linecap="round" stroke-linejoin="round" />
+        <path id="Ellipse 403" d="M11 9.5H11.5C12.3284 9.5 13 10.1716 13 11C13 11.8284 12.3284 12.5 11.5 12.5H11"
+            stroke="#002851" stroke-linecap="round" stroke-linejoin="round" />
+        <path id="Vector 923_2" d="M9 11H11" stroke="#002851" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+</svg>

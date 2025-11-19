@@ -1,0 +1,24 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4230">
+<g id="Frame 2551(6)" clip-path="url(#clip0_4111_10086)">
+<path id="Rectangle 794" d="M23.7497 2.40625H15.7637L21.5902 9.0625L23.7497 11.5469V2.40625Z" fill="#BFDAFD"/>
+<path id="Rectangle 828" d="M14.5226 1H2.85742V29H25.1431V11.3102L14.5226 1Z" fill="#1F79FF"/>
+<path id="Rectangle 825" d="M16.2234 6.99976H7.24316V8.64038H16.2234V6.99976Z" fill="white"/>
+<path id="Rectangle 827" d="M13.1017 12.7419H7.24316V14.3826H13.1017V12.7419Z" fill="white"/>
+</g>
+<g id="Frame" clip-path="url(#clip1_4111_10086)">
+<path id="Vector" d="M20.6926 18.5L20.1093 20.8333H16.5567L15.9734 18.5H20.6926Z" stroke="white"/>
+<path id="Vector_2" d="M14.5 17H15.0833L15.3333 18M15.3333 18L16.1667 21.3333H20.5L21.3333 18H15.3333Z" stroke="white" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_3" d="M16.167 23C16.4431 23 16.667 22.7761 16.667 22.5C16.667 22.2239 16.4431 22 16.167 22C15.8908 22 15.667 22.2239 15.667 22.5C15.667 22.7761 15.8908 23 16.167 23Z" stroke="white" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_4" d="M20.5 23C20.7761 23 21 22.7761 21 22.5C21 22.2239 20.7761 22 20.5 22C20.2239 22 20 22.2239 20 22.5C20 22.7761 20.2239 23 20.5 23Z" stroke="white" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4111_10086">
+<rect width="26" height="26" fill="white" transform="translate(1 1)"/>
+</clipPath>
+<clipPath id="clip1_4111_10086">
+<rect width="8" height="8" fill="white" transform="translate(14 16)"/>
+</clipPath>
+</defs>
+</svg>

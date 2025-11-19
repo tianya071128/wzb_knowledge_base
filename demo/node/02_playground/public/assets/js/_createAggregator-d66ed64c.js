@@ -1,0 +1,1 @@
+import{l_ as o,f8 as s,e7 as u}from"./index-b80d5ef5.js";function c(e,t,g,r){for(var n=-1,a=e==null?0:e.length;++n<a;){var f=e[n];t(r,f,g(f),e)}return r}function h(e,t,g,r){return o(e,function(n,a,f){t(r,n,g(n),f)}),r}function A(e,t){return function(g,r){var n=s(g)?c:h,a=t?t():{};return n(g,e,u(r),a)}}export{A as c};

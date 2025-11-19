@@ -1,0 +1,1 @@
+import{d8 as e}from"./index-b80d5ef5.js";const r=t=>e.value.request.post(`${e.value.SYSTEMURL}/auth/forgetPwdCodeVaild`,t),a=t=>e.value.request.post(`${e.value.SYSTEMURL}/auth/forgetPwd`,t);export{a,r as f};

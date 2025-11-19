@@ -1,0 +1,1 @@
+import{d as t,o as n,b as o,o9 as s,ex as a}from"./index-b80d5ef5.js";const f=t({__name:"TextBase",props:{field:{}},setup(i){return(e,c)=>e.field.options.content?(n(),o(s,{key:0,content:e.field.options.content},null,8,["content"])):(n(),o(a,{key:1,content:"",field:e.field},null,8,["field"]))}});export{f as _};

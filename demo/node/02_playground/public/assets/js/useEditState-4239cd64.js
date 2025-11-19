@@ -1,0 +1,1 @@
+import{u as t}from"./createDesigner-82222fc7.js";import{r as i,c as o,dw as n}from"./index-b80d5ef5.js";function u(){const s=i(!1),e=t(),r=o(()=>n.design===e.mode);return{editVisible:s,isDesignMode:r,pageDesigner:e}}export{u};

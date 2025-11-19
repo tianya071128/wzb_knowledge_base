@@ -1,0 +1,1 @@
+import{C as o}from"./createDesigner-82222fc7.js";import{d as m,o as r,b as d}from"./index-b80d5ef5.js";const p=m({__name:"render",props:{moduleItem:{}},setup(l){return(e,n)=>(r(),d(o,{modules:e.moduleItem.modules,moduleId:e.moduleItem.moduleId},null,8,["modules","moduleId"]))}});export{p as _};

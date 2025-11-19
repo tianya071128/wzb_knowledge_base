@@ -1,0 +1,9 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4221">
+<path id="Rectangle 34624146" d="M3 1H19L25 8V27H3V1Z" fill="#1F79FF"/>
+<path id="Rectangle 34624158" d="M14.5 8H7V22H14.5" stroke="white" stroke-width="1.5"/>
+<path id="Rectangle 34624159" d="M15 8H22.5V22H15" stroke="white" stroke-width="1.5" stroke-dasharray="2 2"/>
+<line id="Line 316" x1="14.75" y1="6" x2="14.75" y2="24" stroke="white" stroke-width="1.5"/>
+<path id="Rectangle 34624147" d="M19 1L25 8H19V1Z" fill="#99C1FF"/>
+</g>
+</svg>

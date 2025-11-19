@@ -1,0 +1,1 @@
+import{d as a,o as n,b as l,a2 as r,B as p,Q as c}from"./index-b80d5ef5.js";import{u as i}from"./useFieldMaxWidth-d82f063e.js";const f=a({__name:"AutoNumberBase",props:{field:{}},setup(e){const t=e,{maxWidthStyle:o}=i(t.field);return(m,u)=>{const s=c;return n(),l(s,{style:r(p(o)),placeholder:"自动生成无需填写",disabled:""},null,8,["style"])}}});export{f as _};

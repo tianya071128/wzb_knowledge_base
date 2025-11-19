@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",          // 编译目标为 ES2020（兼容 Node.js 14+）
+    "module": "CommonJS",        // 模块系统（Node.js 默认使用 CommonJS）
+    "outDir": "./dist",          // 编译后的 JS 文件输出目录
+    "rootDir": "./src",          // TypeScript 源代码目录
+    "strict": true,              // 开启严格类型检查（推荐）
+    "esModuleInterop": true,     // 允许 CommonJS 和 ES 模块互操作
+    "skipLibCheck": true,        // 跳过对库文件的类型检查（提升编译速度）
+    "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致
+    "resolveJsonModule": true    // 允许导入 JSON 文件
+  },
+  "include": ["src/**/*"],       // 需要编译的文件（src 目录下所有 .ts 文件）
+  "exclude": ["node_modules", "dist"] // 排除目录
+}

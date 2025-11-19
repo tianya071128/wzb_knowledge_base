@@ -1,0 +1,1 @@
+import{d8 as t}from"./index-b80d5ef5.js";const r=e=>t.value.request.post(`${t.value.SYSTEMURL}/contract/signApply`,e),n=e=>t.value.request.post(`${t.value.SYSTEMURL}/contract/getSignResult`,e),a=e=>t.value.request.post(`${t.value.SYSTEMURL}/contract/viewFile`,e);export{a as c,n as g,r as s};

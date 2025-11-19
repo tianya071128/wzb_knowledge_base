@@ -1,0 +1,1 @@
+import{d as o,o as r,b as s,wF as n}from"./index-b80d5ef5.js";const i=o({__name:"Render",props:{field:{}},setup(p){return(e,a)=>(r(),s(n,{fields:e.field.fields,showEmpty:""},null,8,["fields"]))}});export{i as _};

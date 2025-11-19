@@ -1,0 +1,13 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<rect id="Rectangle 34624150" y="3" width="28" height="23" rx="2" fill="#00C387"/>
+<path id="Ellipse 553 (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M19.4633 12.75C22.0665 12.75 24.1768 14.8603 24.1768 17.4634C24.1768 20.0666 22.0665 22.1768 19.4633 22.1768C16.8602 22.1768 14.7499 20.0666 14.7499 17.4634C14.7499 14.8603 16.8602 12.75 19.4633 12.75ZM25.6768 17.4634C25.6768 14.0318 22.8949 11.25 19.4633 11.25C16.0318 11.25 13.2499 14.0318 13.2499 17.4634C13.2499 20.895 16.0318 23.6768 19.4633 23.6768C22.8949 23.6768 25.6768 20.895 25.6768 17.4634Z" fill="white"/>
+<path id="Vector (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M16.0037 17.8514L19.965 17.9678L19.8485 14.0062L21.3479 13.9621L21.4878 18.7187C21.4939 18.9252 21.4145 19.125 21.2684 19.2711C21.1224 19.4172 20.9226 19.4965 20.7161 19.4905L15.9596 19.3508L16.0037 17.8514Z" fill="white"/>
+<g id="Group 427318770">
+<path id="Vector" d="M4 7L6.5 9L9 7" stroke="#BFFDD8" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_2" d="M4 12H9" stroke="#BFFDD8" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_3" d="M4 9H9" stroke="#BFFDD8" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_4" d="M6.5 9V14" stroke="#BFFDD8" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

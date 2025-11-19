@@ -1,0 +1,20 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<path id="Vector" d="M20 14.1818C20 13.5291 20.5596 13 21.25 13H23.75C24.4404 13 25 13.5291 25 14.1818V24.2273C25 25.2063 24.1606 26 23.125 26H20V14.1818Z" fill="#FF5738" fill-opacity="0.2"/>
+<path id="Vector_2" d="M2 3.8C2 2.80589 2.78027 2 3.74277 2H21.2572C22.2198 2 23 2.80589 23 3.8V26H3.74277C2.78027 26 2 25.1941 2 24.2V3.8Z" fill="#FF5738"/>
+<path id="Vector_3" d="M6 15H10.6667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" opacity="0.4" d="M6 19.0833H13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<g id="Rectangle 34624142">
+<mask id="path-5-inside-1_4132_1937" fill="white">
+<rect x="5" y="6" width="5" height="5" rx="0.2"/>
+</mask>
+<rect x="5" y="6" width="5" height="5" rx="0.2" stroke="white" stroke-width="2" mask="url(#path-5-inside-1_4132_1937)"/>
+</g>
+<g id="Rectangle 34624143">
+<mask id="path-6-inside-2_4132_1937" fill="white">
+<rect x="14" y="6" width="5" height="5" rx="0.2"/>
+</mask>
+<rect x="14" y="6" width="5" height="5" rx="0.2" stroke="white" stroke-width="2" mask="url(#path-6-inside-2_4132_1937)"/>
+</g>
+</g>
+</svg>

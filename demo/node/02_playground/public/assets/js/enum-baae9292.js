@@ -1,0 +1,1 @@
+var a=(r=>(r.currentPage="1",r.newPage="2",r))(a||{}),l=(r=>(r.app="app",r.entry="entry",r.link="link",r.router="router",r))(l||{}),e=(r=>(r.tb="tb",r.lr="lr",r))(e||{}),t=(r=>(r.default="default",r.circle="circle",r))(t||{}),s=(r=>(r.large="large",r.default="default",r.small="small",r))(s||{});export{e as D,t as G,a as O,l as Q,s as S};

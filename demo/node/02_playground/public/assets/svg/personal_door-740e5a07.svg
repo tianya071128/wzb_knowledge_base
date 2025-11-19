@@ -1,0 +1,15 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 2584" clip-path="url(#clip0_2922_6445)">
+<g id="Group">
+<circle id="Ellipse 493" cx="17.5" cy="19.5" r="10.5" fill="#E9E9FF"/>
+<path id="Vector" fill-rule="evenodd" clip-rule="evenodd" d="M14 26.5C20.9036 26.5 26.5 20.9036 26.5 14C26.5 7.09644 20.9036 1.5 14 1.5C7.09644 1.5 1.5 7.09644 1.5 14C1.5 20.9036 7.09644 26.5 14 26.5Z" fill="#8454FD"/>
+<path id="Vector_2" d="M14 13.375C15.7259 13.375 17.125 11.9759 17.125 10.25C17.125 8.52413 15.7259 7.125 14 7.125C12.2741 7.125 10.875 8.52413 10.875 10.25C10.875 11.9759 12.2741 13.375 14 13.375Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+<path id="Vector_3" d="M5.26367 22.9575C5.47848 19.7004 8.18842 17.125 11.4999 17.125H16.4999C19.807 17.125 22.5142 19.6936 22.7354 22.9446" stroke="white" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_2922_6445">
+<rect width="28" height="28" fill="white"/>
+</clipPath>
+</defs>
+</svg>

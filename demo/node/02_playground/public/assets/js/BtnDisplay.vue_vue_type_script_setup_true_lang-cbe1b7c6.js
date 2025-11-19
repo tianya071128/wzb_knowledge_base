@@ -1,0 +1,1 @@
+import{d as o,o as n,b as a,h7 as p}from"./index-b80d5ef5.js";const r=o({__name:"BtnDisplay",props:{field:{}},setup(s){return(e,t)=>(n(),a(p,{"model-value":e.field.options.btnConfig,preview:""},null,8,["model-value"]))}});export{r as _};

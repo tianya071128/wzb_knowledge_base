@@ -1,0 +1,1 @@
+const s=(e,i)=>{const n=(e==null?void 0:e.split(","))??[];return n.length?!!n.includes(i):!1},f=(e=[],i,n)=>{var r,d,l;let t=[];return n.viewId?t=((d=(r=e.find(c=>c.viewId===n.viewId))==null?void 0:r.operAuth)==null?void 0:d.split(","))??[]:t=((l=e.find(c=>c.entryId===n.entryId))==null?void 0:l.operAuth.split(","))??[],t.length?!!t.includes(i):!1};export{s as a,f as c};

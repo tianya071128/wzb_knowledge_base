@@ -1,0 +1,17 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4246">
+<g id="Group 4278">
+<rect id="Rectangle 2469" x="3" y="4" width="22" height="24" rx="1" fill="#1F79FF"/>
+<path id="Rectangle 2470" d="M7.23047 4.28521C7.23047 3.84338 7.58864 3.48521 8.03047 3.48521H9.93047C10.3723 3.48521 10.7305 3.12703 10.7305 2.68521V1.8C10.7305 1.35817 11.0886 1 11.5305 1H16.9305C17.3723 1 17.7305 1.35817 17.7305 1.8V2.68521C17.7305 3.12703 18.0886 3.48521 18.5305 3.48521H20.4305C20.8723 3.48521 21.2305 3.84338 21.2305 4.28521V6.66154C21.2305 7.10337 20.8723 7.46154 20.4305 7.46154H8.03047C7.58864 7.46154 7.23047 7.10337 7.23047 6.66154V4.28521Z" fill="#98C0FE"/>
+</g>
+<g id="Frame" clip-path="url(#clip0_4261_15015)">
+<path id="Vector" d="M14 22C16.7614 22 19 19.7614 19 17C19 14.2386 16.7614 12 14 12C11.2386 12 9 14.2386 9 17C9 19.7614 11.2386 22 14 22Z" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>
+<path id="Vector_2" d="M14.0023 14L14.002 17.0022L16.1218 19.1221" stroke="white" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_4261_15015">
+<rect width="12" height="12" fill="white" transform="translate(8 11)"/>
+</clipPath>
+</defs>
+</svg>

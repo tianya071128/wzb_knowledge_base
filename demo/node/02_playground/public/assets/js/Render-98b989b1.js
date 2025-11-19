@@ -1,0 +1,1 @@
+import{_ as e}from"./Render.vue_vue_type_script_setup_true_lang-21eb9f9d.js";import{d as o,o as a,b as s,cR as t,cS as n}from"./index-b80d5ef5.js";import"./Base-11a86176.js";import"./useValidateError-9f6399dc.js";const l=o({__name:"Render",setup(p){return(r,c)=>(a(),s(e,t(n(r.$attrs)),null,16))}});export{l as default};

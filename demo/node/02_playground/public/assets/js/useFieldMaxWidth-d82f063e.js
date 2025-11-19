@@ -1,0 +1,1 @@
+import{gY as n,jG as s,c as o,kv as i,a as u}from"./index-b80d5ef5.js";const a={[u.textarea]:"800px"};function m(t){const e=n(),r=s(),d=o(()=>r?r.formDesigner.fields:e?e.form.fields:null);return{maxWidthStyle:o(()=>d.value?(r?r.getFieldShowMode(t.fieldId):e?e.getFieldShowMode(t.fieldId):void 0)===i.narrow?{}:{"max-width":a[t.type]??"400px"}:{})}}export{m as u};

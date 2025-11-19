@@ -1,0 +1,1 @@
+import{d as s,o,b as t,B as i,mY as a,mZ as p,n0 as n,m$ as r}from"./index-b80d5ef5.js";const f=s({__name:"UploadImgBase",props:{field:{}},setup(l){return(e,m)=>(o(),t(r,{limit:i(a)(e.field.options),size:i(p)(e.field.options),"size-text":i(n)(e.field.options)},null,8,["limit","size","size-text"]))}});export{f as _};

@@ -1,0 +1,16 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 4217">
+<g id="Group 427318764">
+<path id="Vector 1168" d="M26 24.1429V1H11C7.68629 1 5 3.68629 5 7V26C5 27.1046 5.8911 28 6.99567 28H22.1465C24.2767 28 26 26.2731 26 24.1429Z" fill="#FF5738"/>
+<path id="Rectangle 34624128" d="M2 23H20.1538C19.9579 24.5921 20.4432 26.193 21.4902 27.4083L22 28H6C3.79086 28 2 26.2091 2 24V23Z" fill="#FFA494"/>
+</g>
+<rect id="Rectangle 34624129" x="10" y="7" width="12" height="2" fill="white"/>
+<rect id="Rectangle 34624130" x="10" y="13" width="5" height="2" fill="#FFA494"/>
+<g id="Group 427318768">
+<path id="Vector" d="M17 14L19.5 16L22 14" stroke="white" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_2" d="M17 19H22" stroke="white" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_3" d="M19.5 16V21" stroke="white" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+<path id="Vector_4" d="M17 16H22" stroke="white" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>
