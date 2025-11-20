@@ -3,18 +3,25 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "redis:start": "node ./scripts/start-redis.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@koa/bodyparser": "^6.0.0",
+    "@koa/router": "^14.0.0",
     "koa": "^3.1.1",
-    "koa-static": "^5.0.0"
+    "koa-static": "^5.0.0",
+    "redis": "^5.10.0",
+    "uuid": "^13.0.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/koa": "^3.0.1",
     "@types/koa-static": "^4.0.4",
+    "@types/koa__router": "^12.0.5",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
