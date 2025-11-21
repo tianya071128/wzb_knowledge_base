@@ -11,10 +11,12 @@ export const LoginSchema = z.object({
 export type LoginBody = z.infer<typeof LoginSchema>;
 // #endregion
 
-export default async function loginController(ctx: Context) {
+export default async function loginController(ctx: Context, next: Function) {
   // 模拟: 验证通过
 
   // 生成 token
   const token = await generateToken(ctx.request.body.username);
   ctx.success({ token });
+
+  await next();
 }

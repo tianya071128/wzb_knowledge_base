@@ -11,7 +11,10 @@ export const CheckVerifyCodeSchema = z.object({
 export type CheckVerifyBody = z.infer<typeof CheckVerifyCodeSchema>;
 // #endregion
 
-export default function checkVerifyCodeController(ctx: Context) {
+export default async function checkVerifyCodeController(
+  ctx: Context,
+  next: Function
+) {
   ctx.success({
     repCode: '0000',
     repMsg: null,
@@ -38,4 +41,6 @@ export default function checkVerifyCodeController(ctx: Context) {
     },
     success: true,
   });
+
+  await next();
 }

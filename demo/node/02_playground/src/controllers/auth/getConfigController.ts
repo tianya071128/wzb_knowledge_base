@@ -1,6 +1,9 @@
 import { Context } from 'koa';
 
-export default function getConfigController(ctx: Context) {
+export default async function getConfigController(
+  ctx: Context,
+  next: Function
+) {
   ctx.success({
     id: '1869274854172147713',
     loginLogo: '',
@@ -18,4 +21,6 @@ export default function getConfigController(ctx: Context) {
     showDataFactroyState: false,
     loginOutUrl: null,
   });
+
+  await next();
 }

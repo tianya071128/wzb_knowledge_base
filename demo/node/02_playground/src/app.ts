@@ -4,7 +4,9 @@ import bodyParser from '@koa/bodyparser';
 import { join, normalize, relative } from 'node:path';
 import * as z from 'zod';
 import { zhCN } from 'zod/locales';
+import { connectMongoDB } from './utils/mongodb';
 import authRoutes from './routes/auth.route';
+import userRoutes from './routes/user.route';
 import responseMiddleware from './middleware/response';
 import './utils/redis';
 import './utils/redisPersist';
@@ -50,6 +52,16 @@ app.use(responseMiddleware);
 
 // #region ------------ 路由注册 ------------
 app.use(authRoutes.routes()).use(authRoutes.allowedMethods());
+app.use(userRoutes.routes()).use(userRoutes.allowedMethods());
 // #endregion
 
-app.listen(3000);
+// 先连接 MongoDB，再启动服务
+async function bootstrap() {
+  await connectMongoDB();
+  const PORT = 3000;
+  app.listen(PORT, () => {
+    console.log(`服务启动在 http://localhost:${PORT}`);
+  });
+}
+
+bootstrap();

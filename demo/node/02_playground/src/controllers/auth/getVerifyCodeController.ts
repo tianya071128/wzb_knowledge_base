@@ -1,6 +1,9 @@
 import { Context } from 'koa';
 
-export default function getVerifyCodeController(ctx: Context) {
+export default async function getVerifyCodeController(
+  ctx: Context,
+  next: Function
+) {
   ctx.success({
     repCode: '0000',
     repMsg: null,
@@ -29,4 +32,6 @@ export default function getVerifyCodeController(ctx: Context) {
     },
     success: true,
   });
+
+  await next();
 }
