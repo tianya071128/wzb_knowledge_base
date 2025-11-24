@@ -10,6 +10,7 @@ import userRoutes from './routes/user.route';
 import responseMiddleware from './middleware/response';
 import './utils/redis';
 import './utils/redisPersist';
+import UserModel from './models/User';
 
 const app = new Koa();
 
@@ -62,6 +63,8 @@ async function bootstrap() {
   app.listen(PORT, () => {
     console.log(`服务启动在 http://localhost:${PORT}`);
   });
+  // const res = await UserModel.find();
+  // console.log(res);
 }
 
 bootstrap();

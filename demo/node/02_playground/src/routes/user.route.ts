@@ -15,4 +15,9 @@ router.post(
   registerController
 );
 
+/**
+ * 获取用户信息
+ */
+// router.get('user/getLoginUserInfo', );
+
 export default router;

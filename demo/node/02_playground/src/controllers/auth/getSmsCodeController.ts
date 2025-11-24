@@ -29,7 +29,7 @@ export default async function getSmsCodeController(
   }
   // #endregion
 
-  const code = Math.floor(Math.random() * 1000000).toString();
+  const code = (Math.floor(Math.random() * 900000) + 100000).toString();
   await redisClient.hSetEx(
     key,
     {

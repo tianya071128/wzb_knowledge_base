@@ -16,7 +16,7 @@ export default async function loginController(ctx: Context, next: Function) {
 
   // 生成 token
   const token = await generateToken(ctx.request.body.username);
-  ctx.success({ token });
+  ctx.success({ accessToken: token });
 
   await next();
 }
