@@ -3,6 +3,8 @@ import registerController, {
   SegisterSchema,
 } from '../controllers/user/registerController';
 import { validateBodyMiddleware } from '../middleware/validate';
+import { getLoginUserInfoMiddleware } from '../middleware/getLoginUserInfo';
+import getLoginUserInfoController from '../controllers/user/getLoginUserInfoController';
 
 const router = new Router({ prefix: '/alicorn-system' });
 
@@ -18,6 +20,10 @@ router.post(
 /**
  * 获取用户信息
  */
-// router.get('user/getLoginUserInfo', );
+router.get(
+  '/user/getLoginUserInfo',
+  getLoginUserInfoMiddleware(),
+  getLoginUserInfoController
+);
 
 export default router;

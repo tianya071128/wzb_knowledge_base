@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import redisPersistClient from './redisPersist';
+import redisPersistClient from './redis/redisPersist';
 
 const TOKEN_EXPIRE = 8 * 60 * 60; // 8小时过期
 

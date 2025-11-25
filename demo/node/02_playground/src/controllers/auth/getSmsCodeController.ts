@@ -1,8 +1,11 @@
 import { Context } from 'koa';
-import redisClient from '../../utils/redis';
 import z from 'zod';
 import { SmsCodeEnum } from '../../types/auth.enum';
 import { phoneReg } from '../../utils/reg';
+import {
+  getSomCodeStorageInfo,
+  storageSmsCode,
+} from '../../utils/redis/smsCode';
 
 // #region ------------ 定义schema ------------
 export const GetSmsCodeSchema = z.object({
@@ -18,10 +21,13 @@ export default async function getSmsCodeController(
   next: Function
 ) {
   const params = ctx.request.body as GetSmsCodeBody;
-  const key = `somcode:${params.type}:${params.receiver}`; // 缓存key
 
   // #region ------------ 防重复获取 ------------
-  const createTime = await redisClient.hGet(key, 'createTime');
+  const createTime = await getSomCodeStorageInfo(
+    params.type,
+    params.receiver,
+    'createTime'
+  );
 
   if (createTime && Date.now() - Number(createTime) < 60 * 1000) {
     ctx.error('请勿重复获取验证码');
@@ -30,19 +36,7 @@ export default async function getSmsCodeController(
   // #endregion
 
   const code = (Math.floor(Math.random() * 900000) + 100000).toString();
-  await redisClient.hSetEx(
-    key,
-    {
-      code,
-      createTime: Date.now().toString(),
-    },
-    {
-      expiration: {
-        type: 'EX',
-        value: 5 * 60,
-      },
-    }
-  );
+  await storageSmsCode(params.type, params.receiver, code);
 
   ctx.success({
     code,

@@ -16,8 +16,8 @@ const responseMiddleware = async (ctx: Context, next: Next) => {
   // 错误响应方法
   ctx.error = (
     message: string = '服务器异常',
-    data?: any,
-    code: string = '1000'
+    code: string = '1000',
+    data?: any
   ) => {
     ctx.body = { code, data: data ?? null, message };
     ctx.status = 200; // 也可根据错误码设置对应的 HTTP 状态码（如 400/500）

@@ -1,5 +1,6 @@
 // src/types/koa.d.ts
 import Koa from 'koa';
+import { UserType } from '../models/User';
 
 declare module 'koa' {
   interface Context {
@@ -18,5 +19,10 @@ declare module 'koa' {
      * @param data 附加数据（可选）
      */
     error: (message: string, code?: string, data?: any) => void;
+
+    state: {
+      /** 用户信息 */
+      userInfo?: UserType;
+    };
   }
 }

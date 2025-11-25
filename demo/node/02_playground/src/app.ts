@@ -8,8 +8,8 @@ import { connectMongoDB } from './utils/mongodb';
 import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route';
 import responseMiddleware from './middleware/response';
-import './utils/redis';
-import './utils/redisPersist';
+import './utils/redis/redis';
+import './utils/redis/redisPersist';
 import UserModel from './models/User';
 
 const app = new Koa();

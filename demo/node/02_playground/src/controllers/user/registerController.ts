@@ -2,11 +2,11 @@ import { Context } from 'koa';
 import z from 'zod';
 import { phoneReg } from '../../utils/reg';
 import { SmsCodeEnum } from '../../types/auth.enum';
-import redisClient from '../../utils/redis';
 import { generateUniqueAccount } from '../../utils/generateAccount';
 import UserModel from '../../models/User';
 import { generateToken } from '../../utils/auth';
-import redisPersistClient from '../../utils/redisPersist';
+import { storageToken } from '../../utils/redis/token';
+import { getSomCodeStorageInfo } from '../../utils/redis/smsCode';
 
 // #region ------------ 定义schema ------------
 export const SegisterSchema = z.object({
@@ -27,8 +27,7 @@ export default async function registerController(ctx: Context) {
   const params = ctx.request.body as SegisterBody;
 
   // 1. 验证验证码
-  const key = `somcode:${params.type}:${params.mobile}`; // 验证码缓存key
-  const code = await redisClient.hGet(key, 'code');
+  const code = await getSomCodeStorageInfo(params.type, params.mobile, 'code');
   if (!code || code !== params.code) {
     ctx.error('验证码错误');
     return;
@@ -45,23 +44,10 @@ export default async function registerController(ctx: Context) {
       username: account, // 自动生成的唯一账号
       mobile: params.mobile,
     });
-    console.log(newUser);
-    // ctx.error('暂不支持测试');
 
     // 4. 生成 token 返回
     const token = await generateToken(newUser._id.toString());
-    redisPersistClient.hSetEx(
-      `login:${token}`,
-      {
-        userId: newUser._id.toString(),
-      },
-      {
-        expiration: {
-          type: 'EX',
-          value: 8 * 60 * 60,
-        },
-      }
-    );
+    await storageToken(token, { userId: newUser._id.toString() });
 
     ctx.success({ accessToken: token });
   } catch (err: any) {
