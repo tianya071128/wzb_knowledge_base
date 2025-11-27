@@ -1,6 +1,9 @@
-import { Context } from 'koa';
+import { Context, Next } from 'koa';
 
-export default function getLoginUserInfoController(ctx: Context) {
+export default async function getLoginUserInfoController(
+  ctx: Context,
+  next: Next
+) {
   ctx.success({
     memberInfo: {
       memberId: '1711308933965324290',
@@ -1839,4 +1842,6 @@ export default function getLoginUserInfoController(ctx: Context) {
     },
     appId: null,
   });
+
+  await next();
 }

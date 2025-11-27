@@ -12,6 +12,7 @@
   "dependencies": {
     "@koa/bodyparser": "^6.0.0",
     "@koa/router": "^14.0.0",
+    "dayjs": "^1.11.19",
     "koa": "^3.1.1",
     "koa-static": "^5.0.0",
     "mongoose": "^8.20.1",

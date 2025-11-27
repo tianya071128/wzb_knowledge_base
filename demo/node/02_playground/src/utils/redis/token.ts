@@ -7,7 +7,7 @@ export interface TokenStorageInfo {
 }
 
 /** 存储时间 */
-export const TOKEN_EXPIRE = 8 * 60 * 60; // 8小时过期
+export const TOKEN_EXPIRE = 24 * 60 * 60; // 24小时过期
 
 /** 生成token存储key */
 export function generateTokenStorageKey(token: string) {
@@ -30,4 +30,9 @@ export async function getTokenStorageInfo<K extends keyof TokenStorageInfo>(
   key: K
 ) {
   return redisPersistClient.hGet(generateTokenStorageKey(token), key);
+}
+
+/** 延长 token 有限期 */
+export async function extendTokenExpire(token: string) {
+  await redisPersistClient.expire(generateTokenStorageKey(token), TOKEN_EXPIRE);
 }

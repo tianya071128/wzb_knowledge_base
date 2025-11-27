@@ -1,6 +1,7 @@
 // src/types/koa.d.ts
 import Koa from 'koa';
 import { UserType } from '../models/User';
+import { Types } from 'mongoose';
 
 declare module 'koa' {
   interface Context {
@@ -20,9 +21,15 @@ declare module 'koa' {
      */
     error: (message: string, code?: string, data?: any) => void;
 
+    /** 请求上下文附加信息 */
     state: {
       /** 用户信息 */
       userInfo?: UserType;
+      /** 企业(租户)信息 */
+      corpInfo?: {
+        /** 企业id */
+        _id: Types.ObjectId | string;
+      };
     };
   }
 }

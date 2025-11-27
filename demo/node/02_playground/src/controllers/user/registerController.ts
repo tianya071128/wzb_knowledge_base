@@ -1,4 +1,4 @@
-import { Context } from 'koa';
+import { Context, Next } from 'koa';
 import z from 'zod';
 import { phoneReg } from '../../utils/reg';
 import { SmsCodeEnum } from '../../types/auth.enum';
@@ -23,7 +23,7 @@ export const SegisterSchema = z.object({
 export type SegisterBody = z.infer<typeof SegisterSchema>;
 // #endregion
 
-export default async function registerController(ctx: Context) {
+export default async function registerController(ctx: Context, next: Next) {
   const params = ctx.request.body as SegisterBody;
 
   // 1. 验证验证码
@@ -50,6 +50,8 @@ export default async function registerController(ctx: Context) {
     await storageToken(token, { userId: newUser._id.toString() });
 
     ctx.success({ accessToken: token });
+
+    await next();
   } catch (err: any) {
     // 捕获唯一索引冲突
     if (err.code === 11000) {

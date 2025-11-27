@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema({
 // 定义 Model（集合名自动转为复数：User → users）
 const UserModel = mongoose.model('User', userSchema);
 
-// 3. 自动推导核心类型（从 Schema 提取字段类型）
+// 自动推导核心类型（从 Schema 提取字段类型）
 export type UserType = InferSchemaType<typeof userSchema> & {
   // _id：兼容 ObjectId 实例和字符串（前端传输/查询常用字符串）
   _id: mongoose.Types.ObjectId | string;

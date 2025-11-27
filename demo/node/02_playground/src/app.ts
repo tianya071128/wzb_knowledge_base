@@ -7,10 +7,10 @@ import { zhCN } from 'zod/locales';
 import { connectMongoDB } from './utils/mongodb';
 import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route';
+import dictRoutes from './routes/system/dict.route';
 import responseMiddleware from './middleware/response';
 import './utils/redis/redis';
 import './utils/redis/redisPersist';
-import UserModel from './models/User';
 
 const app = new Koa();
 
@@ -54,6 +54,7 @@ app.use(responseMiddleware);
 // #region ------------ 路由注册 ------------
 app.use(authRoutes.routes()).use(authRoutes.allowedMethods());
 app.use(userRoutes.routes()).use(userRoutes.allowedMethods());
+app.use(dictRoutes.routes()).use(dictRoutes.allowedMethods());
 // #endregion
 
 // 先连接 MongoDB，再启动服务
