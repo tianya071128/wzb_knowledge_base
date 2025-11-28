@@ -1,15 +1,18 @@
-import { Context } from 'koa';
+import { Context, Next } from 'koa';
 import z from 'zod';
-import { listPageCurrent, listPageLimit } from '../../../utils/zodSchema';
+import {
+  listPageCurrentSchema,
+  listPageLimitSchema,
+} from '../../../utils/zodSchema';
 import DictModel, { DictType, transfromDictData } from '../../../models/Dict';
 import { RootFilterQuery } from 'mongoose';
 
 // 请求参数Schema
 export const GetDictListPageSchema = z.object({
   /** 页码 */
-  current: listPageCurrent,
+  current: listPageCurrentSchema,
   /** 一页多少条 */
-  limit: listPageLimit,
+  limit: listPageLimitSchema,
   /** 字典名称搜索 */
   name: z.string().optional().nullable(),
   /** 类型 */
@@ -20,7 +23,10 @@ export const GetDictListPageSchema = z.object({
 // 从 schema 导出 TypeScript 类型
 export type GetDictListPageBody = z.infer<typeof GetDictListPageSchema>;
 
-export default async function getDictListPageController(ctx: Context) {
+export default async function getDictListPageController(
+  ctx: Context,
+  next: Next
+) {
   const params = ctx.request.body as GetDictListPageBody;
 
   // 组装查询条件
@@ -42,11 +48,15 @@ export default async function getDictListPageController(ctx: Context) {
   }
 
   // 分页查询数据
+  const total = await DictModel.countDocuments({
+    ...queryCondition,
+    tenantId: ctx.state.corpInfo?._id,
+  });
   const res = await DictModel.find({
     ...queryCondition,
     tenantId: ctx.state.corpInfo?._id,
   })
-    .select('code createAt name status sort type')
+    .select('code createAt name status sort type remarks')
     // 排序
     .sort({
       sort: 1,
@@ -63,5 +73,8 @@ export default async function getDictListPageController(ctx: Context) {
     current: params.current,
     records: transfromDictData(res),
     limit: params.limit,
+    total,
   });
+
+  await next();
 }

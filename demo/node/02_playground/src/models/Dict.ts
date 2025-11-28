@@ -1,10 +1,40 @@
-import mongoose, { InferSchemaType } from 'mongoose';
+import mongoose from 'mongoose';
 import dayjs from 'dayjs';
 import { DictTypeEnum } from '../utils/dict/system';
 import { StatusEnum } from '../utils/dict';
 import { getEnumAllValues } from '../utils';
 
-const dictSchema = new mongoose.Schema(
+/**
+ * 字典结构类型
+ */
+export interface DictType {
+  /** 系统字段 */
+  _id: mongoose.Types.ObjectId | string;
+  /** 租户id */
+  tenantId: string;
+  /** 字典名称 */
+  name: string;
+  /** 字典编码 */
+  code: string;
+  /** 字典类型 */
+  type: DictTypeEnum;
+  /** 字典状态 */
+  status: StatusEnum;
+  /** 字典排序 */
+  sort: number;
+  /** 字典描述 */
+  remarks: string;
+  /** 创建时间 */
+  createAt: Date;
+  /** 更新时间 */
+  updateAt: Date;
+  /** 虚拟字段 - 转换id */
+  id?: string;
+  /** 虚拟字段 - 创建时间 */
+  createTime?: string;
+}
+
+const dictSchema = new mongoose.Schema<DictType>(
   {
     /** 字典所属的租户id */
     tenantId: {
@@ -51,22 +81,9 @@ const dictSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    // 创建时间（自动添加，无需手动赋值）
-    createAt: {
-      type: Date,
-      default: Date.now,
-      immutable: true, // 不可修改（创建后固定）
-    },
-    // 更新时间（自动更新）
-    updateAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   {
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-    lean: { virtuals: true }, // 启用 lean 虚拟字段支持
+    timestamps: true, // 关键：启用自动时间戳
   }
 );
 
@@ -81,36 +98,28 @@ export function transfromDictData(
   if (!data) return data;
 
   const ret = (Array.isArray(data) ? data : [data]).map((item) => {
+    const copyItem = { ...item };
+
     // 虚拟字段 id
-    if (item._id) {
+    if (copyItem._id) {
       // 虚拟字段
-      item.id = item._id.toString();
+      copyItem.id = copyItem._id.toString();
 
-      delete item._id;
+      delete copyItem._id;
     }
 
-    if (item.createAt) {
-      item.createTime = dayjs(item.createAt).format('YYYY-MM-DD HH:mm:ss');
+    if (copyItem.createAt) {
+      copyItem.createTime = dayjs(copyItem.createAt).format(
+        'YYYY-MM-DD HH:mm:ss'
+      );
 
-      delete item.createAt;
+      delete copyItem.createAt;
     }
-    return item;
+    return copyItem;
   });
 
   return Array.isArray(data) ? ret : ret[0];
 }
-
-// 自动推导核心类型（从 Schema 提取字段类型）
-export type DictType = InferSchemaType<typeof dictSchema> & {
-  // 虚拟字段
-  id?: string;
-  // 格式化后的时间
-  createTime?: string;
-  // _id：兼容 ObjectId 实例和字符串（前端传输/查询常用字符串）
-  _id: mongoose.Types.ObjectId | string;
-  // __v：Mongoose 版本号（默认 number，若禁用则删除该字段）
-  __v: number;
-};
 
 // 定义 Model
 const DictModel = mongoose.model('Dict', dictSchema);

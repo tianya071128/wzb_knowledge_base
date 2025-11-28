@@ -11,6 +11,7 @@ import dictRoutes from './routes/system/dict.route';
 import responseMiddleware from './middleware/response';
 import './utils/redis/redis';
 import './utils/redis/redisPersist';
+import { errorHandle } from './middleware/errorHandle';
 
 const app = new Koa();
 
@@ -49,6 +50,8 @@ app.use(bodyParser());
 // #region ------------ 自定义中间件 ------------
 // 挂载响应中间件（必须在路由前）
 app.use(responseMiddleware);
+// 统一错误处理器
+app.use(errorHandle);
 // #endregion
 
 // #region ------------ 路由注册 ------------
