@@ -1,7 +1,7 @@
 import { Context } from 'koa';
 import z from 'zod';
 import DictModel from '../../../models/Dict';
-import DictItemModel from '../../../models/DictItem';
+import DictItemModel, { createDictItem } from '../../../models/DictItem';
 import { StatusEnum } from '../../../utils/dict';
 
 // #region ------------ 定义 Schema ------------
@@ -51,7 +51,7 @@ export default async function addDictItemController(ctx: Context) {
   }
 
   // 存在的话, 插入字典项
-  await DictItemModel.create({
+  await createDictItem({
     ...params,
     tenantId: ctx.state.corpInfo?._id,
   });

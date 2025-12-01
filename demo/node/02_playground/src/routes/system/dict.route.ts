@@ -15,6 +15,10 @@ import editDictController, {
 } from '../../controllers/system/dict/editDictController';
 import getDictItemListPageController from '../../controllers/system/dictItem/getDictItemListPageController';
 import addDictItemController from '../../controllers/system/dictItem/addDictItemController';
+import deleteDictItemController from '../../controllers/system/dictItem/deleteDictItemController';
+import updateDictItemStatusController from '../../controllers/system/dictItem/updateDictItemStatusController';
+import editDictItemController from '../../controllers/system/dictItem/editDictItemController';
+import getDictItemByCodeController from '../../controllers/system/dictItem/getDictItemByCodeController';
 
 const router = new Router({ prefix: '/alicorn-system' });
 
@@ -81,6 +85,42 @@ router.post(
   '/dictItem/add',
   getLoginUserInfoMiddleware(),
   addDictItemController
+);
+
+/**
+ * 删除字典项
+ */
+router.post(
+  '/dictItem/delete/:id',
+  getLoginUserInfoMiddleware(),
+  deleteDictItemController
+);
+
+/**
+ * 更新字典项状态
+ */
+router.post(
+  '/dictItem/updateStatus/:id',
+  getLoginUserInfoMiddleware(),
+  updateDictItemStatusController
+);
+
+/**
+ * 编辑字典项
+ */
+router.post(
+  '/dictItem/edit',
+  getLoginUserInfoMiddleware(),
+  editDictItemController
+);
+
+/**
+ * 获取字典项
+ */
+router.get(
+  '/dictItem/listByDictCode/:code',
+  getLoginUserInfoMiddleware(),
+  getDictItemByCodeController
 );
 
 export default router;

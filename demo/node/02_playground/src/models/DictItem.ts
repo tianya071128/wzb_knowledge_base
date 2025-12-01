@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { StatusEnum } from '../utils/dict';
 import { getEnumAllValues } from '../utils';
+import { handleMongooseError } from '../utils/error';
 
 /**
  * 字典项结构类型
@@ -9,7 +10,7 @@ export interface DictItemType {
   /** 系统字段 */
   _id: mongoose.Types.ObjectId | string;
   /** 租户id */
-  tenantId: string;
+  tenantId: string | mongoose.Types.ObjectId;
   /** 对应的字典编码 */
   dictCode: string;
   /** 字典值名称 */
@@ -23,7 +24,7 @@ export interface DictItemType {
   /** 字典项描述 */
   remarks: string;
   /** 颜色 */
-  color?: string;
+  color?: string | null;
   /** 创建时间 */
   createAt: Date;
   /** 更新时间 */
@@ -100,5 +101,42 @@ dictItemSchema.index(
 
 // 定义 Model
 const DictItemModel = mongoose.model('DictItem', dictItemSchema);
+
+// 键映射
+const fieldMap: Partial<Record<keyof DictItemType, string>> = {
+  itemText: '字典值名称',
+  itemValue: '字典值编码',
+};
+
+/**
+ * 封装创建字典项方法, 统一处理错误
+ */
+export async function createDictItem(params: Partial<DictItemType>) {
+  try {
+    // 返回字典项数据
+    return await DictItemModel.create(params);
+  } catch (err) {
+    return handleMongooseError(err, {
+      fieldMap,
+    });
+  }
+}
+
+/**
+ * 封装更新字典项方法, 统一处理错误
+ */
+export async function updateDictItem(
+  id: string,
+  params: Partial<DictItemType>
+) {
+  try {
+    // 更新字典项数据
+    return await DictItemModel.findByIdAndUpdate(id, params);
+  } catch (err) {
+    return handleMongooseError(err, {
+      fieldMap,
+    });
+  }
+}
 
 export default DictItemModel;

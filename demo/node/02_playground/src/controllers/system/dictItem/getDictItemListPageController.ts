@@ -48,8 +48,8 @@ export default async function getDictItemListPageController(ctx: Context) {
 
   // 执行查询
   const res = await DictItemModel.find(queryCondition)
-    .select('-createAt -updateAt')
-    .sort({ sort: 1, createTime: -1 })
+    .select('-createdAt -updatedAt -tenantId -__v')
+    .sort({ sort: 1, createdAt: -1 })
     .skip((params.current - 1) * params.limit)
     .limit(params.limit)
     .lean();

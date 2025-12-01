@@ -14,3 +14,15 @@ export function getEnumAllValues<T extends Record<string, string | number>>(
       .map((key) => enumObj[key as keyof T])
   );
 }
+
+/**
+ * 封装一个统一业务错误, 统一错误码为 10086, 并且名称为 "业务错误 "
+ */
+export class BusinessError extends Error {
+  code: number;
+  constructor(message: string) {
+    super(message);
+    this.code = 10086;
+    this.name = 'businessError';
+  }
+}
