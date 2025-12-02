@@ -7,7 +7,7 @@ import {
 import { StatusEnum } from '../../../utils/dict';
 import { RootFilterQuery } from 'mongoose';
 import DictItemModel, { DictItemType } from '../../../models/DictItem';
-import { transfromMongooseData } from '../../../utils/transform';
+import { transformMongooseDataList } from '../../../utils/transform';
 
 // #region ------------ 定义 Schema ------------
 export const GetDictItemListPageSchema = z.object({
@@ -55,7 +55,7 @@ export default async function getDictItemListPageController(ctx: Context) {
     .lean();
 
   ctx.success({
-    records: transfromMongooseData(res),
+    records: transformMongooseDataList(res),
     total: await DictItemModel.countDocuments(queryCondition),
     current: params.current,
     limit: params.limit,

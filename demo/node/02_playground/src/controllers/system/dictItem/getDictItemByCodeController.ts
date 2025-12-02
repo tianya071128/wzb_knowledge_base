@@ -1,7 +1,7 @@
 import { Context } from 'koa';
 import DictItemModel from '../../../models/DictItem';
 import { StatusEnum } from '../../../utils/dict';
-import { transfromMongooseData } from '../../../utils/transform';
+import { transformMongooseDataList } from '../../../utils/transform';
 
 export default async function getDictItemByCodeController(ctx: Context) {
   const { code } = ctx.params;
@@ -18,5 +18,5 @@ export default async function getDictItemByCodeController(ctx: Context) {
     })
     .lean();
 
-  ctx.success(transfromMongooseData(res));
+  ctx.success(transformMongooseDataList(res));
 }

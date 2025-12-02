@@ -21,7 +21,7 @@ export default async function loginController(ctx: Context, next: Function) {
   });
 
   if (!userInfo) {
-    ctx.fail('用户不存在');
+    ctx.error('用户不存在');
     return;
   }
 

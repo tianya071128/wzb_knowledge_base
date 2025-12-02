@@ -8,6 +8,7 @@ import { connectMongoDB } from './utils/mongodb';
 import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route';
 import dictRoutes from './routes/system/dict.route';
+import regionRoutes from './routes/system/region.route';
 import responseMiddleware from './middleware/response';
 import './utils/redis/redis';
 import './utils/redis/redisPersist';
@@ -58,6 +59,7 @@ app.use(errorHandle);
 app.use(authRoutes.routes()).use(authRoutes.allowedMethods());
 app.use(userRoutes.routes()).use(userRoutes.allowedMethods());
 app.use(dictRoutes.routes()).use(dictRoutes.allowedMethods());
+app.use(regionRoutes.routes()).use(regionRoutes.allowedMethods());
 // #endregion
 
 // 先连接 MongoDB，再启动服务
