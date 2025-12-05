@@ -3,7 +3,9 @@ import RegionModel from '../../../models/Region/model';
 import { StatusEnum } from '../../../utils/dict';
 
 export default async function updateRegionStatusController(ctx: Context) {
-  const { id, status } = ctx.params;
+  const { id } = ctx.params;
+  // status 从 routerPath 中获取
+  const status = ctx.routerPath.split('/').at(-2);
 
   // 验证路由参数是否正确
   if (status !== 'enable' && status !== 'disable') {

@@ -13,8 +13,12 @@ export const GetRegionListSchema = z.object({
   name: z.string().optional().nullable(),
   /** 状态 */
   status: z.enum(StatusEnum).optional().nullable(),
-  /** 是否只查询根区域 */
-  type: z.string().optional().nullable(),
+  /** 根据类型查询 */
+  type: z.coerce // 转换类型
+    .number() // 转换为数字
+    .int() // 强制为整数
+    .optional()
+    .nullable(),
 });
 
 export type GetRegionListBody = z.infer<typeof GetRegionListSchema>;
@@ -47,10 +51,9 @@ export default async function getRegionListController(ctx: Context) {
     queryCondition.status = params.status;
   }
 
-  // 是否查询根区域
-  if (params.type === '1') {
-    // paratId 为 null 或者为 "0", 或者不存在该字段, 都满足条件
-    queryCondition.parentId = { $in: ['0', null, undefined, ''] };
+  // 区域类型
+  if (params.type != null) {
+    queryCondition.type = Number(params.type);
   }
   // #endregion
 

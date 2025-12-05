@@ -26,3 +26,10 @@ export class BusinessError extends Error {
     this.name = 'businessError';
   }
 }
+
+/**
+ * 正则转义函数
+ */
+export function escapeRegExp(str: string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
