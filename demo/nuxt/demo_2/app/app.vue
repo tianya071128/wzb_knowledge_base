@@ -1,11 +1,11 @@
 <script setup lang="ts">
-definePageMeta({
-  middleware: 'auth',
-});
+const count = ref(1); // ref 被自动导入
 </script>
 
 <template>
-  <div>about</div>
+  <div>
+    <NuxtPage />
+  </div>
 </template>
 
 <style lang="scss" scoped></style>
