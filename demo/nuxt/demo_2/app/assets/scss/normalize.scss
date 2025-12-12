@@ -126,6 +126,11 @@ table {
   border-spacing: 0;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 // 滚动条样式设置
 // common.less
 *::-webkit-scrollbar {
@@ -135,7 +140,7 @@ table {
 /* 滚动条滑块 */
 *::-webkit-scrollbar-thumb {
   border-radius: 5px; // 滑块圆角
-  background: var(--az-scrollbar-color); // 滑块颜色
+  background: var(--w-scrollbar-color); // 滑块颜色
 }
 
 /* 滚动条角落 */

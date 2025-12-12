@@ -1,10 +1,12 @@
 <script setup lang="ts">
-const count = ref(1); // ref 被自动导入
+const activityStore = useActivityStore();
 </script>
 
 <template>
   <div>
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>
 

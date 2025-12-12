@@ -1,21 +1,37 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { getHomeCarouselList } from '~/api';
+
+// #region ------------ 轮播图 ------------
+// 获取轮播图数据
+const { data: homeCarouseList } = await useAsyncData('home-banner', () =>
+  getHomeCarouselList()
+);
+
+// #endregion
+</script>
 
 <template>
   <div class="home">
-    <h1>欢迎来到首页</h1>
-    <AppAlert>这是一个自动导入的组件</AppAlert>
-    <div><NuxtLink to="/about">关于</NuxtLink></div>
-    <div><NuxtLink to="/posts/test">id</NuxtLink></div>
-    <img src="/img/default-avatar.png" alt="探索 Nuxt" />
-    <img src="~/assets/img/batch.png" alt="探索 Nuxt" />
+    <div class="home_banner">
+      <el-carousel height="auto" :autoplay="false">
+        <el-carousel-item v-for="item in homeCarouseList ?? []" :key="item.id">
+          <img
+            class="home_banner--image"
+            :src="item.imageUrl"
+            :alt="item.seoKey" />
+        </el-carousel-item>
+      </el-carousel>
+    </div>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .home {
-  text-align: center;
-  h1 {
-    font-size: 3rem;
+  .home_banner {
+    .home_banner--image {
+      width: 100%;
+      object-fit: cover;
+    }
   }
 }
 </style>
