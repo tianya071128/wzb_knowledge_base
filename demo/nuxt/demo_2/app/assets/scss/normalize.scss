@@ -143,6 +143,10 @@ a {
   background: var(--w-scrollbar-color); // 滑块颜色
 }
 
+html {
+  min-width: 1200px;
+}
+
 /* 滚动条角落 */
 // *::-webkit-scrollbar-corner {
 //   border-radius: 2px;
