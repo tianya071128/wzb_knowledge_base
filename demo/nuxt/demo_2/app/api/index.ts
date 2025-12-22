@@ -64,3 +64,35 @@ export function getHomeCarouselList() {
     },
   });
 }
+
+export interface NewsInfo {
+  /** id */
+  id: string;
+  /** 图片地址 */
+  imgUrl: string;
+  /** 标题 */
+  title: string;
+  /** 时间 */
+  publishTime: string;
+  /** 跳转链接 */
+  staticPath: string;
+}
+/** API - 获取新闻列表 */
+export function getNewsList(params: {
+  /** 页码 */
+  pageNum: number;
+  /** 页大小 */
+  pageSize: number;
+  /** 分类id */
+  columnId: string;
+  /** 搜索关键字 */
+  seoKey?: string;
+}) {
+  return request<{
+    total: number;
+    records: NewsInfo[];
+  }>('/article/listInformationHomePage', {
+    method: 'POST',
+    body: params,
+  });
+}

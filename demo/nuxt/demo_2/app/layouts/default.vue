@@ -8,7 +8,18 @@ const headerBg = computed(() => {
   return `rgba(0,0,0,${0.85 * Math.min(1, y.value / 20)})`;
 });
 // 菜单
-const menu = [{ name: '资讯', path: '/news', id: 'news' }];
+const menu = [
+  {
+    name: '方案',
+    id: 'program',
+    prefixPath: '/program',
+    children: [
+      { name: '政务服务', path: '/program/govService', id: 'govService' },
+    ],
+  },
+  { name: '资讯', path: '/news', id: 'news' },
+];
+const route = useRoute();
 
 // 获取活动等相关信息
 const activityStore = useActivityStore();
@@ -42,9 +53,46 @@ await Promise.all([
       <div class="layout_menu">
         <template v-for="item in menu" :key="item.id">
           <!-- 如果是路由 则使用 NuxtLink -->
-          <NuxtLink v-if="item.path" :to="item.path" class="layout_menu--item">
+          <NuxtLink
+            v-if="item.path"
+            :to="item.path"
+            class="layout_menu--item"
+            :class="{
+              'layout_menu--active': route.path === item.path,
+            }">
             {{ item.name }}
           </NuxtLink>
+          <!-- 嵌套 -->
+          <el-popover
+            v-else
+            placement="bottom-start"
+            width="auto"
+            transition="el-zoom-in-top">
+            <template #reference>
+              <div
+                class="layout_menu--item"
+                :class="{
+                  'layout_menu--active': route.path.startsWith(
+                    item.prefixPath ?? ''
+                  ),
+                }">
+                {{ item.name }}
+              </div>
+            </template>
+
+            <template v-for="child in item.children" :key="child.id">
+              <div class="layout_menu--child">
+                <NuxtLink
+                  :to="child.path"
+                  class="layout_menu--child-item"
+                  :class="{
+                    'layout_menu--child-active': route.path === child.path,
+                  }">
+                  {{ child.name }}
+                </NuxtLink>
+              </div>
+            </template>
+          </el-popover>
         </template>
       </div>
 
@@ -267,6 +315,9 @@ await Promise.all([
           color: var(--el-color-primary);
           background-color: var(--el-color-primary-light-9);
         }
+        &.layout_menu--active {
+          color: var(--el-color-primary);
+        }
       }
     }
     .layout_activity {
@@ -428,6 +479,21 @@ await Promise.all([
       color: #fff;
       font-size: 12px;
       margin-top: 20px;
+    }
+  }
+}
+.layout_menu--child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  min-width: 250px;
+  .layout_menu--child-item {
+    cursor: pointer;
+    &:hover {
+      color: var(--el-color-primary);
+    }
+    &.layout_menu--child-active {
+      color: var(--el-color-primary);
     }
   }
 }

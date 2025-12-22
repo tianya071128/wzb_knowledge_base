@@ -2,13 +2,7 @@
 const route = useRoute();
 const router = useRouter();
 
-router.replace({
-  ...route,
-  query: {
-    ...route.query,
-    tab: 'first',
-  },
-});
+const activeName = ref('0');
 </script>
 
 <template>
@@ -23,10 +17,16 @@ router.replace({
         <div class="news_header--title-des">第一时间了解安证通最新动态</div>
       </div>
     </div>
-    <el-tabs stretch class="news_tab">
-      <el-tab-pane label="企业动态" name="first">User</el-tab-pane>
-      <el-tab-pane label="行业资讯" name="second">Config</el-tab-pane>
-      <el-tab-pane label="政策法规" name="third">Role</el-tab-pane>
+    <el-tabs v-model="activeName" stretch class="news_tab">
+      <el-tab-pane label="企业动态" name="0">
+        <news-table columnId="201"></news-table>
+      </el-tab-pane>
+      <el-tab-pane label="行业资讯" name="1" lazy>
+        <news-table columnId="202"></news-table>
+      </el-tab-pane>
+      <el-tab-pane label="政策法规" name="2" lazy>
+        <news-table columnId="203"></news-table>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
