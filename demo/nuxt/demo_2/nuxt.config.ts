@@ -17,6 +17,10 @@ export default defineNuxtConfig({
       proxy: 'https://www.esa2000.com/portal/**',
     },
   },
+  app: {
+    pageTransition: { name: 'page', mode: 'out-in' },
+  },
+
   // 代理
   // nitro: {
   //   devProxy: {

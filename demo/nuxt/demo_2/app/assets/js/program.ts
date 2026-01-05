@@ -77,3 +77,75 @@ export const GOV_SERVICE = {
     },
   ],
 };
+
+/** 制造行业 */
+export const MANUFACTURE_SERVICE = {
+  header: {
+    title: '制造业企业',
+    content: '电子签章应用解决方案',
+    description:
+      '制造业向数字化转型步伐日益加快，在此过程中，电子签名、数字证书等数字化基础应用成为助推制造业数字化转型的重要能力支撑，帮助提高内部管理及外部业务产业链协同管理效率，实现降本增效。',
+    imgUrl: 'https://www.esa2000.com/images/program/1-5/header-bg1.png',
+    alt: '制造业电子签章应用解决方案',
+  },
+  sceneList: [
+    {
+      name: '上游供应链合同签署',
+      content:
+        '制造行业上游供应链环节涉及采购合同，通过业务系统与一签通平台集成可在线签署电子合同提高签署效率，保障签署安全性。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-1.png',
+      sign: '采购方、供应商',
+    },
+    {
+      name: '下游渠道商合同签署',
+      content:
+        '一签通平台可为渠道商、零售商提供具备法律效力的电子合同签约服务，实现线上签署销售、采购交易电子合同，提升企业签约管理与整体运营效率。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-2.png',
+      sign: '制造厂商、渠道商/零售商',
+    },
+    {
+      name: '企业内部无纸化管理',
+      content:
+        '制造企业内部业务系统可通过使用电子印章为各地员工提供提供线上审批、凭证、合同等文件的电子化签署服务，节约企业运营成本，提高企业业务效率。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-3.png',
+      sign: '制造企业、企业员工',
+    },
+    {
+      name: '设计图纸防篡改',
+      content:
+        '制造企业存在大量的工业设计图，通过加盖电子印章，可防止加工制造方篡改图纸，规避业务风险。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-4.png',
+      sign: '制造企业、设计师',
+    },
+    {
+      name: '采购物流',
+      content:
+        '对于原材料的采购物流运输协议、出库单、签收单等文件可以通过电子化签署，保障各类物流文件签署的安全性、真实性。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-5.png',
+      sign: '制造企业、供货商、司机',
+    },
+    {
+      name: '销售物流',
+      content:
+        '一签通平台提供电子签章与实名认证服务，直接与物流平台集成，各类销售物流协议都可在物流平台完成在线签署，提升签署效率。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-6.png',
+      sign: '制造企业、经销商、司机',
+    },
+    {
+      name: '采购协议',
+      content:
+        '采购平台通过使用电子签章，对于原材料采购合同、协议等文件进行电子签署，提高签署效率，节省企业运营成本。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-7.png',
+      sign: '制造企业、供货商、司机',
+    },
+    {
+      name: '人事文件',
+      content:
+        '企业HR系统通过集成一签通平台，可以高效、便捷的完成与各分支机构员工的入职、转岗、离职协议等各类文件的签署，节约签署成本。',
+      imgUrl: 'https://www.esa2000.com/images/program/1-5/application-8.png',
+      sign: '制造企业、经销商、司机',
+    },
+  ],
+};
+
+export type ProgramModel = typeof GOV_SERVICE;

@@ -1,7 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { GOV_SERVICE } from '~/assets/js/program';
+</script>
 
 <template>
-  <div>123</div>
+  <Program :program="GOV_SERVICE" />
 </template>
 
 <style lang="scss" scoped></style>

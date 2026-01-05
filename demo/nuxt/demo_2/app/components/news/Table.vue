@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Search } from '@element-plus/icons-vue';
 import { getNewsList } from '~/api';
 
 const props = defineProps<{

@@ -15,6 +15,7 @@ const menu = [
     prefixPath: '/program',
     children: [
       { name: '政务服务', path: '/program/govService', id: 'govService' },
+      { name: '制造行业', path: '/program/manufacture', id: 'manufacture' },
     ],
   },
   { name: '资讯', path: '/news', id: 'news' },
@@ -80,18 +81,18 @@ await Promise.all([
               </div>
             </template>
 
-            <template v-for="child in item.children" :key="child.id">
-              <div class="layout_menu--child">
-                <NuxtLink
-                  :to="child.path"
-                  class="layout_menu--child-item"
-                  :class="{
-                    'layout_menu--child-active': route.path === child.path,
-                  }">
-                  {{ child.name }}
-                </NuxtLink>
-              </div>
-            </template>
+            <div class="layout_menu--child">
+              <NuxtLink
+                v-for="child in item.children"
+                :key="child.id"
+                :to="child.path"
+                class="layout_menu--child-item"
+                :class="{
+                  'layout_menu--child-active': route.path === child.path,
+                }">
+                {{ child.name }}
+              </NuxtLink>
+            </div>
           </el-popover>
         </template>
       </div>
@@ -488,6 +489,7 @@ await Promise.all([
   gap: 20px;
   min-width: 250px;
   .layout_menu--child-item {
+    width: 70px;
     cursor: pointer;
     &:hover {
       color: var(--el-color-primary);
