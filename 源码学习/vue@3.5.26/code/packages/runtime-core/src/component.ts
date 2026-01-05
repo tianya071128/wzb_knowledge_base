@@ -968,8 +968,8 @@ let compile: CompileFunction | undefined
 let installWithProxy: (i: ComponentInternalInstance) => void
 
 /**
- * For runtime-dom to register the compiler.
- * Note the exported method uses any to avoid d.ts relying on the compiler types.
+ * For runtime-dom to register the compiler. 用于runtime-dom注册编译器
+ * Note the exported method uses any to avoid d.ts relying on the compiler types. 请注意，导出的方法使用 any 来避免 d.ts 依赖于编译器类型
  */
 export function registerRuntimeCompiler(_compile: any): void {
   compile = _compile
@@ -1251,7 +1251,13 @@ export function formatComponentName(
 
   return name ? classify(name) : isRoot ? `App` : `Anonymous`
 }
-
+/**
+ * 判断给定的值是否为类组件
+ * 通过检查值是否为函数且具有 '__vccOpts' 属性来确定是否为类组件
+ *
+ * @param value - 待检查的值
+ * @returns 如果值是类组件则返回 true，否则返回 false
+ */
 export function isClassComponent(value: unknown): value is ClassComponent {
   return isFunction(value) && '__vccOpts' in value
 }

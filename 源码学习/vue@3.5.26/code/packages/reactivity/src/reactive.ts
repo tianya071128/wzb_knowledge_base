@@ -342,7 +342,7 @@ export function isShallow(value: unknown): boolean {
 }
 
 /**
- * Checks if an object is a proxy created by {@link reactive},
+ * Checks if an object is a proxy created by {@link reactive}, // 检查对象是否是由以下对象创建的代理
  * {@link readonly}, {@link shallowReactive} or {@link shallowReadonly}.
  *
  * @param value - The value to check.

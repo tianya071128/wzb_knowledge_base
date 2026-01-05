@@ -46,6 +46,7 @@ export const isDate = (val: unknown): val is Date =>
   toTypeString(val) === '[object Date]'
 export const isRegExp = (val: unknown): val is RegExp =>
   toTypeString(val) === '[object RegExp]'
+/** 检查给定值是否为函数类型 */
 export const isFunction = (val: unknown): val is Function =>
   typeof val === 'function'
 export const isString = (val: unknown): val is string => typeof val === 'string'
@@ -185,6 +186,13 @@ export const toNumber = (val: any): any => {
 declare var global: {}
 
 let _globalThis: any
+/**
+ * 获取全局对象
+ * 该函数用于在不同环境中获取全局对象，优先级为：globalThis > self > window > global
+ * 如果所有可能的全局对象都不存在，则返回一个空对象
+ *
+ * @returns {any} 全局对象或空对象
+ */
 export const getGlobalThis = (): any => {
   return (
     _globalThis ||

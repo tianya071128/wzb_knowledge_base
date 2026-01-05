@@ -65,12 +65,18 @@ declare module '@vue/runtime-core' {
 
 const rendererOptions = /*@__PURE__*/ extend({ patchProp }, nodeOps)
 
-// lazy create the renderer - this makes core renderer logic tree-shakable
-// in case the user only imports reactivity utilities from Vue.
+// lazy create the renderer - this makes core renderer logic tree-shakable 惰性创建渲染器 - 这使得核心渲染器逻辑树可摇动
+// in case the user only imports reactivity utilities from Vue. 如果用户只从 Vue 导入反应性实用程序
 let renderer: Renderer<Element | ShadowRoot> | HydrationRenderer
 
 let enabledHydration = false
 
+/**
+ * 确保渲染器实例存在，如果不存在则创建一个新的渲染器
+ * 该函数使用懒加载模式，仅在首次调用时创建渲染器实例
+ *  --> 用于 tree-shakable
+ * @returns 返回现有的渲染器实例或新创建的渲染器实例
+ */
 function ensureRenderer() {
   return (
     renderer ||
@@ -95,7 +101,11 @@ export const hydrate = ((...args) => {
   ensureHydrationRenderer().hydrate(...args)
 }) as RootHydrateFunction
 
+/**
+ * 创建一个应用实例 --> https://cn.vuejs.org/api/application.html#createapp
+ */
 export const createApp = ((...args) => {
+  // 创建一个应用实例
   const app = ensureRenderer().createApp(...args)
 
   if (__DEV__) {
@@ -104,18 +114,27 @@ export const createApp = ((...args) => {
   }
 
   const { mount } = app
+  /**
+   * 重写 mount 方法 - https://cn.vuejs.org/api/application.html#app-mount
+   *  将应用实例挂载在一个容器元素中。
+   */
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
+    // 找到挂载容器元素
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
 
-    const component = app._component
+    const component = app._component // 获取应用实例的根组件
+    /**
+     * 根组件没有 render 函数或模板，则从容器元素中获取模板
+     */
     if (!isFunction(component) && !component.render && !component.template) {
       // __UNSAFE__
-      // Reason: potential execution of JS expressions in in-DOM template.
-      // The user must make sure the in-DOM template is trusted. If it's
-      // rendered by the server, the template should not contain any user data.
+      // Reason: potential execution of JS expressions in in-DOM template. 原因：在DOM内模板中可能执行JS表达式。
+      // The user must make sure the in-DOM template is trusted. If it's 用户必须确保DOM中的模板是可信的。如果是
+      // rendered by the server, the template should not contain any user data. 模板由服务器渲染，不应包含任何用户数据。
       component.template = container.innerHTML
       // 2.x compat check
+      // container.nodeType 元素节点
       if (__COMPAT__ && __DEV__ && container.nodeType === 1) {
         for (let i = 0; i < (container as Element).attributes.length; i++) {
           const attr = (container as Element).attributes[i]
@@ -130,9 +149,9 @@ export const createApp = ((...args) => {
       }
     }
 
-    // clear content before mounting
+    // clear content before mounting 安装前清除内容
     if (container.nodeType === 1) {
-      container.textContent = ''
+      container.textContent = '' // 在节点上设置 textContent 属性的话，会删除它的所有子节点，并替换为一个具有给定值的文本节点。
     }
     const proxy = mount(container, false, resolveRootNamespace(container))
     if (container instanceof Element) {
@@ -142,6 +161,7 @@ export const createApp = ((...args) => {
     return proxy
   }
 
+  // 返回该实例
   return app
 }) as CreateAppFunction<Element>
 
@@ -164,6 +184,13 @@ export const createSSRApp = ((...args) => {
   return app
 }) as CreateAppFunction<Element>
 
+/**
+ * 解析容器元素的根命名空间
+ * 根据容器元素的类型确定其所属的命名空间（SVG、MathML或默认HTML）
+ *
+ * @param container - 要解析命名空间的容器元素或ShadowRoot
+ * @returns 返回元素的命名空间类型，可能的值为 'svg'、'mathml' 或 undefined
+ */
 function resolveRootNamespace(
   container: Element | ShadowRoot,
 ): ElementNamespace {
@@ -225,14 +252,18 @@ function injectCompilerOptionsCheck(app: App) {
   }
 }
 
+/**
+ * 将应用实例挂载的容器标准化为 Element 或 ShadowRoot 对象
+ */
 function normalizeContainer(
   container: Element | ShadowRoot | string,
 ): Element | ShadowRoot | null {
+  // 使用 string, 查找对应的元素
   if (isString(container)) {
     const res = document.querySelector(container)
     if (__DEV__ && !res) {
       warn(
-        `Failed to mount app: mount target selector "${container}" returned null.`,
+        `Failed to mount app: mount target selector "${container}" returned null. 无法安装应用程序：安装目标选择器“${container}”返回 null`,
       )
     }
     return res
@@ -244,7 +275,7 @@ function normalizeContainer(
     container.mode === 'closed'
   ) {
     warn(
-      `mounting on a ShadowRoot with \`{mode: "closed"}\` may lead to unpredictable bugs`,
+      `mounting on a ShadowRoot with \`{mode: "closed"}\` may lead to unpredictable bugs 使用 \`{mode: "close"}\` 安装在 ShadowRoot 上可能会导致不可预测的错误`,
     )
   }
   return container as any

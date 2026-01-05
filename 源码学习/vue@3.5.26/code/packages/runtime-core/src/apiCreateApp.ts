@@ -102,7 +102,7 @@ export interface App<HostElement = any> {
   _instance: ComponentInternalInstance | null
 
   /**
-   * @internal custom element vnode
+   * @internal custom element vnode 自定义元素vnode
    */
   _ceVNode?: VNode
 
@@ -221,6 +221,12 @@ export type Plugin<
   P extends unknown[] = Options extends unknown[] ? Options : [Options],
 > = FunctionPlugin<P> | ObjectPlugin<P>
 
+/**
+ * 创建一个应用上下文对象
+ * 该函数初始化并返回一个包含应用配置、组件、指令等信息的上下文对象
+ *
+ * @returns AppContext - 返回一个包含应用配置、组件、指令等信息的上下文对象
+ */
 export function createAppContext(): AppContext {
   return {
     app: null as any,
@@ -250,24 +256,41 @@ export type CreateAppFunction<HostElement> = (
 
 let uid = 0
 
+/**
+ * createApp 工厂函数
+ * @param render - 根渲染函数，用于渲染组件到宿主元素
+ * @param hydrate - 可选的水合函数，用于将服务器渲染的HTML水合为交互式应用
+ * @returns 返回一个创建应用实例的函数
+ */
 export function createAppAPI<HostElement>(
   render: RootRenderFunction<HostElement>,
   hydrate?: RootHydrateFunction,
 ): CreateAppFunction<HostElement> {
+  /**
+   * 创建一个应用实例 - 最终调用方法
+   */
   return function createApp(rootComponent, rootProps = null) {
+    /**
+     * 当组件不是函数时
+     */
     if (!isFunction(rootComponent)) {
       rootComponent = extend({}, rootComponent)
     }
 
     if (rootProps != null && !isObject(rootProps)) {
-      __DEV__ && warn(`root props passed to app.mount() must be an object.`)
+      __DEV__ &&
+        warn(
+          `root props passed to app.mount() must be an object. 传递给 app.mount() 的 root props 必须是一个对象`,
+        )
       rootProps = null
     }
 
+    /** 创建一个应用上下文对象 */
     const context = createAppContext()
     const installedPlugins = new WeakSet()
     const pluginCleanupFns: Array<() => any> = []
 
+    /** 标识 - 是否挂载过 */
     let isMounted = false
 
     const app: App = (context.app = {
@@ -354,21 +377,25 @@ export function createAppAPI<HostElement>(
         context.directives[name] = directive
         return app
       },
-
+      /**
+       * 挂载Vue应用到指定的DOM容器 -- https://cn.vuejs.org/api/application.html#app-mount
+       */
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
         namespace?: boolean | ElementNamespace,
       ): any {
+        // 没有挂载过
         if (!isMounted) {
           // #5571
           if (__DEV__ && (rootContainer as any).__vue_app__) {
             warn(
-              `There is already an app instance mounted on the host container.\n` +
-                ` If you want to mount another app on the same host container,` +
-                ` you need to unmount the previous app by calling \`app.unmount()\` first.`,
+              `There is already an app instance mounted on the host container.\n` + // 宿主容器上已经挂载了一个应用程序实例
+                ` If you want to mount another app on the same host container,` + // 如果您想在同一主机容器上挂载另一个应用程序
+                ` you need to unmount the previous app by calling \`app.unmount()\` first.`, // 您需要先调用 \`app.unmount()\` 来卸载以前的应用程序
             )
           }
+          // 创建根Vnode
           const vnode = app._ceVNode || createVNode(rootComponent, rootProps)
           // store app context on the root VNode.
           // this will be set on the root instance on initial mount.
@@ -410,10 +437,10 @@ export function createAppAPI<HostElement>(
           return getComponentPublicInstance(vnode.component!)
         } else if (__DEV__) {
           warn(
-            `App has already been mounted.\n` +
-              `If you want to remount the same app, move your app creation logic ` +
-              `into a factory function and create fresh app instances for each ` +
-              `mount - e.g. \`const createMyApp = () => createApp(App)\``,
+            `App has already been mounted.\n` + // 应用程序已安装
+              `If you want to remount the same app, move your app creation logic ` + // 如果您想重新安装同一个应用程序，请移动您的应用程序创建逻辑
+              `into a factory function and create fresh app instances for each ` + // 进入工厂函数并为每个函数创建新的应用程序实例
+              `mount - e.g. \`const createMyApp = () => createApp(App)\``, // 安装 - 例如\`const createMyApp = () => createApp(App)\`
           )
         }
       },

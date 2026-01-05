@@ -24,7 +24,6 @@ import type { InternalRenderFunction } from 'packages/runtime-core/src/component
 if (__DEV__) {
   initDev()
 }
-
 const compileCache: Record<string, RenderFunction> = Object.create(null)
 
 function compileToFunction(

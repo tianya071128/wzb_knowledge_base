@@ -296,12 +296,12 @@ export const queuePostRenderEffect: (
   : queuePostFlushCb
 
 /**
- * The createRenderer function accepts two generic arguments:
- * HostNode and HostElement, corresponding to Node and Element types in the
- * host environment. For example, for runtime-dom, HostNode would be the DOM
- * `Node` interface and HostElement would be the DOM `Element` interface.
+ * The createRenderer function accepts two generic arguments: createRenderer 函数接受两个通用参数
+ * HostNode and HostElement, corresponding to Node and Element types in the HostNode 和 HostElement，分别对应中的 Node 和 Element 类型
+ * host environment. For example, for runtime-dom, HostNode would be the DOM 宿主环境。例如，对于runtime-dom，HostNode将是DOM
+ * `Node` interface and HostElement would be the DOM `Element` interface. `Node` 接口和 HostElement 将是 DOM `Element` 接口
  *
- * Custom renderers can pass in the platform specific types like this:
+ * Custom renderers can pass in the platform specific types like this: 自定义渲染器可以像这样传入平台特定类型
  *
  * ``` js
  * const { render, createApp } = createRenderer<Node, Element>({
@@ -309,6 +309,11 @@ export const queuePostRenderEffect: (
  *   ...nodeOps
  * })
  * ```
+ */
+/**
+ * 执行自定义渲染器, 这样不必约束单个平台，但是需要提供 RendererOptions 定义一些接口供渲染器定义
+ *  - 本质上 Vue 自身的 @vue/runtime-dom 也是利用这套 API 实现的。
+ *   --> https://cn.vuejs.org/api/custom-renderer.html
  */
 export function createRenderer<
   HostNode = RendererNode,
@@ -326,7 +331,7 @@ export function createHydrationRenderer(
   return baseCreateRenderer(options, createHydrationFunctions)
 }
 
-// overload 1: no hydration
+// overload 1: no hydration --> 非 hydration, hydration(应该是指代 SSR 时的水合作用)
 function baseCreateRenderer<
   HostNode = RendererNode,
   HostElement = RendererElement,
@@ -343,11 +348,12 @@ function baseCreateRenderer(
   options: RendererOptions,
   createHydrationFns?: typeof createHydrationFunctions,
 ): any {
-  // compile-time feature flags check
+  // compile-time feature flags check 编译时功能标志检查
   if (__ESM_BUNDLER__ && !__TEST__) {
     initFeatureFlags()
   }
 
+  // 给目标(window、或者其他)增加 __VUE__ 标记
   const target = getGlobalThis()
   target.__VUE__ = true
   if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
@@ -2444,6 +2450,9 @@ function baseCreateRenderer(
   return {
     render,
     hydrate,
+    /**
+     * 创建一个应用实例, 使用 createAppAPI 闭包
+     */
     createApp: createAppAPI(render, hydrate),
   }
 }

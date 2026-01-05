@@ -114,11 +114,11 @@ export enum PatchFlags {
    */
   CACHED = -1,
   /**
-   * A special flag that indicates that the diffing algorithm should bail out
-   * of optimized mode. For example, on block fragments created by renderSlot()
-   * when encountering non-compiler generated slots (i.e. manually written
-   * render functions, which should always be fully diffed)
-   * OR manually cloneVNodes
+   * A special flag that indicates that the diffing algorithm should bail out 一个特殊标志，表示差异算法应退出
+   * of optimized mode. For example, on block fragments created by renderSlot() 优化模式。例如，在由renderSlot()创建的块片段上
+   * when encountering non-compiler generated slots (i.e. manually written 当遇到非编译器生成的插槽（即手动编写的插槽）时
+   * render functions, which should always be fully diffed) 渲染函数（应始终进行完全差异比较）
+   * OR manually cloneVNodes 或者手动克隆VNodes
    */
   BAIL = -2,
 }

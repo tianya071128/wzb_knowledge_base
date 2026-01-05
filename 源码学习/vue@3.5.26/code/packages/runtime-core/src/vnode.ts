@@ -289,10 +289,10 @@ export function closeBlock(): void {
   currentBlock = blockStack[blockStack.length - 1] || null
 }
 
-// Whether we should be tracking dynamic child nodes inside a block.
-// Only tracks when this value is > 0
-// We are not using a simple boolean because this value may need to be
-// incremented/decremented by nested usage of v-once (see below)
+// Whether we should be tracking dynamic child nodes inside a block. 我们是否应该跟踪块内的动态子节点。
+// Only tracks when this value is > 0 仅当此值大于0时进行跟踪
+// We are not using a simple boolean because this value may need to be 我们没有使用简单的布尔值，因为这个值可能需要
+// incremented/decremented by nested usage of v-once (see below) 通过嵌套使用v-once（见下文）进行递增/递减操作
 export let isBlockTreeEnabled = 1
 
 /**
@@ -384,6 +384,15 @@ export function createBlock(
   )
 }
 
+/**
+ * 判断给定的值是否为VNode对象
+ *
+ * @param value - 待检测的值，可以是任意类型
+ * @returns 如果值为VNode对象则返回true，否则返回false
+ *
+ * 通过检查对象的__v_isVNode属性是否为true来判断是否为VNode
+ * VNode是虚拟DOM节点的表示，用于Vue等框架中的DOM操作
+ */
 export function isVNode(value: any): value is VNode {
   return value ? value.__v_isVNode === true : false
 }
@@ -431,7 +440,14 @@ const createVNodeWithArgsTransform = (
       : args),
   )
 }
-
+/**
+ * 规范化VNode的key属性
+ * 将传入的key值进行标准化处理，如果key存在则返回原值，否则返回null
+ *
+ * @param props - VNode属性对象，包含key属性
+ * @param props.key - VNode的key值，可能为任意类型或undefined/null
+ * @returns 返回标准化后的key值，如果原key存在则返回原值，否则返回null
+ */
 const normalizeKey = ({ key }: VNodeProps): VNode['key'] =>
   key != null ? key : null
 
@@ -452,6 +468,19 @@ const normalizeRef = ({
   ) as any
 }
 
+/**
+ * 创建基础虚拟节点 (VNode)
+ *
+ * @param type - VNode的类型，可以是元素类型、组件类型或特殊类型
+ * @param props - VNode的属性对象，包含数据和VNode属性
+ * @param children - VNode的子节点，可以是任意类型
+ * @param patchFlag - 补丁标志，用于标识VNode的更新类型
+ * @param dynamicProps - 动态属性数组，标识哪些属性是动态的
+ * @param shapeFlag - 形状标志，用于标识VNode的类型特征，默认为ELEMENT
+ * @param isBlockNode - 是否为块节点，默认为false
+ * @param needFullChildrenNormalization - 是否需要完全的子节点规范化，默认为false
+ * @returns 返回创建的VNode对象
+ */
 function createBaseVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
   props: (Data & VNodeProps) | null = null,
@@ -462,12 +491,13 @@ function createBaseVNode(
   isBlockNode = false,
   needFullChildrenNormalization = false,
 ): VNode {
+  // 创建 vnode 对象
   const vnode = {
     __v_isVNode: true,
     __v_skip: true,
     type,
     props,
-    key: props && normalizeKey(props),
+    key: props && normalizeKey(props), // key - 用于性能优化，用于判断VNode是否相同
     ref: props && normalizeRef(props),
     scopeId: currentScopeId,
     slotScopeIds: null,
@@ -499,32 +529,32 @@ function createBaseVNode(
       ;(type as typeof SuspenseImpl).normalize(vnode)
     }
   } else if (children) {
-    // compiled element vnode - if children is passed, only possible types are
-    // string or Array.
+    // compiled element vnode - if children is passed, only possible types are 已编译元素 vnode - 如果传递了子元素，则仅传递可能的类型
+    // string or Array. 字符串或数组
     vnode.shapeFlag |= isString(children)
       ? ShapeFlags.TEXT_CHILDREN
       : ShapeFlags.ARRAY_CHILDREN
   }
 
-  // validate key
+  // validate key 验证key的有效性，防止NaN值
   if (__DEV__ && vnode.key !== vnode.key) {
-    warn(`VNode created with invalid key (NaN). VNode type:`, vnode.type)
+    warn(`VNode created with invalid key (NaN). VNode type:`, vnode.type) // 使用无效键 (NaN) 创建的 VNode。虚拟节点类型
   }
 
-  // track vnode for block tree
+  // track vnode for block tree 跟踪块树中的vnode
   if (
     isBlockTreeEnabled > 0 &&
-    // avoid a block node from tracking itself
+    // avoid a block node from tracking itself 避免块节点跟踪自身
     !isBlockNode &&
-    // has current parent block
+    // has current parent block 有当前父块
     currentBlock &&
-    // presence of a patch flag indicates this node needs patching on updates.
-    // component nodes also should always be patched, because even if the
-    // component doesn't need to update, it needs to persist the instance on to
-    // the next vnode so that it can be properly unmounted later.
+    // presence of a patch flag indicates this node needs patching on updates. 补丁标志的存在表明此节点在更新时需要进行补丁更新
+    // component nodes also should always be patched, because even if the 组件节点也应当始终进行修补，因为即使
+    // component doesn't need to update, it needs to persist the instance on to 组件不需要更新，它需要将实例持久化
+    // the next vnode so that it can be properly unmounted later. 下一个 vnode，以便后续可以正确卸载
     (vnode.patchFlag > 0 || shapeFlag & ShapeFlags.COMPONENT) &&
-    // the EVENTS flag is only for hydration and if it is the only flag, the
-    // vnode should not be considered dynamic due to handler caching.
+    // the EVENTS flag is only for hydration and if it is the only flag, the EVENTS 标志仅用于水合，如果它是唯一标志，则
+    // vnode should not be considered dynamic due to handler caching. 由于处理程序缓存，vnode 不应被视为动态
     vnode.patchFlag !== PatchFlags.NEED_HYDRATION
   ) {
     currentBlock.push(vnode)
@@ -544,6 +574,17 @@ export const createVNode = (
   __DEV__ ? createVNodeWithArgsTransform : _createVNode
 ) as typeof _createVNode
 
+/**
+ * 创建虚拟节点 (VNode)
+ * 这是Vue内部用于创建虚拟DOM节点的核心函数
+ * @param type - VNode的类型，可以是元素类型、组件类型或特殊类型
+ * @param props - 节点的props，默认为null
+ * @param children - 节点的子元素，默认为null
+ * @param patchFlag - 补丁标志，用于优化diff算法，默认为0
+ * @param dynamicProps - 动态属性列表，默认为null
+ * @param isBlockNode - 是否为块节点，默认为false
+ * @returns 返回创建的VNode对象
+ */
 function _createVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
   props: (Data & VNodeProps) | null = null,
@@ -554,15 +595,16 @@ function _createVNode(
 ): VNode {
   if (!type || type === NULL_DYNAMIC_COMPONENT) {
     if (__DEV__ && !type) {
-      warn(`Invalid vnode type when creating vnode: ${type}.`)
+      warn(`Invalid vnode type when creating vnode: ${type}.`) // 创建 vnode 时 vnode 类型无效
     }
     type = Comment
   }
 
+  // 如果 type 时 VNode 对象
   if (isVNode(type)) {
-    // createVNode receiving an existing vnode. This happens in cases like
+    // createVNode receiving an existing vnode. This happens in cases like createVNode 接收现有的 vnode。这种情况发生在类似的情况下
     // <component :is="vnode"/>
-    // #2078 make sure to merge refs during the clone instead of overwriting it
+    // #2078 make sure to merge refs during the clone instead of overwriting it 确保在克隆期间合并引用而不是覆盖它
     const cloned = cloneVNode(type, props, true /* mergeRef: true */)
     if (children) {
       normalizeChildren(cloned, children)
@@ -578,19 +620,19 @@ function _createVNode(
     return cloned
   }
 
-  // class component normalization.
+  // class component normalization. 类组件规范化
   if (isClassComponent(type)) {
     type = type.__vccOpts
   }
 
-  // 2.x async/functional component compat
+  // 2.x async/functional component compat 异步/功能组件兼容性
   if (__COMPAT__) {
     type = convertLegacyComponent(type, currentRenderingInstance)
   }
 
-  // class & style normalization.
+  // class & style normalization. class & style 规范化
   if (props) {
-    // for reactive or proxy objects, we need to clone it to enable mutation.
+    // for reactive or proxy objects, we need to clone it to enable mutation. 对于反应式或代理对象，我们需要克隆它以启用突变。
     props = guardReactiveProps(props)!
     let { class: klass, style } = props
     if (klass && !isString(klass)) {
@@ -606,7 +648,7 @@ function _createVNode(
     }
   }
 
-  // encode the vnode type information into a bitmap
+  // encode the vnode type information into a bitmap 将vnode类型信息编码为位图
   const shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT
     : __FEATURE_SUSPENSE__ && isSuspense(type)
@@ -619,18 +661,20 @@ function _createVNode(
             ? ShapeFlags.FUNCTIONAL_COMPONENT
             : 0
 
+  // 开发环境下对响应式组件对象的警告处理
   if (__DEV__ && shapeFlag & ShapeFlags.STATEFUL_COMPONENT && isProxy(type)) {
     type = toRaw(type)
     warn(
-      `Vue received a Component that was made a reactive object. This can ` +
-        `lead to unnecessary performance overhead and should be avoided by ` +
-        `marking the component with \`markRaw\` or using \`shallowRef\` ` +
-        `instead of \`ref\`.`,
-      `\nComponent that was made reactive: `,
+      `Vue received a Component that was made a reactive object. This can ` + // Vue 接收到一个成为响应式对象的组件。这个可以
+        `lead to unnecessary performance overhead and should be avoided by ` + // 导致不必要的性能开销，应该避免
+        `marking the component with \`markRaw\` or using \`shallowRef\` ` + // 使用 \`markRaw\` 或使用 \`shallowRef\` 标记组件
+        `instead of \`ref\`.`, // 而不是“参考”。
+      `\nComponent that was made reactive: `, // 反应式的 nComponent
       type,
     )
   }
 
+  // 创建 VNode
   return createBaseVNode(
     type,
     props,
