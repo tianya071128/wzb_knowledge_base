@@ -379,6 +379,11 @@ export function createAppAPI<HostElement>(
       },
       /**
        * 挂载Vue应用到指定的DOM容器 -- https://cn.vuejs.org/api/application.html#app-mount
+       *
+       * @param rootContainer - 根容器元素，Vue应用将挂载到此DOM元素
+       * @param isHydrate - 可选参数，是否进行水合操作，用于服务端渲染的客户端激活
+       * @param namespace - 可选参数，指定命名空间，可以是布尔值或元素命名空间
+       * @returns 返回根组件的公共实例
        */
       mount(
         rootContainer: HostElement,
@@ -397,8 +402,8 @@ export function createAppAPI<HostElement>(
           }
           // 创建根Vnode
           const vnode = app._ceVNode || createVNode(rootComponent, rootProps)
-          // store app context on the root VNode.
-          // this will be set on the root instance on initial mount.
+          // store app context on the root VNode. 将应用程序上下文存储在根VNode上
+          // this will be set on the root instance on initial mount. 这将在初始安装时在根实例上设置
           vnode.appContext = context
 
           if (namespace === true) {
@@ -407,26 +412,32 @@ export function createAppAPI<HostElement>(
             namespace = undefined
           }
 
-          // HMR root reload
+          // HMR root reload HMR 根重新加载
           if (__DEV__) {
             context.reload = () => {
               const cloned = cloneVNode(vnode)
-              // avoid hydration for hmr updating
+              // avoid hydration for hmr updating 避免水合以进行 HMR 更新
               cloned.el = null
-              // casting to ElementNamespace because TS doesn't guarantee type narrowing
-              // over function boundaries
+              // casting to ElementNamespace because TS doesn't guarantee type narrowing 强制转换为 ElementNamespace，因为 TS 不保证类型缩小
+              // over function boundaries 超越功能边界
               render(cloned, rootContainer, namespace as ElementNamespace)
             }
           }
 
+          // SSR: 水合作用
           if (isHydrate && hydrate) {
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {
+            /**
+             * 渲染 vnode, 并挂载到指定 rootContainer 中
+             */
             render(vnode, rootContainer, namespace)
           }
+          /** 标记该应用实例已挂载渲染 */
           isMounted = true
+          /** 增加标记 */
           app._container = rootContainer
-          // for devtools and telemetry
+          // for devtools and telemetry 用于开发工具和遥测
           ;(rootContainer as any).__vue_app__ = app
 
           if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {

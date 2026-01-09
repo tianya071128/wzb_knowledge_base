@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "vue": ["../code/packages/vue/src/index.ts"],
+      "@vue/compat": ["../code/packages/vue-compat/src"],
+      "@vue/*": ["../code/packages/*/src"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+}

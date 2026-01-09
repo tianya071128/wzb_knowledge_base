@@ -375,8 +375,20 @@ function baseCreateRenderer(
     insertStaticContent: hostInsertStaticContent,
   } = options
 
-  // Note: functions inside this closure should use `const xxx = () => {}`
-  // style in order to prevent being inlined by minifiers.
+  // Note: functions inside this closure should use `const xxx = () => {}` 注意：此闭包内的函数应使用 const xxx = () => {}`
+  // style in order to prevent being inlined by minifiers. 样式以防止被缩小器内联
+  /**
+   * 负责对比新旧 VNode，执行差异化更新，将最终结果渲染到真实 DOM
+   * @param {VNode | null} n1 旧的虚拟节点（上一次渲染的 VNode），首次渲染时为 null
+   * @param {VNode} n2 新的虚拟节点（本次要渲染的 VNode）
+   * @param {Element | ShadowRoot} container 真实 DOM 容器（VNode 要挂载/更新到的目标容器）
+   * @param {Node | null} [anchor=null] 锚点节点：指定 VNode 插入到容器中该节点的前面（用于精准定位插入位置）
+   * @param {ComponentInternalInstance | null} [parentComponent=null] 父组件实例（用于组件上下文、依赖收集、ref 绑定等）
+   * @param {SuspenseBoundary | null} [parentSuspense=null] 父 Suspense 组件边界（处理 Suspense 异步加载逻辑）
+   * @param {string | undefined} [namespace=undefined] 命名空间（如 svg/foreignObject 等，处理不同命名空间的 DOM 元素）
+   * @param {string[] | null} [slotScopeIds=null] 插槽作用域 ID（用于样式隔离，如 scoped slot）
+   * @param {boolean} [optimized] 是否启用优化模式：开发环境下 HMR 更新时禁用，否则根据新 VNode 是否有动态子节点判断
+   */
   const patch: PatchFn = (
     n1,
     n2,
@@ -388,17 +400,20 @@ function baseCreateRenderer(
     slotScopeIds = null,
     optimized = __DEV__ && isHmrUpdating ? false : !!n2.dynamicChildren,
   ) => {
+    // 新旧 VNode 引用完全相等（指向同一内存地址）：无需任何更新操作，直接返回
     if (n1 === n2) {
       return
     }
 
-    // patching & not same type, unmount old tree
+    // patching & not same type, unmount old tree 修补且类型不同，卸载旧树
+    // 存在旧 VNode 且新旧 VNode 类型不一致：卸载旧 VNode 对应的整棵 DOM 树
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
       unmount(n1, parentComponent, parentSuspense, true)
       n1 = null
     }
 
+    // 处理「强制退出优化」标记：如果新 VNode 标记为 BAIL，关闭优化模式
     if (n2.patchFlag === PatchFlags.BAIL) {
       optimized = false
       n2.dynamicChildren = null
@@ -2399,14 +2414,26 @@ function baseCreateRenderer(
   }
 
   let isFlushing = false
+  /**
+   * 渲染函数，负责将虚拟节点渲染到容器中
+   * @param vnode - 虚拟节点，如果为null则执行卸载操作
+   * @param container - 渲染容器
+   * @param namespace - 命名空间
+   */
   const render: RootRenderFunction = (vnode, container, namespace) => {
     let instance
+    // 如果 vnode 为 null, 则执行卸载操作
     if (vnode == null) {
       if (container._vnode) {
         unmount(container._vnode, null, null, true)
         instance = container._vnode.component
       }
     } else {
+      /**
+       * 这里会做两个操作:
+       *  - 如果 container._vnode 存在的话, 那么就会执行更新操作
+       *  - 如果 container._vnode 不存在的话, 那么就会新增
+       */
       patch(
         container._vnode || null,
         vnode,

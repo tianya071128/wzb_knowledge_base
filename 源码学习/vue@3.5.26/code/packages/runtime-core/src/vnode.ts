@@ -71,16 +71,60 @@ export const Comment: unique symbol = Symbol.for('v-cmt')
 export const Static: unique symbol = Symbol.for('v-stc')
 
 export type VNodeTypes =
+  /**
+   * 普通 HTML / 自定义元素标签名
+   *  -- 最常用的类型，比如 'div'、'span'、'button'、'my-custom-element'（自定义元素），对应原生 DOM 元素。
+   */
   | string
+  /**
+   * 已创建的虚拟DOM节点对象
+   * -- 表示一个完整的VNode实例，包含所有渲染所需的信息如标签名、属性、子节点等
+   */
   | VNode
+  /**
+   * 组件定义
+   * -- 用户定义或内置的组件函数、类或配置对象，用于渲染组件实例
+   */
   | Component
+  /**
+   * 文本节点类型
+   * -- 表示纯文本内容的虚拟DOM节点，用于渲染文本内容而非元素
+   */
   | typeof Text
+  /**
+   * 静态节点类型
+   * -- 表示不会改变的静态内容，Vue会对其进行特殊优化处理
+   */
   | typeof Static
+  /**
+   * 注释节点类型
+   * -- 表示DOM中的注释节点
+   */
   | typeof Comment
+  /**
+   * 片段类型
+   * -- Vue 3中的Fragment组件，允许组件返回多个根节点
+   */
   | typeof Fragment
+  /**
+   * 传送门类型
+   * -- Vue 3中的Teleport组件，用于将内容渲染到DOM树的任意位置（如body或其他DOM节点）
+   */
   | typeof Teleport
+  /**
+   * 传送门实现类型
+   * -- Teleport组件的内部实现类型
+   */
   | typeof TeleportImpl
+  /**
+   * 异步组件占位符类型
+   * -- Vue 3中的Suspense组件，用于处理异步组件加载状态
+   */
   | typeof Suspense
+  /**
+   * 异步组件实现类型
+   * -- Suspense组件的内部实现类型
+   */
   | typeof SuspenseImpl
 
 export type VNodeRef =
@@ -163,95 +207,128 @@ export interface VNode<
   ExtraProps = { [key: string]: any },
 > {
   /**
+   * 标记当前对象是 VNode（而非普通 JS 对象），Vue 内部通过这个标识快速判断类型
    * @internal
    */
   __v_isVNode: true
 
   /**
+   * 告诉 Vue 响应式系统 “跳过对这个 VNode 的代理”，因为 VNode 不需要响应式追踪，避免性能开销
    * @internal
    */
   [ReactiveFlags.SKIP]: true
 
+  /** VNode 的类型，比如：元素标签（div/span）、组件（MyComponent）、Fragment（片段）、Teleport 等 */
   type: VNodeTypes
+  // VNode 的属性集合，包含 DOM 属性（如 class/style）、Vue 内置 props（如 key/ref）、自定义扩展属性
   props: (VNodeProps & ExtraProps) | null
+  // 节点唯一标识，用于 diff 算法优化（判断节点是否可复用），值可以是字符串 / 数字 / Symbol
   key: PropertyKey | null
+  // 引用属性，关联真实 DOM 元素或组件实例（对应模板中的 ref 指令）
   ref: VNodeNormalizedRef | null
   /**
-   * SFC only. This is assigned on vnode creation using currentScopeId
-   * which is set alongside currentRenderingInstance.
+   * SFC 样式隔离的作用域 ID（对应 <style scoped>），创建 VNode 时从当前渲染上下文赋值
+   *
+   * SFC only. This is assigned on vnode creation using currentScopeId 仅限 SFC。这是在使用 currentScopeId 创建 vnode 时分配的
+   * which is set alongside currentRenderingInstance. 与 currentRenderingInstance 一起设置
    */
   scopeId: string | null
   /**
-   * SFC only. This is assigned to:
-   * - Slot fragment vnodes with :slotted SFC styles.
-   * - Component vnodes (during patch/hydration) so that its root node can
-   *   inherit the component's slotScopeIds
+   * 插槽样式隔离 ID（对应 <style :slotted>），仅用于插槽片段 / 组件 VNode，实现插槽样式隔离
+   *
+   * SFC only. This is assigned to: 仅限 SFC。这被分配给
+   * - Slot fragment vnodes with :slotted SFC styles. 具有 :slotted SFC 样式的插槽片段 vnode
+   * - Component vnodes (during patch/hydration) so that its root node can 组件 vnode（在补丁/水合作用期间），以便其根节点可以
+   *   inherit the component's slotScopeIds 继承组件的slotScopeIds
    * @internal
    */
   slotScopeIds: string[] | null
+  /** 子节点（已规范化），可以是字符串（文本）、VNode 数组、插槽函数等 */
   children: VNodeNormalizedChildren
+  /** 组件实例（仅组件类型 VNode 有值），指向组件的内部实例（包含组件的状态、生命周期等） */
   component: ComponentInternalInstance | null
+  /** 自定义指令集合（如 v-if/v-for/ 自定义指令），存储指令的绑定信息 */
   dirs: DirectiveBinding[] | null
+  /** 过渡动画钩子（对应 <transition> 组件），存储动画的触发 / 结束等钩子函数 */
   transition: TransitionHooks<HostElement> | null
 
   // DOM
+  /** VNode 对应的真实 DOM 节点（挂载后赋值），比如 div 元素对象 */
   el: HostNode | null
-  placeholder: HostNode | null // async component el placeholder
-  anchor: HostNode | null // fragment anchor
-  target: HostElement | null // teleport target
-  targetStart: HostNode | null // teleport target start anchor
-  targetAnchor: HostNode | null // teleport target anchor
+  /** 异步组件的占位节点（加载中显示的内容） */
+  placeholder: HostNode | null // async component el placeholder 异步组件 el 占位符
+  /** 片段（Fragment）的锚点节点，用于定位 Fragment 的位置 */
+  anchor: HostNode | null // fragment anchor fragment anchor
+  /** Teleport（瞬移）的目标容器（对应 to 属性） */
+  target: HostElement | null // teleport target 传送目标
+  /** Teleport 目标容器的起始节点，用于精准插入位置 */
+  targetStart: HostNode | null // teleport target start anchor 传送目标起始锚点
+  /** Teleport 目标容器的锚点节点，用于精准插入位置 */
+  targetAnchor: HostNode | null // teleport target anchor 传送目标锚点
   /**
-   * number of elements contained in a static vnode
+   * number of elements contained in a static vnode 静态 vnode 中包含的元素数量
    * @internal
    */
   staticCount: number
 
   // suspense
+  /** 关联的 Suspense 边界实例（对应 <Suspense> 组件） */
   suspense: SuspenseBoundary | null
   /**
+   * SSR（服务端渲染）的内容节点
    * @internal
    */
   ssContent: VNode | null
   /**
+   * SSR 降级回退节点（Suspense 加载中显示的内容）
    * @internal
    */
   ssFallback: VNode | null
 
-  // optimization only
+  // optimization only 仅优化
+  /** 形状标记（位运算值），快速判断 VNode 类型（如元素 / 组件）和子节点类型（文本 / 数组），避免频繁 typeof 判断 */
   shapeFlag: number
+  /** 补丁标记（位运算值），标记 VNode 的动态部分（如动态文本、动态 class），更新时只处理标记的部分，而非全量对比 */
   patchFlag: number
   /**
+   * 动态 props 名称数组（记录哪些 props 是动态变化的）
    * @internal
    */
   dynamicProps: string[] | null
   /**
+   * 动态子节点集合（块树优化用），仅收集动态子节点，更新时直接遍历，跳过静态节点
    * @internal
    */
   dynamicChildren: (VNode[] & { hasOnce?: boolean }) | null
 
-  // application root node only
+  // application root node only 仅应用程序根节点
+  /** 动态子节点集合（块树优化用），仅收集动态子节点，更新时直接遍历，跳过静态节点 */
   appContext: AppContext | null
 
   /**
-   * @internal lexical scope owner instance
+   * 当前 VNode 所属的组件实例（词法作用域的所有者）
+   * @internal lexical scope owner instance 词法作用域所有者实例
    */
   ctx: ComponentInternalInstance | null
 
   /**
-   * @internal attached by v-memo
+   * v-memo 指令专属，存储缓存依赖数组
+   * @internal attached by v-memo 附有 v-memo
    */
   memo?: any[]
   /**
-   * @internal index for cleaning v-memo cache
+   * v-memo 缓存索引（内部清理缓存用）
+   * @internal index for cleaning v-memo cache 用于清理 v-memo 缓存的索引
    */
   cacheIndex?: number
   /**
+   * 兼容模式专属，标记是否是 Vue 2 兼容根节点
    * @internal __COMPAT__ only
    */
   isCompatRoot?: true
   /**
-   * @internal custom element interception hook
+   * 自定义元素拦截钩子（内部用于自定义元素处理）
+   * @internal custom element interception hook 自定义元素拦截钩子
    */
   ce?: (instance: ComponentInternalInstance) => void
 }
@@ -469,17 +546,18 @@ const normalizeRef = ({
 }
 
 /**
- * 创建基础虚拟节点 (VNode)
+ * 创建 Vue 基础虚拟节点（VNode）的核心函数
+ * VNode 是对真实 DOM 的抽象描述，包含节点类型、属性、子节点等关键信息，是 Vue 虚拟 DOM 体系的核心
  *
- * @param type - VNode的类型，可以是元素类型、组件类型或特殊类型
- * @param props - VNode的属性对象，包含数据和VNode属性
- * @param children - VNode的子节点，可以是任意类型
- * @param patchFlag - 补丁标志，用于标识VNode的更新类型
- * @param dynamicProps - 动态属性数组，标识哪些属性是动态的
- * @param shapeFlag - 形状标志，用于标识VNode的类型特征，默认为ELEMENT
- * @param isBlockNode - 是否为块节点，默认为false
- * @param needFullChildrenNormalization - 是否需要完全的子节点规范化，默认为false
- * @returns 返回创建的VNode对象
+ * @param type - VNode 类型，可包括元素标签、组件、Fragment、NULL_DYNAMIC_COMPONENT 等
+ * @param props - 节点属性，包含 DOM 属性、VNode 专有属性等，默认值为 null
+ * @param children - 子节点，可接受字符串、数组（子VNode）等类型，默认值为 null
+ * @param patchFlag - 补丁标记，用于优化更新性能，标记节点哪些部分是动态的（如动态文本、动态属性），默认值为 0（无动态内容）
+ * @param dynamicProps - 动态属性名数组，记录哪些 props 是动态变化的，默认值为 null
+ * @param shapeFlag - 形状标记，用于快速判断 VNode 类型（如元素、组件、文本子节点等），默认根据 type 初始化（Fragment 为 0，普通元素为 ELEMENT）
+ * @param isBlockNode - 是否为块节点（block node），块节点用于优化更新粒度，默认值为 false
+ * @param needFullChildrenNormalization - 是否需要对所有子节点进行完整规范化，默认值为 false
+ * @returns 初始化完成的基础 VNode 对象
  */
 function createBaseVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
@@ -491,7 +569,7 @@ function createBaseVNode(
   isBlockNode = false,
   needFullChildrenNormalization = false,
 ): VNode {
-  // 创建 vnode 对象
+  // 创建基础 VNode 对象，初始化核心属性
   const vnode = {
     __v_isVNode: true,
     __v_skip: true,
@@ -522,9 +600,12 @@ function createBaseVNode(
     ctx: currentRenderingInstance,
   } as VNode
 
+  // 需要对子节点完整规范化
   if (needFullChildrenNormalization) {
+    // 完整规范化子节点（处理所有类型的子节点，如文本、数组、插槽等）
     normalizeChildren(vnode, children)
-    // normalize suspense children
+    // normalize suspense
+    // 若开启 Suspense 特性且当前 VNode 是 Suspense 类型，规范化其内部子节点
     if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
       ;(type as typeof SuspenseImpl).normalize(vnode)
     }
@@ -560,11 +641,13 @@ function createBaseVNode(
     currentBlock.push(vnode)
   }
 
+  // 兼容模式处理：适配 Vue 2 的 v-model 语法和旧版 VNode 属性
   if (__COMPAT__) {
-    convertLegacyVModelProps(vnode)
-    defineLegacyVNodeProperties(vnode)
+    convertLegacyVModelProps(vnode) // 转换旧版 v-model 属性到 Vue 3 格式
+    defineLegacyVNodeProperties(vnode) // 定义旧版 VNode 兼容属性（如 .native 事件、$attrs 等）
   }
 
+  // 返回初始化完成的基础 VNode
   return vnode
 }
 
@@ -575,15 +658,16 @@ export const createVNode = (
 ) as typeof _createVNode
 
 /**
- * 创建虚拟节点 (VNode)
- * 这是Vue内部用于创建虚拟DOM节点的核心函数
- * @param type - VNode的类型，可以是元素类型、组件类型或特殊类型
- * @param props - 节点的props，默认为null
- * @param children - 节点的子元素，默认为null
- * @param patchFlag - 补丁标志，用于优化diff算法，默认为0
- * @param dynamicProps - 动态属性列表，默认为null
- * @param isBlockNode - 是否为块节点，默认为false
- * @returns 返回创建的VNode对象
+ * 创建虚拟节点 (VNode), 是 `createVNode` 的底层实现
+ * 负责 VNode 类型校验、属性规范化、形状标记编码、兼容性处理等前置逻辑，最终调用 createBaseVNode 生成 VNode
+ * @param {VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT} type VNode 类型
+ *        （可取值：原生元素名(string)、组件对象(object/function)、Comment/Fragment/Teleport/Suspense 等内置类型）
+ * @param {(Data & VNodeProps) | null} [props=null] VNode 对应的属性（如 class/style/onClick 等），默认 null
+ * @param {unknown} [children=null] VNode 子节点（可取值：文本、数组、VNode 等），默认 null
+ * @param {number} [patchFlag=0] 补丁标记（PatchFlags）：标记 VNode 中动态变化的部分，用于优化 diff 性能，默认 0（无动态内容）
+ * @param {string[] | null} [dynamicProps=null] 动态属性名数组（如 ['class', 'style']），记录需要动态更新的 props，默认 null
+ * @param {boolean} [isBlockNode=false] 是否为「块节点」（Block Tree 优化相关，标记当前 VNode 属于块节点），默认 false
+ * @returns {VNode} 最终创建的虚拟节点
  */
 function _createVNode(
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
@@ -593,22 +677,31 @@ function _createVNode(
   dynamicProps: string[] | null = null,
   isBlockNode = false,
 ): VNode {
+  // 处理无效/空 VNode 类型：默认转为注释节点（Comment）
+  // NULL_DYNAMIC_COMPONENT 是 Vue 内置的「空动态组件」标识
   if (!type || type === NULL_DYNAMIC_COMPONENT) {
+    // 开发环境：提示无效的 VNode 类型（生产环境静默处理）
     if (__DEV__ && !type) {
       warn(`Invalid vnode type when creating vnode: ${type}.`) // 创建 vnode 时 vnode 类型无效
     }
+    // 空类型兜底为注释节点，避免渲染异常
     type = Comment
   }
 
-  // 如果 type 时 VNode 对象
+  // 特殊场景：传入的 type 本身就是一个已存在的 VNode（如 <component :is="vnode"/> 用法）
   if (isVNode(type)) {
     // createVNode receiving an existing vnode. This happens in cases like createVNode 接收现有的 vnode。这种情况发生在类似的情况下
     // <component :is="vnode"/>
     // #2078 make sure to merge refs during the clone instead of overwriting it 确保在克隆期间合并引用而不是覆盖它
+
+    // 克隆现有 VNode（避免修改原 VNode 引发副作用）
+    // 第三个参数 true：合并 ref 属性（#2078 修复 ref 被覆盖的问题）
     const cloned = cloneVNode(type, props, true /* mergeRef: true */)
+    // 如果传入了 children，规范化克隆后 VNode 的子节点（统一子节点格式：文本/数组/VNode）
     if (children) {
       normalizeChildren(cloned, children)
     }
+    // Block Tree 优化：如果当前开启块树优化、且当前节点不是块节点、且存在当前块容器
     if (isBlockTreeEnabled > 0 && !isBlockNode && currentBlock) {
       if (cloned.shapeFlag & ShapeFlags.COMPONENT) {
         currentBlock[currentBlock.indexOf(type)] = cloned
@@ -616,52 +709,68 @@ function _createVNode(
         currentBlock.push(cloned)
       }
     }
+
+    // 标记克隆的 VNode 为「强制退出优化」：需要全量 diff，不能走动态子节点优化
     cloned.patchFlag = PatchFlags.BAIL
+    // 返回克隆后的 VNode（无需走后续创建流程）
     return cloned
   }
 
   // class component normalization. 类组件规范化
+  // 类组件规范化：将 ClassComponent 实例转为其 __vccOpts 配置（Vue 3 对类组件的适配）
   if (isClassComponent(type)) {
     type = type.__vccOpts
   }
 
   // 2.x async/functional component compat 异步/功能组件兼容性
+  // Vue 2.x 兼容性处理：转换旧版异步组件/函数式组件为 Vue 3 兼容格式
+  // __COMPAT__ 为 true 时开启 2.x 兼容模式
   if (__COMPAT__) {
     type = convertLegacyComponent(type, currentRenderingInstance)
   }
 
   // class & style normalization. class & style 规范化
+  // Props 规范化：处理 class/style 格式，克隆响应式 props 避免原对象被修改
   if (props) {
     // for reactive or proxy objects, we need to clone it to enable mutation. 对于反应式或代理对象，我们需要克隆它以启用突变。
+    // 守卫响应式/代理对象：克隆 props 为普通对象，避免修改原响应式对象引发意外副作用
     props = guardReactiveProps(props)!
+    // 解构 class 和 style 属性（高频动态属性，单独规范化）
     let { class: klass, style } = props
+    // 规范化 class：支持数组/对象/字符串格式，最终转为空格分隔的字符串
     if (klass && !isString(klass)) {
       props.class = normalizeClass(klass)
     }
+
+    // 规范化 style：支持数组/对象格式，处理响应式 style 克隆（避免修改原响应式对象）
     if (isObject(style)) {
-      // reactive state objects need to be cloned since they are likely to be
-      // mutated
+      // reactive state objects need to be cloned since they are likely to be 反应式状态对象需要被克隆，因为它们很可能是
+      // mutated 突变的
+      // 响应式 style 对象需要克隆：因为 style 大概率会被动态修改（如 :style="{ color: red }"）
       if (isProxy(style) && !isArray(style)) {
         style = extend({}, style)
       }
+      // 标准化 style 格式：合并数组 style、解析驼峰式属性（如 backgroundColor → background-color）
       props.style = normalizeStyle(style)
     }
   }
 
   // encode the vnode type information into a bitmap 将vnode类型信息编码为位图
+  // 6. 编码 VNode 形状标记（shapeFlag）：用位掩码快速标识 VNode 类型，提升 diff 时的类型判断性能
+  // 位运算判断 type 类型，最终生成一个数字（每一位代表一种类型）
   const shapeFlag = isString(type)
-    ? ShapeFlags.ELEMENT
+    ? ShapeFlags.ELEMENT // type 是字符串 → 原生元素节点（如 div/button）
     : __FEATURE_SUSPENSE__ && isSuspense(type)
-      ? ShapeFlags.SUSPENSE
+      ? ShapeFlags.SUSPENSE // 开启 Suspense 特性且 type 是 Suspense → Suspense 组件
       : isTeleport(type)
-        ? ShapeFlags.TELEPORT
+        ? ShapeFlags.TELEPORT // type 是 Teleport → Teleport 组件
         : isObject(type)
-          ? ShapeFlags.STATEFUL_COMPONENT
+          ? ShapeFlags.STATEFUL_COMPONENT // type 是对象 → 有状态组件（如 { setup() {} }）
           : isFunction(type)
-            ? ShapeFlags.FUNCTIONAL_COMPONENT
-            : 0
+            ? ShapeFlags.FUNCTIONAL_COMPONENT // type 是函数 → 函数式组件
+            : 0 // 未知类型 → 0（无标记）
 
-  // 开发环境下对响应式组件对象的警告处理
+  // 开发环境警告：避免将组件对象设为响应式（会导致性能开销）
   if (__DEV__ && shapeFlag & ShapeFlags.STATEFUL_COMPONENT && isProxy(type)) {
     type = toRaw(type)
     warn(
@@ -674,7 +783,7 @@ function _createVNode(
     )
   }
 
-  // 创建 VNode
+  // 调用基础 VNode 创建函数，生成最终的 VNode 并返回
   return createBaseVNode(
     type,
     props,
@@ -683,7 +792,7 @@ function _createVNode(
     dynamicProps,
     shapeFlag,
     isBlockNode,
-    true,
+    true, // 需要对所有子节点进行完整规范化
   )
 }
 

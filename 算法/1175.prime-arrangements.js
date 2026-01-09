@@ -23,27 +23,26 @@ var numPrimeArrangements = function (n) {
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
     73, 79, 83, 89, 97,
   ];
-  // 二分搜索找到指数多少个质数
-  let left = 0,
-    right = primes.length - 1;
-  while (left <= right) {
-    let mid = left + Math.floor((right - left) / 2);
+  // 质数个数
+  let primeCount = primes.filter((item) => item <= n).length,
+    ans = 1,
+    MOE = 10 ** 9 + 7;
 
-    if (primes[mid] === n) {
-      right = mid;
-      break;
-    } else if (primes[mid] > n) {
-      right = mid - 1;
-    } else {
-      left = mid + 1;
-    }
+  for (let i = 2; i <= primeCount; i++) {
+    ans = (ans * i) % MOE;
   }
+
+  for (let i = 2; i <= n - primeCount; i++) {
+    ans = (ans * i) % MOE;
+  }
+
+  return ans;
 };
 // @lc code=end
 
 /*
 // @lcpr case=start
-// 5\n
+// 2\n
 // @lcpr case=end
 
 // @lcpr case=start
