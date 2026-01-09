@@ -25,7 +25,7 @@ export default defineConfig({
   define: {
     __COMMIT__: `"dev"`,
     __VERSION__: `"3.5.16"`,
-    __DEV__: JSON.stringify(false),
+    __DEV__: JSON.stringify(true),
     __TEST__: JSON.stringify(false),
     __BROWSER__: JSON.stringify(false),
     __GLOBAL__: JSON.stringify(false),
@@ -38,5 +38,6 @@ export default defineConfig({
     __FEATURE_OPTIONS_API__: JSON.stringify(false),
     __FEATURE_PROD_DEVTOOLS__: JSON.stringify(false),
     __FEATURE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+    __VUE_HMR_RUNTIME__: JSON.stringify,
   },
 });

@@ -105,10 +105,24 @@ export type RootRenderFunction<HostElement = RendererElement> = (
   namespace?: ElementNamespace,
 ) => void
 
+/**
+ * 与平台无关的 DOM 操作 API
+ *  - 浏览器环境见 runtime-dom/src/nodeOps.ts 文件定义
+ */
 export interface RendererOptions<
   HostNode = RendererNode,
   HostElement = RendererElement,
 > {
+  /**
+   * 【核心】更新/修补元素节点的属性/特性/事件绑定，是diff算法中属性更新的核心方法
+   * 负责处理：原生DOM属性(class/style/id)、DOM特性、Vue指令、事件绑定(@click等)的新增/更新/移除
+   * @param el 要更新属性的「真实宿主元素节点」
+   * @param key 要更新的属性/特性/事件名 (如: 'class' | 'style' | 'onClick' | 'id')
+   * @param prevValue 该属性的旧值，首次挂载为 undefined/null
+   * @param nextValue 该属性的新值，不需要更新则为 undefined/null
+   * @param namespace 可选，元素的命名空间，处理 svg/math 等特殊标签的属性命名空间（如 xmlns）
+   * @param parentComponent 可选，当前元素所属的父组件内部实例，用于处理指令/事件的上下文
+   */
   patchProp(
     el: HostElement,
     key: string,
@@ -117,23 +131,113 @@ export interface RendererOptions<
     namespace?: ElementNamespace,
     parentComponent?: ComponentInternalInstance | null,
   ): void
+  /**
+   * 将一个真实节点插入到指定的父容器中，是所有「挂载/插入」操作的底层实现
+   * Vue 内部的 hostInsert 就是调用此方法，也是最常用的宿主操作之一
+   * @param el 要被插入的「真实宿主节点」(元素/文本/注释都可以)
+   * @param parent 父容器「真实宿主元素节点」，只能是元素节点（能容纳子节点）
+   * @param anchor 可选，锚点「真实宿主节点」；插入规则：将 el 插入到 parent 中 anchor 节点的【前面】
+   *               传 null 则表示插入到 parent 的子节点列表的「最后面」
+   */
   insert(el: HostNode, parent: HostElement, anchor?: HostNode | null): void
+  /**
+   * 从宿主环境中移除指定的真实节点，清理节点相关的所有资源，无返回值
+   * 会自动处理节点的父级关联、事件解绑等，避免内存泄漏
+   * @param el 要被移除的「真实宿主节点」(元素/文本/注释都可以)
+   */
   remove(el: HostNode): void
+  /**
+   * 创建一个「真实的宿主元素节点」
+   * Vue 内部的 hostCreateElement 就是调用此方法，对应浏览器的 document.createElement
+   * @param type 元素的标签名 (如: 'div' | 'span' | 'svg' | 'button')
+   * @param namespace 可选，元素命名空间，处理 svg/math 等特殊标签（如 svg 标签需要 xmlns="http://www.w3.org/2000/svg"）
+   * @param isCustomizedBuiltIn 可选，标记是否是「自定义内置元素」(如 <button is="my-button">)
+   * @param vnodeProps 可选，当前元素对应的VNode属性集合，用于创建自定义元素时传递属性
+   * @returns 创建好的「真实宿主元素节点」
+   */
   createElement(
     type: string,
     namespace?: ElementNamespace,
     isCustomizedBuiltIn?: string,
     vnodeProps?: (VNodeProps & { [key: string]: any }) | null,
   ): HostElement
+  /**
+   * 创建一个「真实的宿主文本节点」
+   * Vue 内部的 hostCreateText 就是调用此方法，对应浏览器的 document.createTextNode
+   * @param text 文本节点的内容字符串
+   * @returns 创建好的「真实宿主文本节点」
+   */
   createText(text: string): HostNode
+  /**
+   * 创建一个「真实的宿主注释节点」
+   * Vue 内部的 hostCreateComment 就是调用此方法，对应浏览器的 document.createComment
+   * @param text 注释节点的内容字符串
+   * @returns 创建好的「真实宿主注释节点」
+   */
   createComment(text: string): HostNode
+  /**
+   * 修改「文本节点」的内容，只作用于文本类型的宿主节点
+   * Vue 内部的 hostSetText 就是调用此方法，对应浏览器的 textNode.nodeValue = text
+   * 也是 processText 文本更新逻辑中最核心的调用方法
+   * @param node 要修改的「真实宿主文本节点」
+   * @param text 新的文本内容字符串
+   */
   setText(node: HostNode, text: string): void
+  /**
+   * 修改「元素节点」的文本内容（覆盖元素的所有子节点）
+   * 区别于 setText：setText 操作「文本节点」，此方法操作「元素节点」
+   * 对应浏览器的 element.textContent = text，会清空元素原有所有子节点，直接替换为文本
+   * @param node 要修改的「真实宿主元素节点」
+   * @param text 要设置的文本内容字符串
+   */
   setElementText(node: HostElement, text: string): void
+  /**
+   * 获取指定节点的「父元素节点」
+   * @param node 任意「真实宿主节点」
+   * @returns 该节点的父元素节点，无则返回 null (文本/注释节点的父级一定是元素节点)
+   */
   parentNode(node: HostNode): HostElement | null
+  /**
+   * 获取指定节点的「下一个兄弟节点」
+   * 核心用于「锚点定位」，比如 patch 中卸载旧节点时获取锚点、insert 插入节点时的位置计算
+   * @param node 任意「真实宿主节点」
+   * @returns 该节点的下一个兄弟节点，无则返回 null
+   */
   nextSibling(node: HostNode): HostNode | null
+  /**
+   * 【可选方法】根据选择器查询匹配的第一个元素节点
+   * 非所有平台都需要实现（比如小程序无选择器概念），所以是可选属性
+   * @param selector CSS选择器字符串 (如: '#app' | '.container' | 'div')
+   * @returns 匹配到的元素节点，无则返回 null
+   */
   querySelector?(selector: string): HostElement | null
+  /**
+   * 【可选方法】为元素节点设置 SFC 样式隔离的「作用域ID」
+   * 仅在 Vue 单文件组件 <style scoped> 时生效，会给元素添加 data-v-xxx 属性
+   * 非所有平台需要，故为可选方法
+   * @param el 要设置的「真实宿主元素节点」
+   * @param id 样式隔离的唯一标识ID (如: 'data-v-7ba5bd90')
+   */
   setScopeId?(el: HostElement, id: string): void
+  /**
+   * 【可选方法】克隆一个已存在的真实宿主节点
+   * 用于静态节点复用、缓存节点等性能优化场景，Vue内部按需调用
+   * @param node 要克隆的「真实宿主节点」
+   * @returns 克隆后的新节点
+   */
   cloneNode?(node: HostNode): HostNode
+  /**
+   * 【可选方法】批量插入「静态文本内容」，是 Vue 的静态内容渲染性能优化方法
+   * 直接插入一段HTML字符串/静态文本，比逐个创建节点再插入效率高得多
+   * 用于静态提升、缓存静态节点等编译优化场景，返回插入后的起止节点用于后续更新
+   * @param content 要插入的静态文本/HTML字符串
+   * @param parent 父容器元素节点
+   * @param anchor 插入的锚点节点
+   * @param namespace 元素命名空间
+   * @param start 可选，插入内容的起始节点
+   * @param end 可选，插入内容的结束节点
+   * @returns 包含插入后【起始节点、结束节点】的元组
+   */
   insertStaticContent?(
     content: string,
     parent: HostElement,
@@ -360,6 +464,7 @@ function baseCreateRenderer(
     setDevtoolsHook(target.__VUE_DEVTOOLS_GLOBAL_HOOK__, target)
   }
 
+  /** 与平台无关的 DOM 操作API */
   const {
     insert: hostInsert,
     remove: hostRemove,
@@ -378,16 +483,19 @@ function baseCreateRenderer(
   // Note: functions inside this closure should use `const xxx = () => {}` 注意：此闭包内的函数应使用 const xxx = () => {}`
   // style in order to prevent being inlined by minifiers. 样式以防止被缩小器内联
   /**
-   * 负责对比新旧 VNode，执行差异化更新，将最终结果渲染到真实 DOM
-   * @param {VNode | null} n1 旧的虚拟节点（上一次渲染的 VNode），首次渲染时为 null
-   * @param {VNode} n2 新的虚拟节点（本次要渲染的 VNode）
-   * @param {Element | ShadowRoot} container 真实 DOM 容器（VNode 要挂载/更新到的目标容器）
-   * @param {Node | null} [anchor=null] 锚点节点：指定 VNode 插入到容器中该节点的前面（用于精准定位插入位置）
-   * @param {ComponentInternalInstance | null} [parentComponent=null] 父组件实例（用于组件上下文、依赖收集、ref 绑定等）
-   * @param {SuspenseBoundary | null} [parentSuspense=null] 父 Suspense 组件边界（处理 Suspense 异步加载逻辑）
-   * @param {string | undefined} [namespace=undefined] 命名空间（如 svg/foreignObject 等，处理不同命名空间的 DOM 元素）
-   * @param {string[] | null} [slotScopeIds=null] 插槽作用域 ID（用于样式隔离，如 scoped slot）
-   * @param {boolean} [optimized] 是否启用优化模式：开发环境下 HMR 更新时禁用，否则根据新 VNode 是否有动态子节点判断
+   * Vue3 虚拟DOM核心补丁函数，Diff算法的主入口
+   * 核心作用：对比新旧两个VNode(n1旧节点/n2新节点)的差异，将差异内容更新到真实DOM中，实现精准的DOM更新
+   * 包含逻辑：节点复用判断、节点卸载、不同类型VNode的差异化更新、ref绑定/解绑等全量更新逻辑
+   * @param {VNode | null} n1 旧的虚拟节点，首次渲染时为 null
+   * @param {VNode} n2 新的虚拟节点，本次要渲染/更新的节点
+   * @param {RendererElement} container 真实DOM容器，节点要挂载/更新到的父容器
+   * @param {RendererNode | null} anchor 锚点DOM节点，用于精准插入新节点的位置（参照物），默认null
+   * @param {ComponentInternalInstance | null} parentComponent 当前节点所属的父组件实例，默认null
+   * @param {SuspenseBoundary | null} parentSuspense 当前节点所属的父级Suspense组件实例，处理异步组件用，默认null
+   * @param {string | undefined} namespace DOM命名空间，处理svg、math等特殊标签的属性命名空间，默认undefined
+   * @param {string[] | null} slotScopeIds 插槽的样式作用域ID，SFC的scoped样式隔离用，默认null
+   * @param {boolean} optimized 是否开启编译优化模式，默认值：开发环境+热更新时关闭优化，否则根据新节点是否有动态子节点判断
+   * @returns {void}
    */
   const patch: PatchFn = (
     n1,
@@ -400,33 +508,43 @@ function baseCreateRenderer(
     slotScopeIds = null,
     optimized = __DEV__ && isHmrUpdating ? false : !!n2.dynamicChildren,
   ) => {
-    // 新旧 VNode 引用完全相等（指向同一内存地址）：无需任何更新操作，直接返回
+    // 如果新旧 VNode 指向同一个内存地址，说明节点内容完全无变化，无需任何更新操作，直接终止执行
     if (n1 === n2) {
       return
     }
 
     // patching & not same type, unmount old tree 修补且类型不同，卸载旧树
-    // 存在旧 VNode 且新旧 VNode 类型不一致：卸载旧 VNode 对应的整棵 DOM 树
+    // 存在旧VNode 且 新旧VNode的类型不匹配（isSameVNodeType判断：type+key双匹配）
+    // 类型不一致时无法做差异化更新，最优解是：先卸载旧VNode对应的整棵DOM树，后续直接挂载新节点
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
       unmount(n1, parentComponent, parentSuspense, true)
       n1 = null
     }
 
-    // 处理「强制退出优化」标记：如果新 VNode 标记为 BAIL，关闭优化模式
+    // 如果新 VNode 的补丁标记是 BAIL(放弃优化)，则强制关闭编译优化模式
+    // BAIL 标记表示当前节点的结构复杂，无法做静态/动态节点的优化，需要走全量的diff逻辑
     if (n2.patchFlag === PatchFlags.BAIL) {
       optimized = false
       n2.dynamicChildren = null
     }
 
+    // 解构新VNode的核心属性，后续根据类型做差异化处理
     const { type, ref, shapeFlag } = n2
+    // 根据 VNode 的不同type类型，执行对应的更新/挂载逻辑
+    // 基于 VNode 的type做精准分流，不同类型的节点有专属的处理逻辑，职责单一
     switch (type) {
+      // 文本类型VNode：<div>文本内容</div> 中的文本节点
       case Text:
         processText(n1, n2, container, anchor)
         break
+
+      // 注释类型VNode：模板中的 <!-- xxx --> 注释节点
       case Comment:
         processCommentNode(n1, n2, container, anchor)
         break
+
+      // 静态类型VNode：内容永远不会变化的节点（性能优化核心）
       case Static:
         if (n1 == null) {
           mountStaticNode(n2, container, anchor, namespace)
@@ -434,6 +552,8 @@ function baseCreateRenderer(
           patchStaticNode(n1, n2, container, namespace)
         }
         break
+
+      // 片段类型VNode：<Fragment> 或 模板多根节点自动生成的片段节点
       case Fragment:
         processFragment(
           n1,
@@ -447,7 +567,11 @@ function baseCreateRenderer(
           optimized,
         )
         break
+
+      // 默认分支：处理 原生DOM元素/组件/Teleport/Suspense 等核心类型
+      // 通过 shapeFlag 位运算快速判断具体类型，比多层if判断性能更高，Vue3核心性能优化点
       default:
+        // 原生DOM元素类型：如 div/span/button 等普通HTML标签
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(
             n1,
@@ -460,7 +584,9 @@ function baseCreateRenderer(
             slotScopeIds,
             optimized,
           )
-        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+        }
+        // 组件类型VNode：自定义组件/全局组件/异步组件等
+        else if (shapeFlag & ShapeFlags.COMPONENT) {
           processComponent(
             n1,
             n2,
@@ -472,7 +598,9 @@ function baseCreateRenderer(
             slotScopeIds,
             optimized,
           )
-        } else if (shapeFlag & ShapeFlags.TELEPORT) {
+        }
+        // Teleport瞬移组件类型：<Teleport to="body"> 对应的节点
+        else if (shapeFlag & ShapeFlags.TELEPORT) {
           ;(type as typeof TeleportImpl).process(
             n1 as TeleportVNode,
             n2 as TeleportVNode,
@@ -485,7 +613,9 @@ function baseCreateRenderer(
             optimized,
             internals,
           )
-        } else if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
+        }
+        // Suspense异步组件类型：<Suspense> 对应的节点（开启Suspense特性时生效）
+        else if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
           ;(type as typeof SuspenseImpl).process(
             n1,
             n2,
@@ -498,12 +628,16 @@ function baseCreateRenderer(
             optimized,
             internals,
           )
-        } else if (__DEV__) {
+        }
+        // 开发环境兜底警告：出现了无效的VNode类型
+        else if (__DEV__) {
           warn('Invalid VNode type:', type, `(${typeof type})`)
         }
     }
 
     // set ref
+    // ref是Vue的核心特性，用于获取真实DOM元素或组件实例，此处处理ref的更新逻辑
+    // 情况1：新节点有ref属性 且 存在父组件 → 执行ref绑定/更新：解绑旧ref，绑定新ref
     if (ref != null && parentComponent) {
       setRef(ref, n1 && n1.ref, parentSuspense, n2 || n1, !n2)
     } else if (ref == null && n1 && n1.ref != null) {
@@ -511,55 +645,102 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * 处理【纯文本类型VNode】的初始化挂载与更新逻辑
+   * 文本类型VNode的type固定为 Text，其children属性存储的就是文本内容本身（如 'hello vue3'）
+   * @param {VNode | null} n1 旧的文本虚拟节点，首次渲染时为null
+   * @param {VNode} n2 新的文本虚拟节点，必传
+   * @param {RendererElement} container 真实DOM父容器，文本节点要插入的容器
+   * @param {RendererNode | null} anchor 锚点真实DOM节点，用于精准插入文本节点的位置，null则插入容器末尾
+   */
   const processText: ProcessTextOrCommentFn = (n1, n2, container, anchor) => {
+    // 首次渲染，无旧的文本VNode (n1 === null)
     if (n1 == null) {
+      // 1. 创建真实的文本DOM节点：hostCreateText是平台无关的DOM操作API，入参就是文本内容(n2.children)
+      // 2. 将创建好的真实文本节点赋值给n2.el，建立「虚拟节点」和「真实DOM」的映射关系
+      // 3. 将真实文本节点插入到指定容器的锚点位置，完成文本节点的首次挂载
       hostInsert(
         (n2.el = hostCreateText(n2.children as string)),
         container,
         anchor,
       )
-    } else {
+    }
+    // 存在旧的文本VNode (n1 !== null)，执行更新逻辑
+    else {
+      // 核心优化：文本节点永远复用旧节点的真实DOM元素，避免重复创建/删除DOM，性能最优
+      // n1存在则n1.el一定有值，所以用!强制非空断言
       const el = (n2.el = n1.el!)
       if (n2.children !== n1.children) {
-        // We don't inherit el for cached text nodes in `traverseStaticChildren`
-        // to avoid retaining detached DOM nodes. However, the text node may be
-        // changed during HMR. In this case we need to replace the old text node
-        // with the new one.
+        // We don't inherit el for cached text nodes in `traverseStaticChildren` 在`traverseStaticChildren`中，我们不会为缓存的文本节点继承el
+        // to avoid retaining detached DOM nodes. However, the text node may be 以避免保留已分离的DOM节点。然而，文本节点可能
+        // changed during HMR. In this case we need to replace the old text node 在HMR（热模块重新加载）过程中发生了变化。在这种情况下，我们需要替换旧的文本节点
+        // with the new one. 用新的那个。
+
+        // 【开发环境 + HMR热更新】的特殊兼容处理逻辑 - 生产环境不会走到这里
         if (
-          __DEV__ &&
-          isHmrUpdating &&
-          n2.patchFlag === PatchFlags.CACHED &&
-          '__elIndex' in n1
+          __DEV__ && // 仅开发环境生效
+          isHmrUpdating && // 当前处于热更新状态
+          n2.patchFlag === PatchFlags.CACHED && // 新节点被标记为「缓存节点」
+          '__elIndex' in n1 // 旧节点上存在elIndex（记录了节点在父容器中的索引位置）
         ) {
+          // 获取容器的子节点集合（区分测试环境和生产环境的不同获取方式）
           const childNodes = __TEST__
             ? container.children
             : container.childNodes
+          // 创建新的文本DOM节点，内容为新的文本值
           const newChild = hostCreateText(n2.children as string)
+          // 复用旧节点的索引位置，赋值给新节点，保证插入位置不变
           const oldChild =
             childNodes[((n2 as any).__elIndex = (n1 as any).__elIndex)]
+          // 把新文本节点插入到旧节点的位置
           hostInsert(newChild, container, oldChild)
+          // 移除旧的文本节点，完成替换
           hostRemove(oldChild)
         } else {
+          // 直接修改已有文本DOM节点的内容，无需创建/删除节点，极致高效
+          // hostSetText 是平台无关的DOM操作API，作用：修改一个文本节点的内容
           hostSetText(el, n2.children as string)
         }
       }
+
+      // 如果新旧文本内容一致(n2.children === n1.children)，则什么都不做，直接结束
     }
   }
 
+  /**
+   * 处理【注释类型VNode】的初始化挂载与更新逻辑
+   * 注释类型VNode的type固定为 Comment，其children属性存储的是注释的文本内容
+   * 类型同processText：ProcessTextOrCommentFn，入参规则和文本节点完全一致
+   * @param {VNode | null} n1 旧的注释虚拟节点，首次渲染时为 null
+   * @param {VNode} n2 新的注释虚拟节点，必传（要渲染/更新的注释节点）
+   * @param {RendererElement} container 真实DOM父容器，注释节点要插入的容器
+   * @param {RendererNode | null} anchor 锚点真实DOM节点，控制注释节点插入的位置，null则插入容器末尾
+   */
   const processCommentNode: ProcessTextOrCommentFn = (
     n1,
     n2,
     container,
     anchor,
   ) => {
+    // 首次渲染，无旧注释节点
     if (n1 == null) {
+      // 1. hostCreateComment：创建真实的浏览器注释DOM节点，入参是注释内容(n2.children)
+      // 2. 兜底处理：(n2.children as string) || ''  防止注释内容为null/undefined，保证传入空字符串
+      // 3. 把创建好的真实注释节点赋值给 n2.el ，建立「虚拟注释节点」和「真实注释DOM」的映射关系
+      // 4. hostInsert：将真实注释节点插入到指定容器的锚点位置，完成注释节点的首次挂载
       hostInsert(
         (n2.el = hostCreateComment((n2.children as string) || '')),
         container,
         anchor,
       )
-    } else {
-      // there's no support for dynamic comments
+    }
+    // 存在旧注释节点 (n1 !== null)，执行更新逻辑
+    else {
+      // 【Vue3 核心设计：注释节点 完全不支持动态更新！】
+      // 不管新旧注释的内容是否发生变化，都不会做任何DOM内容更新操作  --> 也就是说, 注释内容变化, 不会触发更新, 除非重新渲染
+      // 唯一做的事：复用旧注释节点的真实DOM元素，将旧节点的el赋值给新节点的el
+
+      // there's no support for dynamic comments 没有对动态注释的支持
       n2.el = n1.el
     }
   }
@@ -1075,6 +1256,20 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * 处理【Fragment(片段)类型VNode】的初始化挂载与更新逻辑
+   * Fragment核心特性：无真实DOM节点，仅作为虚拟容器包裹子节点，渲染后不生成任何冗余DOM
+   * Fragment的children固定为VNode数组，不会是文本/单个节点
+   * @param {VNode | null} n1 旧的Fragment虚拟节点，首次渲染为null
+   * @param {VNode} n2 新的Fragment虚拟节点，本次要渲染/更新的核心节点
+   * @param {RendererElement} container 真实DOM父容器，Fragment的子节点最终挂载到该容器
+   * @param {RendererNode | null} anchor 锚点真实DOM节点，控制Fragment子节点的插入位置
+   * @param {ComponentInternalInstance | null} parentComponent 父组件内部实例
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense组件实例
+   * @param {ElementNamespace} namespace DOM命名空间，处理svg/math等特殊标签
+   * @param {string[] | null} slotScopeIds SFC插槽样式隔离ID，用于<style :slotted>
+   * @param {boolean} optimized 是否开启编译优化模式
+   */
   const processFragment = (
     n1: VNode | null,
     n2: VNode,
@@ -1086,40 +1281,57 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
+    // 创建/复用 Fragment 的「首尾锚点空文本节点」【Fragment的灵魂设计】
+    // Fragment本身无真实el，Vue用「两个空文本节点」作为Fragment的起止锚点：startAnchor + endAnchor
+    // 作用：标记Fragment所有子节点的「范围」，方便后续批量更新/删除子节点，无需遍历整个父容器
+    // 复用逻辑：有旧节点则复用旧锚点，无则创建新的空文本节点（文本内容为空字符串）
     const fragmentStartAnchor = (n2.el = n1 ? n1.el : hostCreateText(''))!
     const fragmentEndAnchor = (n2.anchor = n1 ? n1.anchor : hostCreateText(''))!
 
+    // 解构新Fragment的核心优化标记，用于后续判断更新策略
     let { patchFlag, dynamicChildren, slotScopeIds: fragmentSlotScopeIds } = n2
 
+    // 开发环境兼容处理：HMR热更新 / 根节点Fragment 强制关闭优化
     if (
       __DEV__ &&
       // #5523 dev root fragment may inherit directives
       (isHmrUpdating || patchFlag & PatchFlags.DEV_ROOT_FRAGMENT)
     ) {
-      // HMR updated / Dev root fragment (w/ comments), force full diff
+      // HMR更新/开发环境根Fragment，强制走全量diff，避免优化逻辑导致的更新异常
+      // HMR updated / Dev root fragment (w/ comments), force full diff HMR 更新/开发根片段（带注释），强制完整 diff
       patchFlag = 0
       optimized = false
       dynamicChildren = null
     }
 
-    // check if this is a slot fragment with :slotted scope ids
+    // 插槽样式隔离：合并插槽作用域ID
+    // 如果当前Fragment是插槽片段，且有专属的slotScopeIds，合并到父级的slotScopeIds中
+    // 作用：保证SFC的<style :slotted>样式能正确作用到插槽内的节点，样式隔离生效
+    // check if this is a slot fragment with :slotted scope ids 使用 :slotted 作用域ID 来检查这是否是一个插槽片段
     if (fragmentSlotScopeIds) {
       slotScopeIds = slotScopeIds
         ? slotScopeIds.concat(fragmentSlotScopeIds)
         : fragmentSlotScopeIds
     }
 
+    // 首次渲染 Fragment
     if (n1 == null) {
+      // 1. 先把「首尾锚点文本节点」插入到父容器的指定位置
+      // 插入后：容器中就有了两个相邻的空文本节点，作为Fragment子节点的占位边界
       hostInsert(fragmentStartAnchor, container, anchor)
       hostInsert(fragmentEndAnchor, container, anchor)
-      // a fragment can only have array children
-      // since they are either generated by the compiler, or implicitly created
-      // from arrays.
+      // a fragment can only have array children 一个片段只能有数组类型的子项
+      // since they are either generated by the compiler, or implicitly created 因为它们要么是由编译器生成的，要么是隐式创建的
+      // from arrays. 来自数组。
+
+      // 2. 批量挂载 Fragment 的所有子节点
+      // 核心规则：Fragment 的 children 一定是 VNode 数组，无 children 则兜底为空数组
+      // 挂载规则：所有子节点插入到「起始锚点」和「结束锚点」之间，锚点传 fragmentEndAnchor 即可实现
       mountChildren(
         // #10007
-        // such fragment like `<></>` will be compiled into
-        // a fragment which doesn't have a children.
-        // In this case fallback to an empty array
+        // such fragment like `<></>` will be compiled into  像`<></>`这样的片段将被编译成
+        // a fragment which doesn't have a children. 一个没有子节点的片段。
+        // In this case fallback to an empty array 在这种情况下，退而求其次，使用一个空数组
         (n2.children || []) as VNodeArrayChildren,
         container,
         fragmentEndAnchor,
@@ -1129,7 +1341,10 @@ function baseCreateRenderer(
         slotScopeIds,
         optimized,
       )
-    } else {
+    }
+    // 更新阶段 Fragment
+    else {
+      // 更新阶段分「高性能块级更新」和「全量diff更新」两种策略，根据标记自动选择
       if (
         patchFlag > 0 &&
         patchFlag & PatchFlags.STABLE_FRAGMENT &&

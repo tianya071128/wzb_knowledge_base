@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { h } from 'vue';
 import HelloWorld from './components/HelloWorld.vue';
 </script>
 

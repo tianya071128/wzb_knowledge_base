@@ -42,6 +42,14 @@ const doc = (typeof document !== 'undefined' ? document : null) as Document
 const templateContainer = doc && /*@__PURE__*/ doc.createElement('template')
 
 export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
+  /**
+   * 将一个真实节点插入到指定的父容器中，是所有「挂载/插入」操作的底层实现
+   * Vue 内部的 hostInsert 就是调用此方法，也是最常用的宿主操作之一
+   * @param el 要被插入的「真实宿主节点」(元素/文本/注释都可以)
+   * @param parent 父容器「真实宿主元素节点」，只能是元素节点（能容纳子节点）
+   * @param anchor 可选，锚点「真实宿主节点」；插入规则：将 el 插入到 parent 中 anchor 节点的【前面】
+   *               传 null 则表示插入到 parent 的子节点列表的「最后面」
+   */
   insert: (child, parent, anchor) => {
     parent.insertBefore(child, anchor || null)
   },
@@ -69,9 +77,9 @@ export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
 
     return el
   },
-
+  /** 创建文本节点 */
   createText: text => doc.createTextNode(text),
-
+  /** 创建注释节点 */
   createComment: text => doc.createComment(text),
 
   setText: (node, text) => {
