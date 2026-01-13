@@ -9,7 +9,7 @@ import { VNode, h } from 'vue';
 /**
  * 创建方法主要由: _createVNode 方法创建, h 方法内部也是调用这个方法
  *  - 主要是根据 type 参数创建 VNode
- *  - 其次规范化一下 children、props 等参数，并返回 VNode]
+ *  - 其次规范化一下 children、props 等参数，并返回 VNode
  *
  *
  * 注意:

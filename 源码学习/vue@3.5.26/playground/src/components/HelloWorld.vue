@@ -13,13 +13,13 @@ const count = ref(0);
   <div class="card">
     <button type="button" @click="count++">count is {{ count }}</button>
     <p>
-      Edit
+      Edit{{ count }}
       <code>components/HelloWorld.vue</code>
       to test HMR
     </p>
   </div>
 
-  <p>
+  <p v-if="count > 2">
     Check out
     <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank">
       create-vue
@@ -36,10 +36,16 @@ const count = ref(0);
     .
   </p>
   <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+  <div>
+    <slot></slot>
+  </div>
 </template>
 
 <style scoped>
 .read-the-docs {
   color: #888;
+}
+:slotted(div) {
+  color: red;
 }
 </style>

@@ -12,10 +12,13 @@ export const NOOP = (): void => {}
  */
 export const NO = () => false
 
+/**
+ * 检测 key 是否为 on开头的属性，如onClick/onInput
+ */
 export const isOn = (key: string): boolean =>
   key.charCodeAt(0) === 111 /* o */ &&
   key.charCodeAt(1) === 110 /* n */ &&
-  // uppercase letter
+  // uppercase letter 大写字母
   (key.charCodeAt(2) > 122 || key.charCodeAt(2) < 97)
 
 export const isModelListener = (key: string): key is `onUpdate:${string}` =>
@@ -81,6 +84,15 @@ export const isIntegerKey = (key: unknown): boolean =>
   key[0] !== '-' &&
   '' + parseInt(key, 10) === key
 
+/**
+ * Vue3 核心工具函数 - 判断【属性名是否为Vue内置的保留属性】
+ * 返回值：true → 是Vue保留属性，由Vue内部单独处理，不绑定为DOM原生属性；
+ *        false → 是普通业务属性，需要通过hostPatchProp绑定到元素的真实DOM上。
+ * 实现方式：通过Vue内置的makeMap工具生成哈希表查询函数，查询效率O(1)，极致高性能；
+ * 编译优化：/*@__PURE__*\/ 标记为纯函数，无副作用，支持打包工具tree-shaking和预编译优化；
+ * 核心细节：拼接字符串开头加逗号，是为了让空字符串""也能被正确匹配为保留属性；
+ * 调用场景：mountElement/patchElement的props遍历环节，过滤保留属性，避免误挂载。
+ */
 export const isReservedProp: (key: string) => boolean = /*@__PURE__*/ makeMap(
   // the leading comma is intentional so empty string "" is also included
   ',key,ref,ref_for,ref_key,' +
@@ -150,17 +162,30 @@ export const invokeArrayFns = (fns: Function[], ...arg: any[]): void => {
   }
 }
 
+/**
+ * Vue3 核心底层工具函数 - 封装原生 Object.defineProperty API 的极简通用版
+ * 核心职责：给指定对象定义一个属性，统一配置属性描述符，简化重复的属性定义代码；
+ * 核心默认规则：定义的属性【默认只读、不可枚举、可配置】，仅可写性(writable)支持外部传参配置；
+ * 设计价值：Vue源码内部统一用该函数定义「私有/内部属性」，避免各处重复编写Object.defineProperty的完整配置，减少冗余；
+ *
+ * @param {object} obj 要定义属性的「目标对象」(必填)，可以是任意普通对象/数组/DOM元素对象
+ * @param {string | symbol} key 要定义的「属性名/属性标识」(必填)，支持字符串/ES6 Symbol，避免属性名冲突
+ * @param {any} value 要给属性赋值的「属性值」(必填)，可以是任意类型：基本类型、对象、函数、VNode、组件实例等
+ * @param {boolean} [writable=false] 可选配置：属性是否「可写」，默认false(只读)，true则支持修改属性值
+ * @returns {void} 无返回值
+ */
 export const def = (
   obj: object,
   key: string | symbol,
   value: any,
   writable = false,
 ): void => {
+  // 核心：调用ES5原生API Object.defineProperty，完成属性定义
   Object.defineProperty(obj, key, {
-    configurable: true,
-    enumerable: false,
-    writable,
-    value,
+    configurable: true, // 属性描述符：可配置 → 允许后续删除该属性/重新定义该属性的描述符
+    enumerable: false, // 属性描述符：不可枚举 → 核心！该属性不会出现在for...in/Object.keys/Object.values的遍历结果中
+    writable, // 属性描述符：可写性 → 由入参控制，默认false(只读)，true则可通过 obj[key] = xxx 修改值
+    value, // 属性描述符：属性值 → 赋值为传入的value参数
   })
 }
 

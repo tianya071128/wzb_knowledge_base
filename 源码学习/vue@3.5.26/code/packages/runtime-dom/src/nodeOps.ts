@@ -26,11 +26,11 @@ if (tt) {
   }
 }
 
-// __UNSAFE__
-// Reason: potentially setting innerHTML.
-// This function merely perform a type-level trusted type conversion
-// for use in `innerHTML` assignment, etc.
-// Be careful of whatever value passed to this function.
+// __UNSAFE__ __不安全__
+// Reason: potentially setting innerHTML. 原因：可能正在设置 innerHTML。
+// This function merely perform a type-level trusted type conversion 此函数仅执行类型级别的可信类型转换
+// for use in `innerHTML` assignment, etc. 用于`innerHTML`赋值等操作
+// Be careful of whatever value passed to this function. 请谨慎对待传递给此函数的任何值
 export const unsafeToTrustedHTML: (value: string) => TrustedHTML | string =
   policy ? val => policy.createHTML(val) : val => val
 
@@ -85,7 +85,7 @@ export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
   setText: (node, text) => {
     node.nodeValue = text
   },
-
+  /** 设置元素文本 */
   setElementText: (el, text) => {
     el.textContent = text
   },
@@ -96,6 +96,7 @@ export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
 
   querySelector: selector => doc.querySelector(selector),
 
+  /** 为元素节点设置 SFC 样式隔离的「作用域ID」 */
   setScopeId(el, id) {
     el.setAttribute(id, '')
   },

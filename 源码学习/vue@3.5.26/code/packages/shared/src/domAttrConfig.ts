@@ -26,7 +26,7 @@ export const isBooleanAttr: (key: string) => boolean = /*@__PURE__*/ makeMap(
 )
 
 /**
- * Boolean attributes should be included if the value is truthy or ''.
+ * Boolean attributes should be included if the value is truthy or ''. 如果值为真或为空字符串，则应包含布尔属性
  * e.g. `<select multiple>` compiles to `{ multiple: '' }`
  */
 export function includeBooleanAttr(value: unknown): boolean {

@@ -64,7 +64,7 @@ export enum PatchFlags {
   NEED_HYDRATION = 1 << 5,
 
   /**
-   * Indicates a fragment whose children order doesn't change.
+   * Indicates a fragment whose children order doesn't change. 表示子级顺序不变的片段
    */
   STABLE_FRAGMENT = 1 << 6,
 
@@ -109,8 +109,8 @@ export enum PatchFlags {
    */
 
   /**
-   * Indicates a cached static vnode. This is also a hint for hydration to skip
-   * the entire sub tree since static content never needs to be updated.
+   * Indicates a cached static vnode. This is also a hint for hydration to skip 表示一个缓存的静态虚拟节点。这也是一个跳过水合的提示
+   * the entire sub tree since static content never needs to be updated. 整个子树，因为静态内容永远不需要更新。
    */
   CACHED = -1,
   /**

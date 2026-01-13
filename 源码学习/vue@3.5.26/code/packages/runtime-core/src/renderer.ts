@@ -648,6 +648,9 @@ function baseCreateRenderer(
   /**
    * 处理【纯文本类型VNode】的初始化挂载与更新逻辑
    * 文本类型VNode的type固定为 Text，其children属性存储的就是文本内容本身（如 'hello vue3'）
+   *  - 首次渲染: 创建文本节点并插入
+   *  - 更新渲染: 获取文本节点，更新文本内容
+   *
    * @param {VNode | null} n1 旧的文本虚拟节点，首次渲染时为null
    * @param {VNode} n2 新的文本虚拟节点，必传
    * @param {RendererElement} container 真实DOM父容器，文本节点要插入的容器
@@ -711,6 +714,9 @@ function baseCreateRenderer(
    * 处理【注释类型VNode】的初始化挂载与更新逻辑
    * 注释类型VNode的type固定为 Comment，其children属性存储的是注释的文本内容
    * 类型同processText：ProcessTextOrCommentFn，入参规则和文本节点完全一致
+   *  - 首次渲染: 直接创建注释节点并插入
+   *  - 更新渲染: 不支持更新注释节点
+   *
    * @param {VNode | null} n1 旧的注释虚拟节点，首次渲染时为 null
    * @param {VNode} n2 新的注释虚拟节点，必传（要渲染/更新的注释节点）
    * @param {RendererElement} container 真实DOM父容器，注释节点要插入的容器
@@ -814,6 +820,24 @@ function baseCreateRenderer(
     hostRemove(anchor!)
   }
 
+  /**
+   * Vue3 核心函数 - 普通HTML元素类型VNode的专属处理入口 (元素渲染调度中心)
+   * 核心职责：1. 处理SVG/MathML标签的命名空间赋值 2. 根据是否有旧节点，分发执行「首次挂载」或「更新」逻辑
+   * 额外处理：兼容Vue自定义元素(CE)的patch生命周期钩子，保证自定义元素更新的正确性
+   * 处理节点类型：div/p/span等原生HTML元素、svg/math特殊标签、Vue自定义元素(CE)
+   *
+   *
+   * @param {VNode | null} n1 旧VNode节点；null = 首次渲染，非null = 更新渲染
+   * @param {VNode} n2 新VNode节点 (本次要渲染的目标元素节点，必传)
+   * @param {RendererElement} container 真实DOM父容器，节点最终挂载/更新到这个容器内
+   * @param {RendererNode | null} anchor 锚点DOM节点，控制节点插入的位置（挂载时生效）
+   * @param {ComponentInternalInstance | null} parentComponent 父组件内部实例，提供上下文(指令/插槽/依赖等)
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense实例，处理异步组件边界逻辑
+   * @param {ElementNamespace} namespace DOM命名空间，初始值默认，会根据节点类型动态修正
+   * @param {string[] | null} slotScopeIds SFC插槽样式隔离ID，用于<style :slotted>样式作用域隔离
+   * @param {boolean} optimized 是否开启编译优化模式，透传给后续挂载/更新函数
+   * @returns {void}
+   */
   const processElement = (
     n1: VNode | null,
     n2: VNode,
@@ -825,13 +849,17 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
+    // 原因：SVG/MathML标签有专属的XML命名空间，浏览器需要正确的命名空间才能解析其属性(如xlink:href)和子标签
+    // 规则：匹配到对应标签，直接覆盖原始namespace值，后续挂载/更新时会透传该命名空间
     if (n2.type === 'svg') {
       namespace = 'svg'
     } else if (n2.type === 'math') {
       namespace = 'mathml'
     }
 
+    // n1为null → 无旧节点，属于【首次渲染】
     if (n1 == null) {
+      // 调用 mountElement 执行「全新元素挂载逻辑」：创建真实DOM、设置属性、挂载子节点、插入容器
       mountElement(
         n2,
         container,
@@ -842,14 +870,22 @@ function baseCreateRenderer(
         slotScopeIds,
         optimized,
       )
-    } else {
+    }
+    // n1不为null → 存在旧节点，属于【数据更新触发的重渲染】
+    else {
+      // 判断并获取当前节点是否为「Vue自定义元素(VueElement/CE)」 --> https://cn.vuejs.org/guide/extras/web-components.html#building-custom-elements-with-vue
       const customElement = !!(n1.el && (n1.el as VueElement)._isVueCE)
         ? (n1.el as VueElement)
         : null
+
+      // 保证自定义元素的patch生命周期钩子成对执行，无论是否报错
       try {
+        // 如果是Vue自定义元素，执行其内部的patch前置钩子：标记开始更新，做更新前准备
         if (customElement) {
           customElement._beginPatch()
         }
+
+        // 核心执行：调用patchElement执行「元素节点更新逻辑」：对比新旧属性、更新样式/事件、更新子节点等
         patchElement(
           n1,
           n2,
@@ -860,6 +896,7 @@ function baseCreateRenderer(
           optimized,
         )
       } finally {
+        // 无论patch过程是否报错，最终都要执行自定义元素的patch后置钩子：标记更新结束，做收尾清理
         if (customElement) {
           customElement._endPatch()
         }
@@ -867,6 +904,25 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 核心底层函数 - 普通HTML原生元素的【首次完整挂载实现】
+   * 完整职责：创建真实DOM节点 → 挂载子节点(文本/数组) → 触发指令created钩子 → 设置SFC样式隔离ID →
+   *           批量绑定元素属性/事件 → 触发vnode挂载前置钩子 → 开发环境挂载调试标识 → 触发指令beforeMount钩子 →
+   *           执行过渡入场前置钩子 → 插入真实DOM到页面容器 → 队列化执行挂载完成的后置钩子/过渡动画/指令挂载钩子
+   * 核心特点：先挂载子节点，再设置父元素属性；核心DOM操作均为跨平台API封装；所有钩子/过渡均按生命周期顺序执行
+   * 入参承接：完全承接processElement透传的入参，无额外新增参数
+   *
+   *
+   * @param {VNode} vnode 本次要挂载的新VNode元素节点 (必传，无旧节点)
+   * @param {RendererElement} container 真实DOM父容器，最终要把元素插入到这个容器内
+   * @param {RendererNode | null} anchor 锚点DOM节点，控制元素插入到容器的指定位置（null则插入末尾）
+   * @param {ComponentInternalInstance | null} parentComponent 父组件内部实例，提供上下文(指令/依赖/钩子执行)
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense实例，处理异步边界的钩子执行时机
+   * @param {ElementNamespace} namespace DOM命名空间，svg/mathml/默认，用于创建带命名空间的元素
+   * @param {string[] | null} slotScopeIds SFC插槽样式隔离ID，用于<style :slotted>的样式作用域隔离
+   * @param {boolean} optimized 是否开启编译优化模式，透传给子节点的mountChildren使用
+   * @returns {void}
+   */
   const mountElement = (
     vnode: VNode,
     container: RendererElement,
@@ -877,10 +933,15 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
+    // 声明变量：el-当前元素的真实DOM节点；vnodeHook-VNode钩子函数的临时存储变量
     let el: RendererElement
     let vnodeHook: VNodeHook | undefined | null
+    // 解构VNode的核心属性
     const { props, shapeFlag, transition, dirs } = vnode
 
+    // 创建当前元素的【真实DOM节点】，并绑定到VNode的el属性上 (核心核心！)
+    // vnode.el = 真实DOM，后续所有操作都基于这个真实DOM；el变量也指向该DOM，方便后续调用
+    // hostCreateElement：跨平台DOM创建API，浏览器环境对应 document.createElementNS/.createElement
     el = vnode.el = hostCreateElement(
       vnode.type as string,
       namespace,
@@ -888,80 +949,147 @@ function baseCreateRenderer(
       props,
     )
 
-    // mount children first, since some props may rely on child content
-    // being already rendered, e.g. `<select value>`
+    // mount children first, since some props may rely on child content 先安装children，因为某些道具可能依赖于子内容
+    // being already rendered, e.g. `<select value>` 已经被渲染，例如 `<select value>`
+    // 有些元素的props（如<select value>）依赖子节点渲染完成后再设置才生效，否则会出bug
+    // 通过shapeFlag位运算判断子节点类型，精准分发处理逻辑，无冗余判断
+
+    // 子节点是纯文本 → 直接设置元素的文本内容
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // hostSetElementText：跨平台API，浏览器环境对应 el.textContent = xxx
       hostSetElementText(el, vnode.children as string)
-    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    }
+    // 子节点是VNode数组 → 调用mountChildren批量递归挂载所有子节点
+    else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      // 子节点会被挂载到当前元素el内部，el是子节点的父容器
       mountChildren(
-        vnode.children as VNodeArrayChildren,
-        el,
-        null,
-        parentComponent,
-        parentSuspense,
-        resolveChildrenNamespace(vnode, namespace),
-        slotScopeIds,
-        optimized,
+        vnode.children as VNodeArrayChildren, // 子VNode数组
+        el, // 子节点的父容器 = 当前元素的真实DOM
+        null, // 子节点锚点：null → 插入到父容器末尾
+        parentComponent, // 父组件实例透传
+        parentSuspense, // 父Suspense实例透传
+        resolveChildrenNamespace(vnode, namespace), // 解析子节点的命名空间（继承父元素）
+        slotScopeIds, // 插槽样式隔离ID透传
+        optimized, // 编译优化模式透传
       )
     }
 
+    // 如果当前元素有指令(dirs) → 触发指令的【created】钩子
+    // 指令生命周期：created → beforeMount → mounted → beforeUpdate → updated → unmounted
+    // created时机：元素DOM创建完成，属性/子节点挂载完成，元素未插入页面时
     if (dirs) {
+      // 触发指令的【created】钩子
       invokeDirectiveHook(vnode, null, parentComponent, 'created')
     }
+
     // scopeId
+    // 设置【SFC样式隔离的scopeId】
+    // 作用：给真实DOM添加data-v-xxx属性，配合<style scoped>实现组件样式隔离，不会污染其他组件
+    // slotScopeIds：处理插槽内容的样式隔离，scopeId：处理组件自身元素的样式隔离
     setScopeId(el, vnode, vnode.scopeId, slotScopeIds, parentComponent)
+
     // props
+    // 处理当前元素的【props属性/事件绑定】
     if (props) {
+      // 遍历所有props，批量绑定非保留属性/非value属性
       for (const key in props) {
+        // 过滤：1. 先跳过value属性（单独特殊处理） 2. 跳过Vue的保留属性（key/ref/插槽等，内部已处理）
         if (key !== 'value' && !isReservedProp(key)) {
+          // hostPatchProp：跨平台属性更新API，核心方法！
+          // 功能：绑定原生属性(如id/class)、DOM事件(如onClick)、自定义属性等，null表示无旧值（首次挂载）
           hostPatchProp(el, key, null, props[key], namespace, parentComponent)
         }
       }
       /**
-       * Special case for setting value on DOM elements:
-       * - it can be order-sensitive (e.g. should be set *after* min/max, #2325, #4024)
-       * - it needs to be forced (#1471)
-       * #2353 proposes adding another renderer option to configure this, but
-       * the properties affects are so finite it is worth special casing it
-       * here to reduce the complexity. (Special casing it also should not
-       * affect non-DOM renderers)
+       * Special case for setting value on DOM elements: 在DOM元素上设置值的特殊情况
+       * - it can be order-sensitive (e.g. should be set *after* min/max, #2325, #4024) 它可能是顺序敏感的（例如，应在最小值/最大值之后设置，#2325，#4024）
+       * - it needs to be forced (#1471) 它需要被强制执行 (#1471)
+       * #2353 proposes adding another renderer option to configure this, but #2353 提议增加另一个渲染器选项来配置这一点，但
+       * the properties affects are so finite it is worth special casing it 这些属性的影响是如此有限，值得对其进行特殊处理
+       * here to reduce the complexity. (Special casing it also should not 这里是为了降低复杂性。（特殊情况下，它也不应该
+       * affect non-DOM renderers) 影响非DOM渲染器）
+       */
+      /**
+       * 1. 顺序敏感：某些表单元素的value需要在min/max等属性之后设置才生效（如<input type="number">）
+       * 2. 强制赋值：需要强制覆盖原生的默认值，避免原生表单元素的value绑定失效
+       * 3. 影响范围小：仅对value属性特殊处理，不会增加复杂度，也不影响非DOM渲染器
        */
       if ('value' in props) {
         hostPatchProp(el, 'value', null, props.value, namespace)
       }
+
+      // 触发VNode的【onVnodeBeforeMount】钩子
+      // VNode生命周期钩子：挂载前执行，此时元素DOM已创建、属性已绑定、未插入页面
       if ((vnodeHook = props.onVnodeBeforeMount)) {
         invokeVNodeHook(vnodeHook, parentComponent, vnode)
       }
     }
 
+    // 【开发环境/调试模式专属】挂载调试标识
+    // 生产环境会被tree-shaking移除，无性能损耗
+    // 作用：给真实DOM挂载__vnode和__vueParentComponent属性，方便Vue Devtools调试、定位组件和VNode关联关系
     if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
       def(el, '__vnode', vnode, true)
       def(el, '__vueParentComponent', parentComponent, true)
     }
 
+    // 步骤8：如果有指令 → 触发指令的【beforeMount】钩子
+    // 时机：元素DOM就绪、属性绑定完成、即将插入页面时
     if (dirs) {
+      // 触发指令的【beforeMount】钩子
       invokeDirectiveHook(vnode, null, parentComponent, 'beforeMount')
     }
-    // #1583 For inside suspense + suspense not resolved case, enter hook should call when suspense resolved
-    // #1689 For inside suspense + suspense resolved case, just call it
+
+    // #1583 For inside suspense + suspense not resolved case, enter hook should call when suspense resolved 对于内部挂起+未解决挂起的情况，挂起解决后应调用进入钩子
+    // #1689 For inside suspense + suspense resolved case, just call it 对于内部悬念+悬念已解的案例，只需这样称呼它
+    // needTransition：判断是否需要执行过渡钩子（有transition配置 + Suspense异步边界已就绪）
     const needCallTransitionHooks = needTransition(parentSuspense, transition)
     if (needCallTransitionHooks) {
-      transition!.beforeEnter(el)
+      transition!.beforeEnter(el) // 过渡入场前的钩子，比如设置元素初始样式(透明度0)
     }
+
+    // 【核心DOM操作】将真实DOM节点插入到页面的父容器中
+    // hostInsert：跨平台插入API，浏览器环境对应 container.insertBefore(el, anchor)
+    // 执行完这一步 → 元素才真正出现在页面上！！！前面所有步骤都是在内存中操作DOM，无页面重绘回流
     hostInsert(el, container, anchor)
+
+    // 队列化执行【挂载完成的所有后置钩子/动画】
+    // 触发条件：有VNode的mounted钩子 或 需要执行过渡动画 或 有指令 → 进入队列
     if (
       (vnodeHook = props && props.onVnodeMounted) ||
       needCallTransitionHooks ||
       dirs
     ) {
+      // queuePostRenderEffect：Vue3的核心异步队列API，【DOM插入页面后异步执行】
+      // 核心价值：1. 避免同步执行导致的多次页面重绘回流，提升性能 2. 保证钩子执行时机是「元素已在页面上」
       queuePostRenderEffect(() => {
+        // 1. 触发VNode的【onVnodeMounted】钩子 → 挂载完成，元素已在页面
         vnodeHook && invokeVNodeHook(vnodeHook, parentComponent, vnode)
+        // 2. 执行过渡动画的【enter】钩子 → 入场动画，比如从透明度0到1
         needCallTransitionHooks && transition!.enter(el)
+        // 3. 触发指令的【mounted】钩子 → 指令生命周期的最后一步，元素已挂载完成
         dirs && invokeDirectiveHook(vnode, null, parentComponent, 'mounted')
       }, parentSuspense)
     }
   }
 
+  /**
+   * Vue3 核心底层函数 - SFC <style scoped> 样式隔离的【唯一实现】
+   * 核心职责：给元素的真实DOM节点添加对应的 scopeId 标识(data-v-xxx属性)，实现样式私有化；
+   * 完整处理逻辑：
+   *  1. 给DOM添加当前组件自身的scopeId
+   *  2. 给DOM添加插槽内容的所有slotScopeIds  --> 使用 :slotted() 选择器 - https://cn.vuejs.org/api/sfc-css-features.html#slotted-selectors
+   *  3. 递归继承父组件的所有scopeId
+   * 样式隔离原理：编译器会把<style scoped>内的样式选择器，自动拼接[data-v-xxx]属性选择器，DOM上有对应属性才会匹配样式，实现隔离
+   * 入参承接：入参均从mountElement透传而来，包含真实DOM、当前VNode、各类隔离ID、父组件实例
+   *
+   * @param {RendererElement} el 当前元素的真实DOM节点，需要给它添加scopeId属性
+   * @param {VNode} vnode 当前元素对应的VNode虚拟节点，存储自身的scopeId/slotScopeIds
+   * @param {string | null} scopeId 当前组件自身的样式隔离ID，格式如 "data-v-7ba5bd90"，null则无
+   * @param {string[] | null} slotScopeIds 插槽内容的样式隔离ID数组，处理<style :slotted>的插槽样式隔离，null则无
+   * @param {ComponentInternalInstance | null} parentComponent 父组件的内部实例，用于递归继承父组件的scopeId，null则无父组件
+   * @returns {void}
+   */
   const setScopeId = (
     el: RendererElement,
     vnode: VNode,
@@ -969,16 +1097,32 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     parentComponent: ComponentInternalInstance | null,
   ) => {
+    // 处理【当前组件自身的样式隔离ID - scopeId】
+    // 如果当前组件有自身的scopeId（写了<style scoped>就会生成）
     if (scopeId) {
+      // 核心操作：给真实DOM节点，添加对应的scopeId属性（如 data-v-7ba5bd90）
+      // hostSetScopeId：跨平台DOM操作API，浏览器环境等价于 el.setAttribute(scopeId, '')
       hostSetScopeId(el, scopeId)
     }
+
+    // 处理【插槽内容的样式隔离ID数组 - slotScopeIds】
+    // 如果有插槽样式隔离ID（写了<style :slotted>就会生成该数组）
     if (slotScopeIds) {
+      // 遍历所有插槽隔离ID，逐个添加到当前DOM节点上
+      // 原因：插槽内容是父组件传递的，需要匹配父组件的插槽样式隔离规则，实现插槽样式私有化
       for (let i = 0; i < slotScopeIds.length; i++) {
         hostSetScopeId(el, slotScopeIds[i])
       }
     }
+
+    // 【递归核心逻辑】继承【父组件】的所有样式隔离ID (最关键的兜底逻辑)
+    // 触发条件：当前元素有父组件实例 → 存在组件嵌套关系，需要递归继承父组件的scopeId
     if (parentComponent) {
+      // 第一步：获取父组件渲染的「根VNode子树」
       let subTree = parentComponent.subTree
+
+      // 【仅开发环境生效】兼容父组件根节点是「开发环境根Fragment」的特殊场景
+      // 过滤逻辑：如果父组件根节点是带DEV_ROOT_FRAGMENT标记的Fragment，提取其真实的单根节点
       if (
         __DEV__ &&
         subTree.patchFlag > 0 &&
@@ -987,11 +1131,16 @@ function baseCreateRenderer(
         subTree =
           filterSingleRoot(subTree.children as VNodeArrayChildren) || subTree
       }
+
+      // 核心判断：当前VNode是否是「父组件的根节点」 或 「父组件Suspense的内容/兜底节点」
+      // 满足该条件 → 当前元素需要继承父组件的scopeId，保证嵌套组件的样式隔离链完整
       if (
         vnode === subTree ||
         (isSuspense(subTree.type) &&
           (subTree.ssContent === vnode || subTree.ssFallback === vnode))
       ) {
+        // 递归调用自身！把父组件的scopeId/slotScopeIds，添加到当前DOM节点上
+        // 入参替换为：父组件的VNode、父组件的隔离ID、父组件的父实例 → 逐层向上继承，直到根组件
         const parentVNode = parentComponent.vnode
         setScopeId(
           el,
@@ -1004,6 +1153,22 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * 批量挂载子VNode节点，仅负责【首次渲染】，无更新/diff逻辑
+   *  - 核心逻辑：遍历子节点数组，对每一个子节点执行 空旧节点+新节点 的patch，完成全新挂载
+   *  - 调用时机：在 processFragment 首次渲染、processElement 元素首次渲染、组件首次渲染等场景中，当需要挂载一组子节点（VNode 数组） 时，都会调用该方法。
+   *
+   * @param {VNodeArrayChildren} children 待挂载的子VNode数组，需要被批量处理的所有子节点
+   * @param {RendererElement} container 真实DOM父容器，所有子节点最终挂载到这个容器内
+   * @param {RendererNode | null} anchor 锚点真实DOM节点，控制子节点插入的位置；插入规则：所有子节点插入到该锚点【前面】
+   * @param {ComponentInternalInstance | null} parentComponent 父组件内部实例，提供组件上下文（指令、插槽、依赖等）
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense组件实例，处理异步组件挂载的边界逻辑
+   * @param {ElementNamespace} namespace DOM命名空间，处理svg/math等特殊标签的属性命名空间，保证浏览器正确解析
+   * @param {string[] | null} slotScopeIds SFC插槽样式隔离ID，用于<style :slotted>的样式作用域隔离
+   * @param {boolean} optimized 是否开启编译优化模式，编译器生成的节点会开启，手写render函数默认关闭
+   * @param {number} start 遍历的起始索引，默认值为0；用于分片挂载/部分挂载，从指定下标开始处理子节点
+   * @returns {void}
+   */
   const mountChildren: MountChildrenFn = (
     children,
     container,
@@ -1015,10 +1180,18 @@ function baseCreateRenderer(
     optimized,
     start = 0,
   ) => {
+    // 核心循环：从起始索引start开始，遍历所有待挂载的子VNode节点
     for (let i = start; i < children.length; i++) {
+      // 核心处理：标准化/克隆子节点，保证当前子节点是【合法可挂载的VNode对象】
+      // 三元分支：根据是否开启优化模式，执行不同的节点处理逻辑，处理后重新赋值给原数组的当前项
       const child = (children[i] = optimized
-        ? cloneIfMounted(children[i] as VNode)
-        : normalizeVNode(children[i]))
+        ? // 优化模式下：复用已挂载的节点，克隆一份新的VNode（避免同一个VNode被多次挂载导致DOM重复）
+          cloneIfMounted(children[i] as VNode)
+        : // 非优化模式下：标准化VNode，把非标准节点(字符串/数字/布尔值等)转为标准VNode
+          normalizeVNode(children[i]))
+
+      // 核心执行：调用patch函数，对当前子节点执行【首次挂载】
+      // 关键点：第一个参数传null → 代表「无旧节点n1」，patch内部会走全新挂载逻辑，不走diff更新
       patch(
         null,
         child,
@@ -1033,6 +1206,34 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 Diff算法核心函数 - 「相同类型元素VNode」的增量更新主入口，DOM复用+最小更新的终极实现
+   * 核心职责：复用新旧VNode对应的真实DOM元素(el)，仅对「有变化的内容」做精准增量更新，不销毁/重建DOM；
+   * 核心逻辑：
+   *   - DOM复用
+   *   - 钩子/指令前置执行
+   *   - 子节点增量更新
+   *       - patchBlockChildren 块更新：✅性能天花板 → 编译器只收集「动态子节点」，更新时只遍历动态子节点、完全跳过静态子节点
+   *       - patchChildren 全量 Diff：✅兜底兼容 → 无优化标记时，对所有子节点做「增 / 删 / 改 / 移」的全量对比，遵循 Vue3 的 Diff 算法规则
+   *   - 属性增量更新
+   *       - 精准标记的单个属性更新：有CLASS/STYLE/PROPS标记时，只更新对应的单个属性，比如只有 class 动态变化，就只调用hostPatchProp更新 class，其他属性完全不处理，性能极致；
+   *       - 全量属性更新：有FULL_PROPS标记时，调用patchProps全量对比新旧 props，适配动态属性名的场景
+   *       - 无标记兜底更新：无任何优化标记时，调用patchProps全量更新，保证正确性。
+   *   - 文本内容更新
+   *   - 钩子/指令后置异步执行；
+   * 核心优化：编译优化标记(patchFlag/dynamicChildren)优先，走快速更新路径；无优化则走全量Diff兜底，兼顾性能与兼容；
+   * 入参说明：Vue3 patch阶段的标准入参，涵盖元素更新所需的所有上下文信息
+   *
+   *
+   * @param {VNode} n1 旧的元素VNode节点，包含旧的props/children/patchFlag/真实DOM(el)等信息
+   * @param {VNode} n2 新的元素VNode节点，包含新的props/children/patchFlag/待更新的内容等信息
+   * @param {ComponentInternalInstance|null} parentComponent 父组件实例，用于钩子执行/指令处理/依赖收集
+   * @param {SuspenseBoundary|null} parentSuspense 父级Suspense边界，用于异步渲染的副作用队列调度
+   * @param {ElementNamespace} namespace 元素命名空间，如HTML/SVG，传给patchProp做属性兼容处理
+   * @param {string[]|null} slotScopeIds 插槽的作用域ID，用于样式隔离(如scoped样式)
+   * @param {boolean} optimized 是否为编译器优化后的VNode，true=走优化路径，false=走全量Diff
+   * @returns {void} 无返回值，所有操作均为对真实DOM的增量更新副作用
+   */
   const patchElement = (
     n1: VNode,
     n2: VNode,
@@ -1042,28 +1243,46 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
+    // ========== 第一步：核心DOM复用 - 最重要的初始化逻辑 ==========
+    // 复用旧VNode的真实DOM元素，赋值给新VNode的el属性 → 核心！不销毁、不重建，只复用DOM
     const el = (n2.el = n1.el!)
+    // 开发环境/生产调试工具：给真实DOM挂载当前新VNode的引用，用于调试/DEVTOOLS解析
     if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
       el.__vnode = n2
     }
+
+    // ========== 第二步：解构编译优化标记 & 初始化变量 ==========
+    // 解构新VNode的编译优化标记：动态子节点、patchFlag二进制标记、自定义指令数组
     let { patchFlag, dynamicChildren, dirs } = n2
-    // #1426 take the old vnode's patch flag into account since user may clone a
-    // compiler-generated vnode, which de-opts to FULL_PROPS
+    // #1426 take the old vnode's patch flag into account since user may clone a 考虑到用户可能会克隆一个对象，因此需要将旧虚拟节点（vnode）的补丁标志纳入考虑
+    // compiler-generated vnode, which de-opts to FULL_PROPS 编译器生成的虚拟节点（vnode），该节点取消了选择FULL_PROPS
+
+    // 处理逻辑：将旧VNode的「全量属性标记(FULL_PROPS)」合并到新标记中，避免优化失效，强制走全量属性更新
     patchFlag |= n1.patchFlag & PatchFlags.FULL_PROPS
+    // 解构新旧props，兜底为空对象常量，避免访问undefined报错
     const oldProps = n1.props || EMPTY_OBJ
     const newProps = n2.props || EMPTY_OBJ
-    let vnodeHook: VNodeHook | undefined | null
+    let vnodeHook: VNodeHook | undefined | null // 声明VNode钩子函数变量，用于后续钩子执行
 
-    // disable recurse in beforeUpdate hooks
+    // ========== 第三步：执行【前置钩子/指令】- 更新前的回调逻辑 ==========
+    // disable recurse in beforeUpdate hooks 在 beforeUpdate 挂钩中禁用递归
+
+    // 临时关闭父组件的递归更新标记：避免beforeUpdate钩子中触发的数据更新，导致无限递归更新
+    // 执行VNode的beforeUpdate钩子：<div v-on:vnode-before-update="handle">
     parentComponent && toggleRecurse(parentComponent, false)
     if ((vnodeHook = newProps.onVnodeBeforeUpdate)) {
       invokeVNodeHook(vnodeHook, parentComponent, n2, n1)
     }
+    // 执行自定义指令的 beforeUpdate 钩子：指令的更新前回调
     if (dirs) {
       invokeDirectiveHook(n2, n1, parentComponent, 'beforeUpdate')
     }
+    // 恢复父组件的递归更新标记，完成钩子执行
     parentComponent && toggleRecurse(parentComponent, true)
 
+    // ========== 第四步：HMR热更新兼容处理 - 开发环境专属 ==========
+    // 如果是HMR模块热更新触发的更新，强制关闭所有编译优化，走「全量Diff」
+    // 原因：HMR更新后，编译优化标记可能失效，全量Diff能保证更新的正确性
     if (__DEV__ && isHmrUpdating) {
       // HMR updated, force full diff
       patchFlag = 0
@@ -1071,15 +1290,21 @@ function baseCreateRenderer(
       dynamicChildren = null
     }
 
-    // #9135 innerHTML / textContent unset needs to happen before possible
-    // new children mount
+    // ========== 第五步：innerHTML/textContent 空值前置清空 - 临界兼容处理 ==========
+    // #9135 innerHTML / textContent unset needs to happen before possible 在可能之前，需要先取消设置 innerHTML / textContent
+    // new children mount 新增 children mount
+    // 当旧props有innerHTML/textContent、新props为空时，需要「提前清空文本内容」
+    // 执行时机：必须在子节点更新之前执行，避免清空操作覆盖后续挂载的子节点，导致子节点丢失
     if (
       (oldProps.innerHTML && newProps.innerHTML == null) ||
       (oldProps.textContent && newProps.textContent == null)
     ) {
-      hostSetElementText(el, '')
+      hostSetElementText(el, '') // 调用宿主环境API，清空元素的文本内容
     }
 
+    // ========== 第六步：【核心子节点增量更新】- 优先级最高，分两种更新策略 ==========
+    // 策略1：有编译优化的dynamicChildren → 走「块更新极速路径」patchBlockChildren ✅性能最优
+    // 适用场景：编译器能精准收集到所有动态子节点，静态子节点完全跳过，只更新变化的动态子节点
     if (dynamicChildren) {
       patchBlockChildren(
         n1.dynamicChildren!,
@@ -1087,14 +1312,18 @@ function baseCreateRenderer(
         el,
         parentComponent,
         parentSuspense,
-        resolveChildrenNamespace(n2, namespace),
+        resolveChildrenNamespace(n2, namespace), // 解析子节点的命名空间(SVG/HTML)
         slotScopeIds,
       )
+      // 开发环境：遍历静态子节点，保证HMR热更新的正确性
       if (__DEV__) {
         // necessary for HMR
         traverseStaticChildren(n1, n2)
       }
-    } else if (!optimized) {
+    }
+    // 策略2：无编译优化标记 → 走「全量子节点Diff路径」patchChildren ✅兜底兼容
+    // 适用场景：无dynamicChildren、optimized=false，对所有子节点做全量的Diff对比，增/删/改/移，保证更新正确
+    else if (!optimized) {
       // full diff
       patchChildren(
         n1,
@@ -1109,17 +1338,27 @@ function baseCreateRenderer(
       )
     }
 
+    // ========== 第七步：【核心元素属性增量更新】- 编译优化优先，最小化更新，Vue3核心性能点 ==========
+    // patchFlag>0 说明：编译器给当前元素打了「动态内容标记」，有可更新的动态内容，走「快速更新路径」
+    // 核心优势：编译器保证「新旧VNode的结构完全一致」，无需全量遍历，只更新标记的动态部分，无冗余判断
     if (patchFlag > 0) {
-      // the presence of a patchFlag means this element's render code was
-      // generated by the compiler and can take the fast path.
-      // in this path old node and new node are guaranteed to have the same shape
-      // (i.e. at the exact same position in the source template)
+      // the presence of a patchFlag means this element's render code was 存在一个补丁标志（patchFlag）意味着该元素的渲染代码已经
+      // generated by the compiler and can take the fast path. 由编译器生成，并且可以走快速通道
+      // in this path old node and new node are guaranteed to have the same shape 在这条路径中，旧节点和新节点保证具有相同的形状
+      // (i.e. at the exact same position in the source template) （即，在源模板中的完全相同位置）
+
+      // 分支1：包含全量属性标记 → 走全量属性更新patchProps
+      // 触发场景：元素有「动态属性名」(如 :[key]="value")，无法精准标记单个属性，只能全量对比props
       if (patchFlag & PatchFlags.FULL_PROPS) {
-        // element props contain dynamic keys, full diff needed
+        // element props contain dynamic keys, full diff needed 元素属性包含动态键，需要进行完全差异比较
         patchProps(el, oldProps, newProps, parentComponent, namespace)
-      } else {
+      }
+      // 分支2：精准的动态属性标记 → 走「单个属性按需更新」，性能极致 ✅核心优化
+      else {
         // class
-        // this flag is matched when the element has dynamic class bindings.
+        // this flag is matched when the element has dynamic class bindings. 当元素具有动态类绑定时，此标志会被匹配
+
+        // 子分支1：有动态class标记 → 只更新class属性
         if (patchFlag & PatchFlags.CLASS) {
           if (oldProps.class !== newProps.class) {
             hostPatchProp(el, 'class', null, newProps.class, namespace)
@@ -1127,25 +1366,32 @@ function baseCreateRenderer(
         }
 
         // style
-        // this flag is matched when the element has dynamic style bindings
+        // this flag is matched when the element has dynamic style bindings 当元素具有动态样式绑定时，此标志与之匹配
+
+        // 子分支2：有动态style标记 → 只更新style属性
         if (patchFlag & PatchFlags.STYLE) {
           hostPatchProp(el, 'style', oldProps.style, newProps.style, namespace)
         }
 
         // props
-        // This flag is matched when the element has dynamic prop/attr bindings
-        // other than class and style. The keys of dynamic prop/attrs are saved for
-        // faster iteration.
-        // Note dynamic keys like :[foo]="bar" will cause this optimization to
-        // bail out and go through a full diff because we need to unset the old key
+        // This flag is matched when the element has dynamic prop/attr bindings 当元素具有动态属性绑定时，此标志会被匹配
+        // other than class and style. The keys of dynamic prop/attrs are saved for 除了类和样式之外。动态属性/特性的键被保存下来
+        // faster iteration. 更快的迭代
+        // Note dynamic keys like :[foo]="bar" will cause this optimization to 注意，像 :[foo]=“bar” 这样的动态键将导致此优化
+        // bail out and go through a full diff because we need to unset the old key 退出并执行完整的差异比较，因为我们需要取消旧键的设置
+
+        // 子分支3：有动态普通属性标记 → 只更新标记的动态属性
         if (patchFlag & PatchFlags.PROPS) {
-          // if the flag is present then dynamicProps must be non-null
-          const propsToUpdate = n2.dynamicProps!
+          // if the flag is present then dynamicProps must be non-null 如果存在该标志，则dynamicProps必须为非空
+          const propsToUpdate = n2.dynamicProps! // // 编译器已收集好所有动态属性名，存入dynamicProps数组，直接遍历即可
           for (let i = 0; i < propsToUpdate.length; i++) {
             const key = propsToUpdate[i]
             const prev = oldProps[key]
             const next = newProps[key]
-            // #1471 force patch value
+            // #1471 force patch value 强制补丁值
+
+            // 强制更新value属性 + 新旧值不同时更新
+            // 原因：表单元素的value可能存在「视图与模型不一致」的情况，强制更新保证正确性
             if (next !== prev || key === 'value') {
               hostPatchProp(el, key, prev, next, namespace, parentComponent)
             }
@@ -1154,26 +1400,54 @@ function baseCreateRenderer(
       }
 
       // text
-      // This flag is matched when the element has only dynamic text children.
+      // This flag is matched when the element has only dynamic text children. 当元素仅包含动态文本子元素时，此标志即匹配
+
+      // 子分支4：有动态文本标记 → 只更新元素的文本内容
+      // 触发场景：元素只有动态文本子节点(如 <div>{{msg}}</div>)，直接更新文本，无需处理子节点
       if (patchFlag & PatchFlags.TEXT) {
         if (n1.children !== n2.children) {
           hostSetElementText(el, n2.children as string)
         }
       }
-    } else if (!optimized && dynamicChildren == null) {
-      // unoptimized, full diff
+    }
+    // 兜底逻辑：无patchFlag + 无优化 → 走全量属性更新patchProps
+    // 适用场景：无任何编译优化标记，全量对比新旧props，保证属性更新的正确性
+    else if (!optimized && dynamicChildren == null) {
+      // unoptimized, full diff 未优化，完整差异
       patchProps(el, oldProps, newProps, parentComponent, namespace)
     }
 
+    // ========== 第八步：执行【后置异步钩子/指令】- 更新完成后的回调逻辑 ==========
+    // 核心设计：后置钩子(updated)、指令updated钩子 全部放入「异步后置渲染队列」
+    // 原因：保证钩子执行时，DOM已经完成所有更新，能获取到最新的DOM状态；异步执行不阻塞主线程，提升性能
     if ((vnodeHook = newProps.onVnodeUpdated) || dirs) {
       queuePostRenderEffect(() => {
+        // 执行VNode的updated钩子
         vnodeHook && invokeVNodeHook(vnodeHook, parentComponent, n2, n1)
+        // 执行自定义指令的updated钩子
         dirs && invokeDirectiveHook(n2, n1, parentComponent, 'updated')
       }, parentSuspense)
     }
   }
 
-  // The fast path for blocks.
+  // The fast path for blocks. 块的快速路径
+  /**
+   * Vue3 编译优化核心 - 块级子节点高性能批量更新方法 (仅稳定Fragment触发)
+   * 核心设计：专为「节点顺序永不改变」的稳定结构设计，放弃全量diff，采用【同下标一对一精准patch】
+   * 核心优势：无key对比、无节点移动/增删逻辑、无父容器遍历，彻底规避传统diff的性能损耗，更新效率极致
+   * 核心约束：新旧子节点数组长度必须一致、节点顺序完全不变、仅包含编译期标记的「动态子节点」
+   * 调用场景：processFragment 更新阶段，满足稳定Fragment+动态子节点匹配的分支
+   *
+   *
+   * @param {VNode[]} oldChildren 旧的动态子节点VNode数组 (编译期提取，仅含动态节点)
+   * @param {VNode[]} newChildren 新的动态子节点VNode数组 (编译期提取，仅含动态节点，长度与旧数组一致)
+   * @param {RendererElement} fallbackContainer 兜底的父容器DOM节点，用于无需动态获取容器的场景，避免DOM查询开销
+   * @param {ComponentInternalInstance | null} parentComponent 父组件内部实例，提供上下文(指令/事件等)
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense实例，处理异步组件更新边界逻辑
+   * @param {ElementNamespace} namespace DOM命名空间，处理svg/math等特殊标签的属性命名空间
+   * @param {string[] | null} slotScopeIds SFC插槽样式隔离ID，用于<style :slotted>样式作用域隔离
+   * @returns {void}
+   */
   const patchBlockChildren: PatchBlockChildrenFn = (
     oldChildren,
     newChildren,
@@ -1183,27 +1457,36 @@ function baseCreateRenderer(
     namespace: ElementNamespace,
     slotScopeIds,
   ) => {
+    // 同下标遍历新旧动态子节点数组 (块级更新的灵魂)
+    // 前提：编译器保证 newChildren.length === oldChildren.length，无需判断长度
+    // 逻辑：因为是稳定Fragment，子节点顺序永不改变 → 直接按数组下标 旧节点 ↔ 新节点 一对一更新
+    // 无key对比、无节点移动、无增删 → 这是Vue3最高性能的更新方式
     for (let i = 0; i < newChildren.length; i++) {
-      const oldVNode = oldChildren[i]
-      const newVNode = newChildren[i]
-      // Determine the container (parent element) for the patch.
+      const oldVNode = oldChildren[i] // 当前下标旧的动态子节点
+      const newVNode = newChildren[i] // 当前下标新的动态子节点
+
+      // Determine the container (parent element) for the patch. 确定补丁的容器（父元素）。
+      // 核心目的：精准获取当前节点的真实挂载父容器，保证patch更新时DOM操作的正确性；
+      // 兜底设计：能复用计算结果就复用，能避免DOM查询就避免，兼顾「正确性」与「性能」
       const container =
-        // oldVNode may be an errored async setup() component inside Suspense
-        // which will not have a mounted element
+        // oldVNode may be an errored async setup() component inside Suspense oldVNode可能是Suspense内部的一个发生错误的异步setup()组件
+        // which will not have a mounted element 它不会有安装的 element
         oldVNode.el &&
-        // - In the case of a Fragment, we need to provide the actual parent
-        // of the Fragment itself so it can move its children.
+        // - In the case of a Fragment, we need to provide the actual parent 在Fragment的情况下，我们需要提供实际的父级
+        // of the Fragment itself so it can move its children. 获取Fragment本身的引用，以便它可以移动其子节点
         (oldVNode.type === Fragment ||
-          // - In the case of different nodes, there is going to be a replacement
-          // which also requires the correct parent container
+          // - In the case of different nodes, there is going to be a replacement 在不同节点的情况下，将会进行替换
+          // which also requires the correct parent container 这也需要正确的父容器
           !isSameVNodeType(oldVNode, newVNode) ||
-          // - In the case of a component, it could contain anything.
+          // - In the case of a component, it could contain anything. 就组件而言，它可以包含任何内容
           oldVNode.shapeFlag &
             (ShapeFlags.COMPONENT | ShapeFlags.TELEPORT | ShapeFlags.SUSPENSE))
           ? hostParentNode(oldVNode.el)!
-          : // In other cases, the parent container is not actually used so we
-            // just pass the block element here to avoid a DOM parentNode call.
+          : // In other cases, the parent container is not actually used so we 在其他情况下，父容器实际上并未被使用，因此我们
+            // just pass the block element here to avoid a DOM parentNode call. 只需在此处传递块级元素，以避免进行DOM的parentNode调用
             fallbackContainer
+
+      // 调用patch函数，执行【同下标新旧节点的精准更新】
       patch(
         oldVNode,
         newVNode,
@@ -1258,8 +1541,17 @@ function baseCreateRenderer(
 
   /**
    * 处理【Fragment(片段)类型VNode】的初始化挂载与更新逻辑
-   * Fragment核心特性：无真实DOM节点，仅作为虚拟容器包裹子节点，渲染后不生成任何冗余DOM
-   * Fragment的children固定为VNode数组，不会是文本/单个节点
+   *  - Fragment核心特性：无真实DOM节点，仅作为虚拟容器包裹子节点，渲染后不生成任何冗余DOM
+   *  - Fragment的children固定为VNode数组，不会是文本/单个节点
+   *
+   *  - 首次渲染:
+   *      -- 建立两个锚点文本节点，作为 Fragment 的锚点, Fragment 的所有子节点插入到「起始锚点」和「结束锚点」之间
+   *      -- 借用 mountChildren 方法直接渲染子节点
+   *  - 更新渲染:
+   *      -- 根据标记不同, 策略不同:
+   *          --- 如果是 「节点顺序永不改变」的稳定结构设计, 则调用 patchBlockChildren 方法精准更新
+   *          --- 否则, 调用 patchChildren 方法进行更新
+   *
    * @param {VNode | null} n1 旧的Fragment虚拟节点，首次渲染为null
    * @param {VNode} n2 新的Fragment虚拟节点，本次要渲染/更新的核心节点
    * @param {RendererElement} container 真实DOM父容器，Fragment的子节点最终挂载到该容器
@@ -1282,7 +1574,7 @@ function baseCreateRenderer(
     optimized: boolean,
   ) => {
     // 创建/复用 Fragment 的「首尾锚点空文本节点」【Fragment的灵魂设计】
-    // Fragment本身无真实el，Vue用「两个空文本节点」作为Fragment的起止锚点：startAnchor + endAnchor
+    // Fragment 本身无真实 el，Vue 用「两个空文本节点」作为 Fragment 的起止锚点：startAnchor + endAnchor
     // 作用：标记Fragment所有子节点的「范围」，方便后续批量更新/删除子节点，无需遍历整个父容器
     // 复用逻辑：有旧节点则复用旧锚点，无则创建新的空文本节点（文本内容为空字符串）
     const fragmentStartAnchor = (n2.el = n1 ? n1.el : hostCreateText(''))!
@@ -1349,13 +1641,16 @@ function baseCreateRenderer(
         patchFlag > 0 &&
         patchFlag & PatchFlags.STABLE_FRAGMENT &&
         dynamicChildren &&
-        // #2715 the previous fragment could've been a BAILed one as a result
-        // of renderSlot() with no valid children
+        // #2715 the previous fragment could've been a BAILed one as a result 因此，之前的片段本可以是一个保释片段
+        // of renderSlot() with no valid children 在没有有效子元素的情况下调用 renderSlot()
         n1.dynamicChildren &&
         n1.dynamicChildren.length === dynamicChildren.length
       ) {
-        // a stable fragment (template root or <template v-for>) doesn't need to
-        // patch children order, but it may contain dynamicChildren.
+        // a stable fragment (template root or <template v-for>) doesn't need to 一个稳定的片段（模板根或<template v-for>）不需要
+        // patch children order, but it may contain dynamicChildren. 补丁子级顺序，但它可能包含动态子级。
+        // ✅ 最优更新策略：稳定Fragment的「块级子节点精准更新」 (高性能)
+        // 稳定Fragment：指编译期确定的、子节点顺序永远不变的Fragment（如模板根节点/<template v-for>）
+        // 特点：无需对比子节点顺序/结构，只需要更新「标记的动态子节点」即可，diff开销极小
         patchBlockChildren(
           n1.dynamicChildren,
           dynamicChildren,

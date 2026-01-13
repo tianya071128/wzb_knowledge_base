@@ -297,12 +297,12 @@ export interface VNode<
   dynamicProps: string[] | null
   /**
    * 动态子节点集合（块树优化用），仅收集动态子节点，更新时直接遍历，跳过静态节点
+   *   -- 动态子节点: 依赖了响应式变量或者 props 等节点, 在更新渲染时, 有可能会变化的节点
    * @internal
    */
   dynamicChildren: (VNode[] & { hasOnce?: boolean }) | null
 
   // application root node only 仅应用程序根节点
-  /** 动态子节点集合（块树优化用），仅收集动态子节点，更新时直接遍历，跳过静态节点 */
   appContext: AppContext | null
 
   /**
@@ -474,18 +474,38 @@ export function isVNode(value: any): value is VNode {
   return value ? value.__v_isVNode === true : false
 }
 
+/**
+ * Vue3 Diff算法 核心基石 - 判断两个VNode是否为【同类型可复用节点】
+ * 核心规则：生产环境 仅判断「节点类型一致 + 节点key一致」；开发环境 额外兼容HMR热更新的组件重载逻辑
+ * 返回值意义：true → 同类型节点，可复用旧节点执行更新；false → 不同节点，销毁旧节点+创建新节点
+ * 核心价值：Diff算法的判断基准，决定了节点是「更新」还是「替换」，是Vue3更新性能的基础保障
+ *
+ * @param {VNode} n1 旧的VNode虚拟节点
+ * @param {VNode} n2 新的VNode虚拟节点
+ * @returns {boolean} 是否为同类型可复用的VNode节点
+ */
 export function isSameVNodeType(n1: VNode, n2: VNode): boolean {
+  // 【仅开发环境生效】HMR热更新 专属兼容逻辑 (生产环境被tree-shaking移除)
+  // 触发条件：开发环境 + 新节点是【组件类型】 + 旧节点已经有组件实例(已挂载)
   if (__DEV__ && n2.shapeFlag & ShapeFlags.COMPONENT && n1.component) {
+    // 1. 获取当前组件对应的「热更新脏组件实例集合」
+    // 含义：hmrDirtyComponents存储了所有被热更新修改过的组件，key是组件类型，value是该组件的实例集合
     const dirtyInstances = hmrDirtyComponents.get(n2.type as ConcreteComponent)
+
+    // 2. 如果当前组件被热更新，且旧节点的组件实例在脏实例集合中 → 触发强制重载逻辑
     if (dirtyInstances && dirtyInstances.has(n1.component)) {
-      // #7042, ensure the vnode being unmounted during HMR
-      // bitwise operations to remove keep alive flags
+      // #7042, ensure the vnode being unmounted during HMR 确保在HMR（热模块刷新）过程中卸载vnode
+      // bitwise operations to remove keep alive flags 通过位操作移除保持活动标志
       n1.shapeFlag &= ~ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE
       n2.shapeFlag &= ~ShapeFlags.COMPONENT_KEPT_ALIVE
-      // HMR only: if the component has been hot-updated, force a reload.
+
+      // HMR only: if the component has been hot-updated, force a reload. 如果组件已经进行了热更新，则强制重新加载
+      // 核心：HMR场景下，组件被修改后，强制返回false → 不复用旧组件实例，销毁旧的+创建新的，实现组件热重载
       return false
     }
   }
+
+  // 双条件同时满足，才判定为「同类型可复用节点」，缺一不可！
   return n1.type === n2.type && n1.key === n2.key
 }
 
@@ -803,79 +823,113 @@ export function guardReactiveProps(
   return isProxy(props) || isInternalObject(props) ? extend({}, props) : props
 }
 
+/**
+ * Vue3 核心底层函数：克隆一个VNode节点，生成全新的VNode副本
+ * 核心特性：支持合并额外属性、合并ref、克隆过渡钩子
+ * 核心价值：生成新的VNode引用，复用原节点内容，防止原VNode被修改/重复挂载导致的DOM异常、数据污染
+ *
+ *
+ * @generic T VNode的type类型泛型
+ * @generic U VNode的props类型泛型
+ * @param {VNode<T, U>} vnode 源VNode节点，要被克隆的原始虚拟节点（必传）
+ * @param {(Data & VNodeProps) | null} [extraProps=null] 可选，要追加/合并到克隆节点上的额外属性
+ * @param {boolean} [mergeRef=false] 可选，是否合并ref属性；true=合并新旧ref，false=用新ref覆盖旧ref
+ * @param {boolean} [cloneTransition=false] 可选，是否克隆过渡钩子；true=克隆transition并重置内部VNode引用，false=复用原过渡钩子
+ * @returns {VNode<T, U>} 克隆后的全新VNode节点副本，与原节点内容一致，引用地址完全不同
+ */
 export function cloneVNode<T, U>(
   vnode: VNode<T, U>,
   extraProps?: (Data & VNodeProps) | null,
   mergeRef = false,
   cloneTransition = false,
 ): VNode<T, U> {
-  // This is intentionally NOT using spread or extend to avoid the runtime
-  // key enumeration cost.
-  const { props, ref, patchFlag, children, transition } = vnode
+  // 这里刻意不使用对象展开(...)或Object.assign，目的是避免运行时枚举对象key的性能损耗，手动赋值性能最优
+  // This is intentionally NOT using spread or extend to avoid the runtime 这是故意不使用spread或extend来避免运行时问题
+  // key enumeration cost. 密钥枚举成本。
+  const { props, ref, patchFlag, children, transition } = vnode // 解构原VNode的核心属性，只解构需要处理/判断的属性，其余属性后续手动赋值
+  // 处理属性合并：如果传入了额外属性，合并「原节点props」和「额外props」，否则直接复用原props
   const mergedProps = extraProps ? mergeProps(props || {}, extraProps) : props
+
+  // 核心：创建全新的VNode克隆副本，手动逐个赋值所有属性
+  // 所有属性与原节点保持一致，保证克隆节点的内容和原节点完全相同
+  // 重点处理：props/key/ref/children/patchFlag 这几个需要动态计算的属性，其余属性纯拷贝
   const cloned: VNode<T, U> = {
-    __v_isVNode: true,
-    __v_skip: true,
-    type: vnode.type,
-    props: mergedProps,
+    __v_isVNode: true, // 固定标识：标记是VNode对象，区别于普通JS对象
+    __v_skip: true, // 固定标识：diff算法中跳过该节点的子节点遍历（优化标记）
+    type: vnode.type, // 核心：节点类型，与原节点完全一致 (div/组件/Fragment等)
+    props: mergedProps, // 节点属性：使用合并后的属性（原属性+额外属性），无额外属性则复用原属性
+    // 节点的唯一key：从合并后的props中标准化获取，保证key的合法性
     key: mergedProps && normalizeKey(mergedProps),
+
+    // 处理ref属性的「合并/覆盖」规则 (Vue3 重点兼容逻辑)
     ref:
+      // 分支1：传入了额外属性 且 额外属性中包含ref → 需要处理ref的合并/覆盖
       extraProps && extraProps.ref
-        ? // #2078 in the case of <component :is="vnode" ref="extra"/>
-          // if the vnode itself already has a ref, cloneVNode will need to merge
-          // the refs so the single vnode can be set on multiple refs
+        ? // #2078 in the case of <component :is="vnode" ref="extra"/> 在 <component :is="vnode" ref="extra"/> 的情况下，
+          // if the vnode itself already has a ref, cloneVNode will need to merge 如果 vnode 本身已经有引用，cloneVNode 将需要进行合并
+          // the refs so the single vnode can be set on multiple refs 引用，以便可以在多个引用上设置单个 vnode
+          // 如果原VNode本身已有ref，克隆时需要合并两个ref，让单个VNode能被多个ref绑定
           mergeRef && ref
-          ? isArray(ref)
-            ? ref.concat(normalizeRef(extraProps)!)
-            : [ref, normalizeRef(extraProps)!]
-          : normalizeRef(extraProps)
-        : ref,
-    scopeId: vnode.scopeId,
-    slotScopeIds: vnode.slotScopeIds,
+          ? // mergeRef=true 且 原节点有ref → 执行ref合并逻辑
+            isArray(ref)
+            ? // 原ref是数组 → 追加新的标准化ref到数组末尾
+              ref.concat(normalizeRef(extraProps)!)
+            : // 原ref是单个值 → 转为数组，存入新旧两个ref
+              [ref, normalizeRef(extraProps)!]
+          : // mergeRef=false → 直接使用新的标准化ref，覆盖原ref
+            normalizeRef(extraProps)
+        : // 无额外ref → 直接复用原节点的ref属性
+          ref,
+    scopeId: vnode.scopeId, // SFC样式隔离ID，纯拷贝
+    slotScopeIds: vnode.slotScopeIds, // 插槽样式隔离ID数组，纯拷贝
     children:
       __DEV__ && patchFlag === PatchFlags.CACHED && isArray(children)
-        ? (children as VNode[]).map(deepCloneVNode)
+        ? // 开发环境 + 原节点是「缓存静态节点」 + 子节点是数组 → 对子节点执行深度克隆
+          // 防止开发环境下缓存节点的子节点被共享修改，生产环境无需处理，直接复用
+          (children as VNode[]).map(deepCloneVNode)
         : children,
-    target: vnode.target,
-    targetStart: vnode.targetStart,
-    targetAnchor: vnode.targetAnchor,
-    staticCount: vnode.staticCount,
-    shapeFlag: vnode.shapeFlag,
-    // if the vnode is cloned with extra props, we can no longer assume its
-    // existing patch flag to be reliable and need to add the FULL_PROPS flag.
-    // note: preserve flag for fragments since they use the flag for children
-    // fast paths only.
+    target: vnode.target, // Teleport瞬移组件的目标容器，纯拷贝
+    targetStart: vnode.targetStart, // Teleport目标容器的起始锚点，纯拷贝
+    targetAnchor: vnode.targetAnchor, // Teleport目标容器的结束锚点，纯拷贝
+    staticCount: vnode.staticCount, // 静态节点计数，纯拷贝
+    shapeFlag: vnode.shapeFlag, // 节点形状标记(位运算)，纯拷贝，与原节点一致
+    // if the vnode is cloned with extra props, we can no longer assume its 如果克隆的vnode带有额外的属性，我们就不能再假定它
+    // existing patch flag to be reliable and need to add the FULL_PROPS flag. 现有的补丁标志需要可靠，并且需要添加FULL_PROPS标志。
+    // note: preserve flag for fragments since they use the flag for children 注意：为片段保留标志，因为它们将该标志用于子元素
+    // fast paths only. 仅限快速通道。
     patchFlag:
       extraProps && vnode.type !== Fragment
         ? patchFlag === PatchFlags.CACHED // hoisted node
           ? PatchFlags.FULL_PROPS
           : patchFlag | PatchFlags.FULL_PROPS
         : patchFlag,
-    dynamicProps: vnode.dynamicProps,
-    dynamicChildren: vnode.dynamicChildren,
-    appContext: vnode.appContext,
-    dirs: vnode.dirs,
-    transition,
+    dynamicProps: vnode.dynamicProps, // 动态属性数组，纯拷贝
+    dynamicChildren: vnode.dynamicChildren, // 动态子节点数组，纯拷贝
+    appContext: vnode.appContext, // 应用上下文，纯拷贝
+    dirs: vnode.dirs, // 指令数组，纯拷贝
+    transition, // 过渡钩子，先复用原过渡钩子，后续按需克隆
 
-    // These should technically only be non-null on mounted VNodes. However,
-    // they *should* be copied for kept-alive vnodes. So we just always copy
-    // them since them being non-null during a mount doesn't affect the logic as
-    // they will simply be overwritten.
-    component: vnode.component,
-    suspense: vnode.suspense,
-    ssContent: vnode.ssContent && cloneVNode(vnode.ssContent),
-    ssFallback: vnode.ssFallback && cloneVNode(vnode.ssFallback),
-    placeholder: vnode.placeholder,
+    // These should technically only be non-null on mounted VNodes. However, 从技术上讲，这些属性只应在已挂载的VNode上为非空。然而，
+    // they *should* be copied for kept-alive vnodes. So we just always copy 对于保持活跃的vnodes，它们*应该*被复制。所以我们总是进行复制
+    // them since them being non-null during a mount doesn't affect the logic as 因为它们在挂载期间非空并不会影响逻辑
+    // they will simply be overwritten. 它们将被简单地覆盖
+    // 以下属性理论上只有「已挂载的VNode」才会有值，但为了keep-alive组件的复用场景，需要全部拷贝
+    // 即使在挂载阶段拷贝了这些属性也无影响，因为挂载时会被重新赋值，不影响核心逻辑
+    component: vnode.component, // 组件实例，纯拷贝（仅组件类型VNode有值）
+    suspense: vnode.suspense, // Suspense实例，纯拷贝（仅Suspense类型VNode有值）
+    ssContent: vnode.ssContent && cloneVNode(vnode.ssContent), // 服务端渲染内容，递归克隆
+    ssFallback: vnode.ssFallback && cloneVNode(vnode.ssFallback), // 服务端渲染兜底内容，递归克隆
+    placeholder: vnode.placeholder, // 占位节点，纯拷贝
 
-    el: vnode.el,
-    anchor: vnode.anchor,
-    ctx: vnode.ctx,
-    ce: vnode.ce,
+    el: vnode.el, // 真实DOM映射，纯拷贝（⚠️ 重要：克隆节点会继承原节点的el，后续挂载时会被重置）
+    anchor: vnode.anchor, // 锚点节点，纯拷贝（Fragment的结束锚点）
+    ctx: vnode.ctx, // 组件上下文，纯拷贝
+    ce: vnode.ce, // 编译器缓存，纯拷贝
   }
 
-  // if the vnode will be replaced by the cloned one, it is necessary
-  // to clone the transition to ensure that the vnode referenced within
-  // the transition hooks is fresh.
+  // if the vnode will be replaced by the cloned one, it is necessary 如果该虚拟节点（vnode）将被克隆后的节点所替换，那么这是必要的
+  // to clone the transition to ensure that the vnode referenced within 克隆转换以确保在...中引用的vnode
+  // the transition hooks is fresh. 过渡钩很新鲜。
   if (transition && cloneTransition) {
     setTransitionHooks(
       cloned as VNode,
@@ -883,10 +937,13 @@ export function cloneVNode<T, U>(
     )
   }
 
+  // 开启Vue2兼容模式时，为克隆节点定义遗留的VNode属性
+  // 生产环境/非兼容模式下，这段代码会被tree-shaking移除，无性能损耗
   if (__COMPAT__) {
     defineLegacyVNodeProperties(cloned as VNode)
   }
 
+  // 新节点与原节点「内容完全一致」，「内存引用地址完全不同」，是独立的全新对象
   return cloned
 }
 
@@ -894,9 +951,26 @@ export function cloneVNode<T, U>(
  * Dev only, for HMR of hoisted vnodes reused in v-for
  * https://github.com/vitejs/vite/issues/2022
  */
+/**
+ * 【开发环境专用】递归深度克隆VNode节点，基于浅克隆cloneVNode实现
+ * 核心逻辑：先浅克隆当前VNode，再递归遍历并深度克隆所有子VNode数组，做到「当前节点+所有子孙节点」全克隆
+ * 核心价值：防止开发环境下，缓存的静态节点的子节点被多个父节点共享引用、意外修改，导致渲染异常
+ * 调用限制：仅在 cloneVNode 内部的子节点处理逻辑中被调用，无单独调用场景
+ *
+ * @param {VNode} vnode 要被深度克隆的源VNode节点（标准合法VNode）
+ * @returns {VNode} 深度克隆后的全新VNode，当前节点+所有子孙节点均为新引用，与原节点完全解耦
+ */
 function deepCloneVNode(vnode: VNode): VNode {
+  // 第一步：调用基础的cloneVNode，对【当前VNode节点本身】做一层浅克隆
+  // 得到一个和当前节点内容一致、引用独立的浅克隆节点
   const cloned = cloneVNode(vnode)
+
+  // 第二步：递归处理子节点 - 仅当「原节点的子节点是VNode数组」时，才执行递归
+  // 1. isArray(vnode.children)：判断子节点是否为数组（只有数组型子节点才需要递归克隆）
+  // 2. 文本/注释/单个VNode等非数组子节点，直接复用浅克隆的结果即可，无需处理
   if (isArray(vnode.children)) {
+    // 遍历原节点的子VNode数组，对每一个子节点【递归调用deepCloneVNode】
+    // 把递归克隆后的全新子节点数组，赋值给克隆节点的children属性
     cloned.children = (vnode.children as VNode[]).map(deepCloneVNode)
   }
   return cloned
@@ -959,8 +1033,19 @@ export function normalizeVNode(child: VNodeChild): VNode {
   }
 }
 
-// optimized normalization for template-compiled render fns
+// optimized normalization for template-compiled render fns 模板编译渲染 fns 的优化标准化
+/**
+ * 【优化模式专用】按需克隆VNode节点：仅当节点「已挂载/是缓存节点」且「非memo缓存节点」时，才执行克隆
+ * 核心设计：能复用原节点就复用，避免无意义的克隆消耗性能；必须克隆时才克隆，避免DOM挂载异常
+ * 核心解决：同一个VNode被多次挂载导致的「一份VNode对应多份真实DOM」的重复渲染问题
+ *
+ *
+ * @param {VNode} child 待检测/克隆的标准VNode节点（优化模式下编译器保证入参必为合法VNode）
+ * @returns {VNode} 返回原VNode 或 克隆后的新VNode副本
+ */
 export function cloneIfMounted(child: VNode): VNode {
+  // 满足条件 → 返回【原节点】，无需克隆
+  // 不满足条件 → 返回【克隆后的新节点】，必须克隆
   return (child.el === null && child.patchFlag !== PatchFlags.CACHED) ||
     child.memo
     ? child
