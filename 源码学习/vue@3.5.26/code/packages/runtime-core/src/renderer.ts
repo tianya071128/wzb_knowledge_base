@@ -825,6 +825,8 @@ function baseCreateRenderer(
    * 核心职责：1. 处理SVG/MathML标签的命名空间赋值 2. 根据是否有旧节点，分发执行「首次挂载」或「更新」逻辑
    * 额外处理：兼容Vue自定义元素(CE)的patch生命周期钩子，保证自定义元素更新的正确性
    * 处理节点类型：div/p/span等原生HTML元素、svg/math特殊标签、Vue自定义元素(CE)
+   *  - 首次渲染: 调用 mountElement 方法执行渲染
+   *  - 更新渲染: 调用 patchElement 方法执行更新
    *
    *
    * @param {VNode | null} n1 旧VNode节点；null = 首次渲染，非null = 更新渲染
@@ -1324,7 +1326,7 @@ function baseCreateRenderer(
     // 策略2：无编译优化标记 → 走「全量子节点Diff路径」patchChildren ✅兜底兼容
     // 适用场景：无dynamicChildren、optimized=false，对所有子节点做全量的Diff对比，增/删/改/移，保证更新正确
     else if (!optimized) {
-      // full diff
+      // full diff 全量 diff
       patchChildren(
         n1,
         n2,
@@ -1501,6 +1503,25 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 核心函数 - 【元素属性增量更新核心入口】，负责新旧属性的差异对比与更新指令下发
+   * 核心职责：对比元素的新旧属性对象，增量处理：移除废弃属性、更新变化/新增属性，不做全量覆盖
+   * 核心原则：最小化DOM操作，只处理「有差异」的属性，无差异则无任何操作
+   * 核心设计：只做属性差异判断，不直接操作DOM → 真实DOM操作交给hostPatchProp，实现跨平台解耦
+   * 核心特性：过滤Vue保留属性、兼容命名空间、对表单value属性做特殊兜底处理、纯增量更新无冗余逻辑
+   *
+   *  - ✅ 步骤一：清理「废弃属性」→ 遍历旧属性，移除「旧有但新无」的属性
+   *  - ✅ 步骤二：增量更新「新增 / 变化属性」→ 遍历新属性，更新差异属性
+   *  - 核心通过 hostPatchProp 方法实现新增和删除属性
+   *
+   *
+   * @param {RendererElement} el 真实的DOM元素对象，属性要挂载的目标元素
+   * @param {Data} oldProps 旧VNode的属性对象，可能为EMPTY_OBJ(无属性)
+   * @param {Data} newProps 新VNode的属性对象，可能为EMPTY_OBJ(无属性)
+   * @param {ComponentInternalInstance | null} parentComponent 父组件实例，用于指令/事件/依赖收集
+   * @param {ElementNamespace} namespace 元素命名空间(html/svg/mathml)，决定属性解析规则
+   * @returns {void} 无返回值，所有操作均为下发更新指令到hostPatchProp，由其执行真实DOM副作用
+   */
   const patchProps = (
     el: RendererElement,
     oldProps: Data,
@@ -1508,31 +1529,51 @@ function baseCreateRenderer(
     parentComponent: ComponentInternalInstance | null,
     namespace: ElementNamespace,
   ) => {
+    // ========== 核心前置判断：新旧属性对象是否全等，全等则无任何属性变化，直接返回 ==========
+    // 全等说明属性无任何增删改，无需后续所有处理，性能最优的快速路径
     if (oldProps !== newProps) {
+      // ========== 第一步：处理「旧属性的废弃逻辑」→ 移除 旧有但新属性中不存在 的属性 ==========
+      // 只有旧属性不是空对象时，才需要遍历处理，空对象无属性可移除，跳过该逻辑
       if (oldProps !== EMPTY_OBJ) {
+        // 遍历旧属性对象的所有属性key
         for (const key in oldProps) {
+          // 过滤条件：
+          // 1. isReservedProp(key) → 是Vue保留属性，跳过（不处理DOM属性）
+          // 2. !(key in newProps) → 该属性在新属性中不存在 → 属于「废弃属性」需要移除
           if (!isReservedProp(key) && !(key in newProps)) {
+            // 调用宿主适配层API，移除该属性：新值传null，表示删除/解绑该属性
             hostPatchProp(
               el,
               key,
-              oldProps[key],
-              null,
+              oldProps[key], // 旧值
+              null, // 新值为null → 核心标识：移除属性/解绑事件/清空样式
               namespace,
               parentComponent,
             )
           }
         }
       }
+
+      // ========== 第二步：处理「新属性的增量更新」→ 更新 新增/值发生变化 的属性 ==========
+      // 遍历新属性对象的所有属性key，处理新增/变化的属性
       for (const key in newProps) {
-        // empty string is not valid prop
+        // empty string is not valid prop 空字符串不是有效的 prop
+        // 1. 跳过Vue的内部保留属性，这类属性不渲染为DOM属性（如key/ref/slot）
         if (isReservedProp(key)) continue
+        // 2. 获取当前属性的 新值/旧值
         const next = newProps[key]
         const prev = oldProps[key]
-        // defer patching value
+        // defer patching value 延迟修补 value
+        // 3. 核心更新判断条件：新值 !== 旧值 且 不是value属性 → 执行属性更新
+        // 注：value 属性这里先延迟更新(defer patching value)，放到最后单独兜底处理
         if (next !== prev && key !== 'value') {
           hostPatchProp(el, key, prev, next, namespace, parentComponent)
         }
       }
+
+      // ========== 第三步：特殊兜底处理 → 单独更新 value 属性 ==========
+      // 核心原因：表单控件(input/select/textarea)的value属性有特殊的更新时机和逻辑，
+      // 延迟到所有属性更新完成后单独处理，能避免和其他属性（如checked/disabled）的更新冲突，保证赋值正确
       if ('value' in newProps) {
         hostPatchProp(el, 'value', oldProps.value, newProps.value, namespace)
       }
@@ -1693,6 +1734,24 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 核心核心函数 - 【组件类型VNode专属处理入口】，组件渲染的总调度中心
+   * 核心职责：统一分发组件的所有处理逻辑，只做分支判断，不做具体业务逻辑
+   * 核心逻辑：三分支极简分发 → 无旧VNode=首次渲染 → 是缓存组件则激活，否则挂载；有旧VNode=组件更新
+   * 处理场景：普通组件挂载、缓存组件激活、组件增量更新，覆盖Vue所有组件的渲染生命周期
+   *
+   *
+   * @param {VNode | null} n1 组件的旧VNode节点，null 表示【组件首次渲染/挂载】
+   * @param {VNode} n2 组件的新VNode节点，必传（当前要渲染的最新组件节点）
+   * @param {RendererElement} container 真实DOM容器，组件要挂载的父容器
+   * @param {RendererNode | null} anchor 锚点DOM节点，组件插入/移动的参考位置，保证挂载位置正确
+   * @param {ComponentInternalInstance | null} parentComponent 父组件实例，组件上下文、生命周期调度、依赖收集
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense边界，处理异步组件的加载/错误状态
+   * @param {ElementNamespace} namespace 元素命名空间(html/svg/mathml)，组件内部元素的属性解析规则
+   * @param {string[] | null} slotScopeIds 插槽作用域ID，用于组件内部插槽的scoped样式隔离
+   * @param {boolean} optimized 是否为编译优化后的VNode，透传给子函数做性能优化
+   * @returns {void} 无返回值，所有具体逻辑由子函数(mountComponent/updateComponent/activate)执行
+   */
   const processComponent = (
     n1: VNode | null,
     n2: VNode,
@@ -1704,9 +1763,14 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
+    // 第一步：给新组件VNode赋值插槽作用域ID，用于组件内部插槽的scoped样式隔离，保证样式生效
     n2.slotScopeIds = slotScopeIds
+
+    // ========== 核心分支一：n1为null → 无旧组件VNode，当前是【组件首次渲染/挂载阶段】 ==========
     if (n1 == null) {
+      // 子分支1.1：当前组件是【被KeepAlive缓存的组件】→ 执行缓存组件的「激活」逻辑，复用实例，不重新挂载
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+        // parentComponent 一定存在(KeepAlive作为父组件)，非空断言后获取KeepAlive上下文，调用激活方法
         ;(parentComponent!.ctx as KeepAliveContext).activate(
           n2,
           container,
@@ -1714,7 +1778,10 @@ function baseCreateRenderer(
           namespace,
           optimized,
         )
-      } else {
+      }
+      // 子分支1.2：当前是【普通组件】→ 执行组件的「首次挂载」逻辑，创建实例、初始化、渲染DOM
+      else {
+        // 挂载组件
         mountComponent(
           n2,
           container,
@@ -1725,11 +1792,32 @@ function baseCreateRenderer(
           optimized,
         )
       }
-    } else {
+    }
+    // ========== 核心分支二：n1不为null → 存在旧组件VNode，当前是【组件增量更新阶段】 ==========
+    else {
+      // 执行组件的「增量更新」逻辑，对比新旧组件VNode，执行重渲染、最小化DOM更新
       updateComponent(n1, n2, optimized)
     }
   }
 
+  /**
+   * Vue3 终极核心函数 - 组件【首次挂载】的唯一入口，组件诞生的完整生命周期实现
+   * 核心职责：完成组件从「虚拟VNode」到「真实DOM渲染」的全流程，包含：创建实例→初始化配置→执行setup→处理异步→创建响应式渲染→渲染DOM
+   * 核心流程：组件实例化 → 开发环境处理 → KeepAlive特殊注入 → 组件核心初始化 → 异步组件处理 → 创建渲染副作用 → 完成挂载
+   * 处理范围：所有普通Vue组件的首次挂载，兼容Vue2兼容模式、异步组件、KeepAlive组件、开发环境所有调试能力
+   * 核心特性：无冗余逻辑、步骤严谨、兼容所有场景、响应式核心绑定、承上启下连接VNode与真实DOM
+   *
+   *  - 1. 创建实例: createComponentInstance 方法创建实例, 初始化一些字段
+   *
+   * @param {VNode} initialVNode 组件的根VNode节点，组件的虚拟载体，挂载后会赋值真实DOM到el属性
+   * @param {RendererElement} container 真实DOM容器，组件最终要挂载到的父容器
+   * @param {RendererNode | null} anchor 锚点DOM节点，组件插入的参考位置，保证挂载位置精准无误
+   * @param {ComponentInternalInstance | null} parentComponent 父组件实例，组件的上下文归属，用于依赖收集/生命周期调度
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense异步边界，处理异步组件的加载状态
+   * @param {ElementNamespace} namespace 元素命名空间(html/svg/mathml)，组件内部元素的属性解析规则
+   * @param {boolean} optimized 是否为编译优化后的VNode，透传做渲染性能优化
+   * @returns {void} 无返回值，所有操作均为组件实例的初始化和DOM渲染的副作用
+   */
   const mountComponent: MountComponentFn = (
     initialVNode,
     container,
@@ -1739,60 +1827,93 @@ function baseCreateRenderer(
     namespace: ElementNamespace,
     optimized,
   ) => {
-    // 2.x compat may pre-create the component instance before actually
-    // mounting
+    // ========== 步骤1：处理Vue2兼容模式 - 预创建的组件实例兜底 ==========
+    // 2.x compat may pre-create the component instance before actually compat可能会在实际创建组件实例之前预先创建它
+    // mounting 安装
+
+    // 兼容场景：Vue2迁移Vue3时，组件实例可能在挂载前就被提前创建，这里做兜底复用
     const compatMountInstance =
       __COMPAT__ && initialVNode.isCompatRoot && initialVNode.component
+
+    // ========== 步骤2：创建/复用 组件的【内部核心实例】ComponentInternalInstance ✅核心核心 ==========
+    // 组件实例是组件的灵魂，所有组件的上下文、数据、生命周期都挂载在这个实例上
+    // 优先级：兼容模式的预创建实例 > 全新创建实例
+    // 并且把创建好的实例挂载到组件VNode上：initialVNode.component，后续更新时可直接复用该实例
     const instance: ComponentInternalInstance =
       compatMountInstance ||
       (initialVNode.component = createComponentInstance(
-        initialVNode,
-        parentComponent,
-        parentSuspense,
+        initialVNode, // 组件根VNode
+        parentComponent, // 父组件实例
+        parentSuspense, // 父级异步边界
       ))
 
+    // ========== 步骤3：开发环境专属 - 注册组件的热更新(HMR) ==========
+    // 开发环境下，如果组件有热更新标识(__hmrId)，注册热更新逻辑，修改代码无需刷新页面，提升开发体验
     if (__DEV__ && instance.type.__hmrId) {
       registerHMR(instance)
     }
 
+    // ========== 步骤4：开发环境专属 - 开启警告上下文+挂载性能打点 ==========
+    // pushWarningContext：绑定当前组件VNode的警告上下文，开发环境报错时能精准定位到组件位置
+    // startMeasure：开启组件挂载的性能打点，统计mount/init阶段的耗时，开发环境性能分析用
     if (__DEV__) {
       pushWarningContext(initialVNode)
       startMeasure(instance, `mount`)
     }
 
-    // inject renderer internals for keepAlive
+    // ========== 步骤5：特殊逻辑注入 - 给KeepAlive组件注入渲染器内部实例 ==========
+    // inject renderer internals for keepAlive 为 keepAlive 注入渲染器内部结构
+    // 如果当前挂载的是KeepAlive组件，将渲染器的核心内部实例注入到KeepAlive的上下文
+    // 作用：让KeepAlive能调用渲染器的底层API，实现组件的缓存/激活/失活逻辑
     if (isKeepAlive(initialVNode)) {
       ;(instance.ctx as KeepAliveContext).renderer = internals
     }
 
-    // resolve props and slots for setup context
+    // ========== 步骤6：组件【核心初始化】setupComponent ✅重中之重 核心核心 ==========
+    // resolve props and slots for setup context 解析设置上下文的 props 和 slot
+    // 非兼容模式/非预创建实例，执行组件的完整初始化流程，这一步是组件的「五脏六腑配齐」的核心
+    // 兼容模式的预创建实例已经完成过初始化，这里跳过避免重复执行
     if (!(__COMPAT__ && compatMountInstance)) {
       if (__DEV__) {
-        startMeasure(instance, `init`)
+        startMeasure(instance, `init`) // 开发环境：开启初始化阶段的性能打点
       }
+      // 执行组件初始化：解析props、解析slots、执行setup函数、绑定render函数、初始化上下文
       setupComponent(instance, false, optimized)
       if (__DEV__) {
-        endMeasure(instance, `init`)
+        endMeasure(instance, `init`) // 开发环境：结束初始化性能打点
       }
     }
 
-    // avoid hydration for hmr updating
+    // ========== 步骤7：开发环境专属 - 热更新时清空组件VNode的真实DOM引用 ==========
+    // avoid hydration for hmr updating 避免水合以进行 HMR 更新
+    // 热更新时避免复用旧的DOM节点，防止热更新后DOM结构错乱，只在开发环境生效
     if (__DEV__ && isHmrUpdating) initialVNode.el = null
 
-    // setup() is async. This component relies on async logic to be resolved
-    // before proceeding
+    // ========== 步骤8：核心分支判断 - 处理【异步组件(Suspense)】和【普通同步组件】 ==========
+    // setup() is async. This component relies on async logic to be resolved setup() 是异步的。该组件依赖异步逻辑来解析
+    // before proceeding 在继续之前
+    // __FEATURE_SUSPENSE__：是否开启异步组件特性；instance.asyncDep：组件是否是异步组件(setup返回Promise)
+    // ✔️ 分支8.1：当前是【异步组件】，交给父级Suspense异步边界处理
     if (__FEATURE_SUSPENSE__ && instance.asyncDep) {
+      // 注册异步依赖：Suspense会等待异步组件加载完成后，再执行后续的渲染逻辑
       parentSuspense &&
         parentSuspense.registerDep(instance, setupRenderEffect, optimized)
 
-      // Give it a placeholder if this is not hydration
-      // TODO handle self-defined fallback
+      // Give it a placeholder if this is not hydration 如果这不是水合作用，就给它一个占位符
+      // TODO handle self-defined fallback TODO 处理自定义回退
+
+      // 异步组件加载过程中，创建【注释占位符节点】，避免DOM结构塌陷
+      // 只有组件还没有真实DOM时，才创建占位符
       if (!initialVNode.el) {
         const placeholder = (instance.subTree = createVNode(Comment))
         processCommentNode(null, placeholder, container!, anchor)
         initialVNode.placeholder = placeholder.el
       }
-    } else {
+    }
+    // ✔️ 分支8.2：当前是【普通同步组件】✅ 99%的业务组件走这个分支
+    else {
+      // 创建组件的【响应式渲染副作用】，这是Vue「数据驱动视图」的终极核心
+      // 内部逻辑：执行render生成VNode树 → 调用patch渲染真实DOM → 收集响应式依赖 → 数据变化触发重渲染
       setupRenderEffect(
         instance,
         initialVNode,
@@ -1804,9 +1925,10 @@ function baseCreateRenderer(
       )
     }
 
+    // ========== 步骤9：开发环境专属 - 清理警告上下文+结束挂载性能打点 ==========
     if (__DEV__) {
-      popWarningContext()
-      endMeasure(instance, `mount`)
+      popWarningContext() // 弹出当前组件的警告上下文，恢复全局上下文
+      endMeasure(instance, `mount`) // 结束组件挂载的性能打点，统计总耗时
     }
   }
 
@@ -2171,6 +2293,37 @@ function baseCreateRenderer(
     resetTracking()
   }
 
+  /**
+   * Vue3 核心核心函数 - 新旧VNode子节点的【全量Diff算法主入口】，子节点增量更新的兜底核心
+   * 核心职责：对比新旧VNode的子节点（c1旧，c2新），根据「新旧子节点的类型组合」，执行差异化的增量更新逻辑
+   * 核心能力：处理所有子节点场景：文本↔文本、文本↔数组、数组↔数组、数组↔空、空↔数组、空↔空
+   * 核心逻辑：编译优化路径优先(patchFlag>0) → 无优化则按子节点类型全量判断 → 最小化DOM操作（复用/移动优先，挂载/卸载兜底）
+   *   - 如果是编译器优化: 会走快捷通道调用对应的 diff 算法, 编译器保证两个新旧都是数组
+   *      -- 如果是带 key 的子数组, 调用 patchKeyedChildren 方法(双端对比 + 最长递增子序列算法)
+   *      -- 如果是不带 key 的子数组, 调用 patchUnkeyedChildren 方法比对
+   *   - 其他根据新旧子节点的类型判断:
+   *      -- ✔️ 场景 1：【新子节点 = 纯文本】 → 两种子情况
+   *          --- 旧的子节点是数组, 调用 unmountChildren 方法卸载旧的子节点
+   *          --- 新旧文本不同, 更新容器的文本内容
+   *      -- ✔️ 场景 2：【新子节点 = 数组】 → 两种子情况
+   *          --- 旧的子节点是数组, 调用 patchKeyedChildren 方法比对
+   *          --- 旧的子节点是文本或空, 则先清空容器的文本内容, 在调用 mountChildren 方法挂载子节点
+   *      -- 场景 3：【新子节点 = 无子节点 (null/undefined)】 → 两种子情况
+   *          --- 旧的子节点是数组, 调用 unmountChildren 卸载旧的子节点
+   *          --- 旧的子节点是文本, 则清空容器的文本内容
+   *
+   *
+   * @param {VNode} n1 旧的父级VNode节点，取其children作为旧子节点c1
+   * @param {VNode} n2 新的父级VNode节点，取其children作为新子节点c2
+   * @param {Element} container 真实DOM容器，子节点挂载的父容器
+   * @param {Element | null} anchor 锚点DOM节点，DOM插入/移动的参考位置，保证节点位置正确
+   * @param {ComponentInternalInstance | null} parentComponent 父组件实例，用于钩子执行/指令/依赖收集
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense边界，用于异步组件的副作用调度
+   * @param {ElementNamespace} namespace 元素命名空间(html/svg/mathml)，传给子节点处理函数做规范兼容
+   * @param {string[] | null} slotScopeIds 插槽作用域ID，用于scoped样式隔离
+   * @param {boolean} [optimized=false] 是否为编译优化后的VNode，默认false → 走全量diff
+   * @returns {void} 无返回值，所有操作均为真实DOM的增/删/改/移副作用
+   */
   const patchChildren: PatchChildrenFn = (
     n1,
     n2,
@@ -2182,16 +2335,25 @@ function baseCreateRenderer(
     slotScopeIds,
     optimized = false,
   ) => {
+    // ========== 第一步：初始化变量，解构新旧子节点 + 形状标记 ==========
+    // 旧子节点：取旧VNode的children，无则为undefined/null
     const c1 = n1 && n1.children
+    // 旧VNode的形状标记：无旧VNode则为0，用于判断旧子节点的类型
     const prevShapeFlag = n1 ? n1.shapeFlag : 0
+    // 新子节点：取新VNode的children，无则为undefined/null
     const c2 = n2.children
-
+    // 解构新VNode的 补丁标记(patchFlag) + 形状标记(shapeFlag)
     const { patchFlag, shapeFlag } = n2
-    // fast path
+
+    // ========== 第二步：【编译优化快速路径 - 优先级最高 ✅性能最优】 ==========
+    // fast path 快速路径
+    // patchFlag > 0 说明编译器给子节点打了优化标记，无需全量类型判断，直接走对应优化逻辑
     if (patchFlag > 0) {
+      // 分支1：子节点是【带key的VNode数组】→ 走最优diff算法 patchKeyedChildren
+      // 备注：该标记包含「全key/部分key」两种情况，只要有key就走这个逻辑
       if (patchFlag & PatchFlags.KEYED_FRAGMENT) {
-        // this could be either fully-keyed or mixed (some keyed some not)
-        // presence of patchFlag means children are guaranteed to be arrays
+        // this could be either fully-keyed or mixed (some keyed some not) 这可以是完全键控的，也可以是混合键控的（部分键控，部分非键控）
+        // presence of patchFlag means children are guaranteed to be arrays patchFlag 的存在意味着 children 必定是数组
         patchKeyedChildren(
           c1 as VNode[],
           c2 as VNodeArrayChildren,
@@ -2203,8 +2365,10 @@ function baseCreateRenderer(
           slotScopeIds,
           optimized,
         )
-        return
-      } else if (patchFlag & PatchFlags.UNKEYED_FRAGMENT) {
+        return // 执行完直接返回，不走后续逻辑
+      }
+      // 分支2：子节点是【无key的VNode数组】→ 走简单diff算法 patchUnkeyedChildren
+      else if (patchFlag & PatchFlags.UNKEYED_FRAGMENT) {
         // unkeyed
         patchUnkeyedChildren(
           c1 as VNode[],
@@ -2217,24 +2381,35 @@ function baseCreateRenderer(
           slotScopeIds,
           optimized,
         )
-        return
+        return // 执行完直接返回，不走后续逻辑
       }
     }
 
-    // children has 3 possibilities: text, array or no children.
+    // ========== 第三步：【无编译优化 - 全量子节点类型判断 核心主逻辑】 ==========
+    // children has 3 possibilities: text, array or no children. 子项有 3 种可能性：文本、数组或无子项。
+    // 核心说明：子节点只有3种可能 → 纯文本、VNode数组、无子节点(null/undefined)
+    // 所有逻辑基于「新旧子节点的类型组合」做差异化处理，共6种组合场景，全覆盖无遗漏
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
-      // text children fast path
+      // text children fast path 文本子节点快速路径
+
+      // ✅ 场景1：新子节点 是【纯文本】
+      // 子场景1.1：旧子节点 是【VNode数组】→ 先卸载所有旧的数组子节点，再设置新文本
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         unmountChildren(c1 as VNode[], parentComponent, parentSuspense)
       }
+      // 子场景1.2：新旧文本内容不同 → 直接更新容器的文本内容，复用容器DOM，无其他操作
       if (c2 !== c1) {
         hostSetElementText(container, c2 as string)
       }
     } else {
+      // ✅ 场景2：新子节点 不是文本 → 即【数组/无子节点】
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        // prev children was array
+        // prev children was array 之前的子节点是数组
+        // ✅ 子场景2.1：旧子节点 是【VNode数组】
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          // two arrays, cannot assume anything, do full diff
+          // two arrays, cannot assume anything, do full diff 两个数组，不能假设任何事情，进行完整的比较
+          // ✅ 组合：旧数组 → 新数组 → 核心场景，走全量最优diff算法 patchKeyedChildren
+          // 对比新旧数组子节点，完成增删改移，最小化DOM操作，Vue3 Diff核心
           patchKeyedChildren(
             c1 as VNode[],
             c2 as VNodeArrayChildren,
@@ -2246,18 +2421,25 @@ function baseCreateRenderer(
             slotScopeIds,
             optimized,
           )
-        } else {
+        }
+        // ✅ 组合：旧数组 → 新的无子节点 → 直接卸载所有旧子节点即可
+        else {
           // no new children, just unmount old
           unmountChildren(c1 as VNode[], parentComponent, parentSuspense, true)
         }
-      } else {
-        // prev children was text OR null
-        // new children is array OR null
+      }
+      // ✅ 子场景2.2：旧子节点 是【纯文本 / 无子节点(null/undefined)】
+      else {
+        // prev children was text OR null 之前的子节点的值为文本或为空
+        // new children is array OR null 现在的子节点的值为数组或为空
+        // ✅ 子场景2.2：旧子节点 是【纯文本 / 无子节点(null/undefined)】
         if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          // ✅ 组合：旧文本 → 新数组/空 → 先清空容器的文本内容，为后续挂载数组做准备
           hostSetElementText(container, '')
         }
-        // mount new if array
+        // mount new if array 挂载新的子节点数组
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // 批量挂载子节点
           mountChildren(
             c2 as VNodeArrayChildren,
             container,
@@ -2332,7 +2514,47 @@ function baseCreateRenderer(
     }
   }
 
-  // can be all-keyed or mixed
+  // can be all-keyed or mixed 可以是全键控或混合键控
+  /**
+   * Vue3 终极核心函数 - 带key的VNode数组子节点【最优Diff算法】，双端对比+最长递增子序列的完整实现
+   * 核心职责：对比带key的新旧子节点数组(c1旧/c2新)，完成「新增、删除、修改、移动」四大操作，极致最小化DOM操作
+   * 核心原则：能复用则复用、能更新则更新、能移动则移动、能卸载则卸载、最后才挂载 → 无任何冗余DOM操作
+   * 核心算法：分5个阶段执行，从简单到复杂，层层兜底，覆盖所有数组操作场景：正序/倒序/乱序/增删/替换
+   *   - ✅ 阶段 1：从头同步匹配，如果是同类型节点则patch更新，否则终止匹配
+   *   - ✅ 阶段 2：从尾同步匹配，如果是同类型则patch更新，否则终止匹配
+   *   - 此时剩下三种情况：
+   *      -- ✅ 阶段 3：旧完新剩 → 批量挂载新增节点
+   *      -- ✅ 阶段 4：新完旧剩 → 批量卸载多余节点
+   *      -- ✅ 阶段 5：新旧都剩 → 乱序序列的核心处理
+   *          --- ✔️ 5.1 构建 keyToNewIndexMap：key→新索引的映射表，让后续的节点匹配通过 key 快速查找(O(1))
+   *          --- ✔️ 5.2 遍历旧数组，完成「匹配更新 + 标记删除 + 记录位置」
+   *                  ---- 遍历旧数组剩余节点，通过 key或者暴力查找可复用的 快速查找新数组中的对应节点，完成 3 件事：
+   *                        ----- 无匹配 → 卸载旧节点；
+   *                        ----- 有匹配 → patch更新节点，复用 DOM；
+   *                        ----- 记录「新索引→旧索引」的映射关系到 newIndexToOldIndexMap
+   *                  ---- 通过maxNewIndexSoFar判断节点是否需要移动 → 节点乱序的核心判断依据
+   *                        ----- 如果当前新索引 > 之前的最大索引 → 节点顺序正常，无需移动；
+   *                        ----- 如果当前新索引 < 之前的最大索引 → 节点顺序被打乱，标记moved=true，需要后续移动；
+   *           --- ✔️ 5.3 最长递增子序列 + 反向遍历移动 / 挂载节点
+   *                   ---- 生成最长递增子序列：基于newIndexToOldIndexMap生成，该序列的含义是 「无需移动的稳定节点索引」 → 这些节点的相对顺序在新旧数组中一致，不需要移动，能最大程度减少 DOM 操作；
+   *                   ---- 反向遍历新数组：反向遍历能复用已更新节点的 DOM 作为锚点，保证节点插入的位置绝对正确
+   *                   ---- 节点处理逻辑
+   *                          ----- 映射表值为 0 → 新增节点，执行挂载；
+   *                          ----- 节点不在稳定序列中 → 调用move移动节点，无 DOM 重建；
+   *                          ----- 节点在稳定序列中 → 无需移动，游标前移即可；
+   *
+   *
+   * @param {VNode[]} c1 旧的子节点VNode数组（必带key，或部分带key）
+   * @param {VNodeArrayChildren} c2 新的子节点VNode数组（必带key，或部分带key）
+   * @param {RendererElement} container 真实DOM容器，子节点挂载的父容器
+   * @param {RendererNode | null} parentAnchor 父级锚点，兜底的DOM插入参考位置
+   * @param {ComponentInternalInstance | null} parentComponent 父组件实例，钩子/指令/依赖收集
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense边界，异步组件副作用调度
+   * @param {ElementNamespace} namespace 命名空间(html/svg/mathml)，保证标签/属性解析正确
+   * @param {string[] | null} slotScopeIds 插槽作用域ID，scoped样式隔离
+   * @param {boolean} optimized 是否为编译优化后的VNode，true则走编译优化逻辑
+   * @returns {void} 无返回值，所有操作均为真实DOM的增/删/改/移副作用
+   */
   const patchKeyedChildren = (
     c1: VNode[],
     c2: VNodeArrayChildren,
@@ -2344,20 +2566,31 @@ function baseCreateRenderer(
     slotScopeIds: string[] | null,
     optimized: boolean,
   ) => {
-    let i = 0
-    const l2 = c2.length
-    let e1 = c1.length - 1 // prev ending index
-    let e2 = l2 - 1 // next ending index
+    // ========== 初始化核心变量 ==========
+    let i = 0 // 数组「起始游标」，从头部开始遍历，双端对比的核心游标
+    const l2 = c2.length // 新数组的总长度
+    // 旧数组的「尾部游标」，初始指向最后一个元素
+    let e1 = c1.length - 1 // prev ending index 之前结束索引
+    // 新数组的「尾部游标」，初始指向最后一个元素
+    let e2 = l2 - 1 // next ending index 下一个结束索引
 
-    // 1. sync from start
+    // ========== 阶段1: 从头开始同步匹配 (sync from start) ✅最简单场景，正序相同节点 ==========
+    // 1. sync from start 从头开始同步
     // (a b) c
     // (a b) d e
+
+    // 匹配规则：从数组头部(i=0)开始，依次对比c1[i]和c2[i]，直到节点不匹配为止
+    // 适用场景：数组开头的节点无变化，例如：(a b) c  →  (a b) d e
     while (i <= e1 && i <= e2) {
-      const n1 = c1[i]
+      const n1 = c1[i] // 旧数组当前游标节点
+      // 标准化/克隆新数组节点，统一格式，避免复用副作用
       const n2 = (c2[i] = optimized
         ? cloneIfMounted(c2[i] as VNode)
         : normalizeVNode(c2[i]))
+
+      // 是可复用的同类型节点 → 调用patch更新节点（属性/子节点），复用真实DOM
       if (isSameVNodeType(n1, n2)) {
+        // 无需描点, 应该肯定可以复用, 直接操作之前的 DOM
         patch(
           n1,
           n2,
@@ -2370,20 +2603,28 @@ function baseCreateRenderer(
           optimized,
         )
       } else {
-        break
+        break // 节点不匹配，终止头部匹配，进入后续阶段
       }
-      i++
+      i++ // 游标后移，继续匹配下一个节点
     }
 
-    // 2. sync from end
+    // ========== 阶段2: 从尾开始同步匹配 (sync from end) ✅次简单场景，倒序相同节点 ==========
+    // 2. sync from end 从末尾同步
     // a (b c)
     // d e (b c)
+
+    // 匹配规则：从数组尾部(e1/e2)开始，依次对比c1[e1]和c2[e2]，直到节点不匹配为止
+    // 适用场景：数组结尾的节点无变化，例如：a (b c)  →  d e (b c)
     while (i <= e1 && i <= e2) {
-      const n1 = c1[e1]
+      const n1 = c1[e1] // 旧数组尾部当前节点
+      // 标准化/克隆新数组节点
       const n2 = (c2[e2] = optimized
         ? cloneIfMounted(c2[e2] as VNode)
         : normalizeVNode(c2[e2]))
+
+      // 是可复用的同类型节点 → patch更新，复用真实DOM
       if (isSameVNodeType(n1, n2)) {
+        // 无需描点, 应该肯定可以复用, 直接操作之前的 DOM
         patch(
           n1,
           n2,
@@ -2396,24 +2637,39 @@ function baseCreateRenderer(
           optimized,
         )
       } else {
-        break
+        break // 节点不匹配，终止尾部匹配，进入后续阶段
       }
-      e1--
-      e2--
+      e1-- // 旧数组尾部游标前移
+      e2-- // 新数组尾部游标前移
     }
 
-    // 3. common sequence + mount
+    // ========== 阶段3: 旧数组遍历完毕，新数组还有剩余 → 批量挂载新增节点 ✅新增场景 ==========
+    // 3. common sequence + mount 通用序列+挂载
     // (a b)
     // (a b) c
     // i = 2, e1 = 1, e2 = 2
     // (a b)
     // c (a b)
     // i = 0, e1 = -1, e2 = 0
+
+    // 触发条件：i > e1 → 旧数组的所有节点都完成了匹配，新数组还有未匹配的节点
+    // 适用场景1：旧: [a,b]  → 新: [a,b,c]  (i=2, e1=1, e2=2)
+    // 适用场景2：旧: []     → 新: [a,b,c]  (i=0, e1=-1, e2=2)
+    // 适用场景3：旧: [a,b]  → 新: [c,a,b]  (i=0, e1=-1, e2=0)
     if (i > e1) {
       if (i <= e2) {
+        // 计算新增节点的「插入锚点」：新数组剩余节点的下一个节点的el，无则用父级锚点
         const nextPos = e2 + 1
         const anchor = nextPos < l2 ? (c2[nextPos] as VNode).el : parentAnchor
+
+        // 遍历新数组剩余节点，批量执行「挂载」操作（patch(null, n2)）
         while (i <= e2) {
+          /**
+           * 可能需要描点(描点是当前要插入位置的下一个节点)
+           *  - 如果尾部匹配到了的话, 那么就是尾部匹配的元素
+           *  - 没有的话, 就直接不需要描点, 插入到最后一个
+           *  - parentAnchor 应该是其他作用, 暂不关心
+           */
           patch(
             null,
             (c2[i] = optimized
@@ -2432,75 +2688,108 @@ function baseCreateRenderer(
       }
     }
 
-    // 4. common sequence + unmount
+    // ========== 阶段4: 新数组遍历完毕，旧数组还有剩余 → 批量卸载多余节点 ✅删除场景 ==========
+    // 4. common sequence + unmount 通用序列+卸载
     // (a b) c
     // (a b)
     // i = 2, e1 = 2, e2 = 1
     // a (b c)
     // (b c)
     // i = 0, e1 = 0, e2 = -1
+
+    // 触发条件：i > e2 → 新数组的所有节点都完成了匹配，旧数组还有未匹配的节点
+    // 适用场景1：旧: [a,b,c]  → 新: [a,b]  (i=2, e1=2, e2=1)
+    // 适用场景2：旧: [a,b,c]  → 新: []     (i=0, e1=2, e2=-1)
+    // 适用场景3：旧: [a,b,c]  → 新: [b,c]  (i=0, e1=0, e2=-1)
     else if (i > e2) {
+      // 遍历旧数组剩余节点，批量执行「卸载」操作，清理DOM/事件/组件
       while (i <= e1) {
         unmount(c1[i], parentComponent, parentSuspense, true)
         i++
       }
     }
 
-    // 5. unknown sequence
+    // ========== 阶段5: 最复杂场景 → 新旧数组都有剩余节点，且为「乱序序列」 ✅核心核心核心 ==========
+    // 5. unknown sequence 未知序列
     // [i ... e1 + 1]: a b [c d e] f g
     // [i ... e2 + 1]: a b [e d c h] f g
     // i = 2, e1 = 4, e2 = 5
-    else {
-      const s1 = i // prev starting index
-      const s2 = i // next starting index
 
-      // 5.1 build key:index map for newChildren
+    // 触发条件：i <= e1 && i <= e2 → 首尾匹配后，中间部分的节点是乱序的，无法通过简单遍历匹配
+    // 适用场景：旧: [a,b,c,d,e,f]  → 新: [a,b,e,d,c,h,f]
+    // 核心处理逻辑：构建key映射表 → 匹配节点更新 → 标记移动 → 最长递增子序列计算 → 移动+挂载节点
+    else {
+      // 旧数组剩余节点的「起始游标」(start 1)
+      const s1 = i // prev starting index 上一个开始索引
+      // 新数组剩余节点的「起始游标」(start 2)
+      const s2 = i // next starting index 下一个开始索引
+
+      // ========== 5.1 构建「新数组key:索引」的映射表 keyToNewIndexMap ==========
+      // 5.1 build key:index map for newChildren 构建 key:newChildren 的索引图
+
+      // 核心目的：通过节点的key，能在O(1)时间内找到新数组中对应的节点索引，避免暴力遍历，性能从O(n²)→O(n)
       const keyToNewIndexMap: Map<PropertyKey, number> = new Map()
+      // 构建新的子节点的 Map, 必须需要存在 Key
       for (i = s2; i <= e2; i++) {
         const nextChild = (c2[i] = optimized
           ? cloneIfMounted(c2[i] as VNode)
           : normalizeVNode(c2[i]))
         if (nextChild.key != null) {
+          // 开发环境：检测重复key，抛出警告 → key必须唯一的原因
           if (__DEV__ && keyToNewIndexMap.has(nextChild.key)) {
             warn(
-              `Duplicate keys found during update:`,
+              `Duplicate keys found during update:`, // 更新期间发现重复密钥
               JSON.stringify(nextChild.key),
-              `Make sure keys are unique.`,
+              `Make sure keys are unique.`, // 确保密钥是唯一的
             )
           }
+
+          // 存入映射表：key → 新数组索引
           keyToNewIndexMap.set(nextChild.key, i)
         }
       }
 
-      // 5.2 loop through old children left to be patched and try to patch
-      // matching nodes & remove nodes that are no longer present
-      let j
-      let patched = 0
-      const toBePatched = e2 - s2 + 1
-      let moved = false
-      // used to track whether any node has moved
-      let maxNewIndexSoFar = 0
-      // works as Map<newIndex, oldIndex>
-      // Note that oldIndex is offset by +1
-      // and oldIndex = 0 is a special value indicating the new node has
-      // no corresponding old node.
-      // used for determining longest stable subsequence
+      // ========== 5.2 遍历旧数组剩余节点，完成「匹配更新+标记删除+记录节点位置」 ==========
+      // 5.2 loop through old children left to be patched and try to patch 循环遍历剩下要修补的老孩子并尝试修补
+      // matching nodes & remove nodes that are no longer present 匹配节点并删除不再存在的节点
+      let j // 临时游标，用于无key节点的暴力匹配
+      let patched = 0 // 已完成patch更新的节点数量
+      const toBePatched = e2 - s2 + 1 // 新数组剩余节点的总数量（需要被patch的节点数）
+      let moved = false // 标记：是否存在节点需要「移动」，初始为false
+      // used to track whether any node has moved 用于跟踪任何节点是否移动
+      let maxNewIndexSoFar = 0 // 记录遍历过程中，遇到的最大新数组索引值 → 核心判断节点是否需要移动
+      // works as Map<newIndex, oldIndex> 作为 Map<newIndex, oldIndex> 类型工作
+      // Note that oldIndex is offset by +1 注意，oldIndex 被偏移了 +1
+      // and oldIndex = 0 is a special value indicating the new node has 而oldIndex = 0是一个特殊值，表示新节点具有
+      // no corresponding old node. 没有对应的旧节点。
+      // used for determining longest stable subsequence 用于确定最长稳定子序列
+
+      // 构建 新索引→旧索引 的映射表 newIndexToOldIndexMap，长度=toBePatched
+      // 核心规则：1. 初始值全为0，表示「无对应旧节点，需要挂载」
+      //          2. 赋值为 i+1（旧索引+1），因为旧索引可能为0，用+1避免和初始值混淆
+      //          3. 该数组是生成「最长递增子序列」的核心依据
       const newIndexToOldIndexMap = new Array(toBePatched)
       for (i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
 
+      // 遍历旧数组的剩余节点，逐个匹配+更新
       for (i = s1; i <= e1; i++) {
-        const prevChild = c1[i]
+        const prevChild = c1[i] // 旧数组当前节点
+        // 已匹配的节点数 ≥ 需要匹配的节点数 → 剩余旧节点无匹配，直接卸载
         if (patched >= toBePatched) {
-          // all new children have been patched so this can only be a removal
+          // all new children have been patched so this can only be a removal 所有新的子项都已修补，因此这只能是删除
           unmount(prevChild, parentComponent, parentSuspense, true)
           continue
         }
-        let newIndex
+        let newIndex // 新数组中匹配到的节点索引
+        // 情况1：旧节点有key → 通过映射表快速查找新数组中的对应索引（O(1)）
         if (prevChild.key != null) {
           newIndex = keyToNewIndexMap.get(prevChild.key)
         } else {
-          // key-less node, try to locate a key-less node of the same type
+          // key-less node, try to locate a key-less node of the same type 无键节点，尝试定位相同类型的无键节点
+
+          // 情况2：旧节点无key → 兜底暴力匹配，找同类型且未被匹配的节点（性能差，不推荐）
           for (j = s2; j <= e2; j++) {
+            // 在这里不会匹配到新数组中存在 key 的节点, 因为 isSameVNodeType 方法保证 key 需要一致
             if (
               newIndexToOldIndexMap[j - s2] === 0 &&
               isSameVNodeType(prevChild, c2[j] as VNode)
@@ -2510,15 +2799,26 @@ function baseCreateRenderer(
             }
           }
         }
+
+        // 无匹配到新节点 → 该旧节点被删除，执行卸载
         if (newIndex === undefined) {
           unmount(prevChild, parentComponent, parentSuspense, true)
-        } else {
+        }
+        // 有匹配到新节点
+        else {
+          // 有匹配到新节点 → 新索引 → 旧索引+1
           newIndexToOldIndexMap[newIndex - s2] = i + 1
+
+          // 核心判断：是否需要移动节点
+          // 如果 当前新索引 < 之前的最大新索引 → 节点顺序被打乱，需要移动 → 标记moved=true
+          // 如果 当前新索引 > 之前的最大新索引 → 更新最大索引，节点顺序正常，无需移动
           if (newIndex >= maxNewIndexSoFar) {
             maxNewIndexSoFar = newIndex
           } else {
             moved = true
           }
+
+          // 匹配成功 → 调用patch更新节点（属性/子节点），复用真实DOM
           patch(
             prevChild,
             c2[newIndex] as VNode,
@@ -2534,24 +2834,31 @@ function baseCreateRenderer(
         }
       }
 
-      // 5.3 move and mount
-      // generate longest stable subsequence only when nodes have moved
+      // ========== 5.3 核心收尾：基于「最长递增子序列」完成「节点移动+新增挂载」 ==========
+      // 5.3 move and mount 移动和安装
+      // generate longest stable subsequence only when nodes have moved 仅当节点移动时才生成最长的稳定子序列
+
+      // 生成最长递增子序列：只有节点需要移动时(moved=true)才生成，否则无需处理
+      // 该序列的含义：「无需移动的稳定节点索引」，这些节点保持原有顺序，其余节点按需移动即可
       const increasingNewIndexSequence = moved
         ? getSequence(newIndexToOldIndexMap)
         : EMPTY_ARR
-      j = increasingNewIndexSequence.length - 1
-      // looping backwards so that we can use last patched node as anchor
+      j = increasingNewIndexSequence.length - 1 // 最长递增子序列的尾部游标，反向遍历
+      // looping backwards so that we can use last patched node as anchor 向后循环，以便我们可以使用最后修补的节点作为锚点
       for (i = toBePatched - 1; i >= 0; i--) {
-        const nextIndex = s2 + i
-        const nextChild = c2[nextIndex] as VNode
-        const anchorVNode = c2[nextIndex + 1] as VNode
+        const nextIndex = s2 + i // 新数组的真实索引
+        const nextChild = c2[nextIndex] as VNode // 新数组当前节点
+        const anchorVNode = c2[nextIndex + 1] as VNode // 锚点节点：当前节点的下一个节点
+        // 计算最终的插入锚点：优先用下一个节点的el，异步组件则用占位符，兜底用父锚点
         const anchor =
           nextIndex + 1 < l2
-            ? // #13559, #14173 fallback to el placeholder for unresolved async component
+            ? // #13559, #14173 fallback to el placeholder for unresolved async component 对于未解析的异步组件，回退到 el 占位符
               anchorVNode.el || resolveAsyncComponentPlaceholder(anchorVNode)
             : parentAnchor
+
+        // 情况1：映射表值为0 → 无对应旧节点，是新增节点 → 执行挂载操作
         if (newIndexToOldIndexMap[i] === 0) {
-          // mount new
+          // mount new 安装新的
           patch(
             null,
             nextChild,
@@ -2564,9 +2871,10 @@ function baseCreateRenderer(
             optimized,
           )
         } else if (moved) {
-          // move if:
-          // There is no stable subsequence (e.g. a reverse)
-          // OR current node is not among the stable sequence
+          // move if: 如果移动
+          // There is no stable subsequence (e.g. a reverse) 没有稳定的子序列（例如反向）
+          // OR current node is not among the stable sequence 或者当前节点不在稳定序列之中
+          // 移动条件：1. 无稳定序列  2. 当前节点不在稳定序列中
           if (j < 0 || i !== increasingNewIndexSequence[j]) {
             move(nextChild, container, anchor, MoveType.REORDER)
           } else {
@@ -2994,18 +3302,36 @@ function baseCreateRenderer(
   }
 }
 
+/**
+ * Vue3 内部核心纯工具函数 - 解析当前VNode的「子节点应该使用的命名空间」
+ * 核心职责：根据父元素的当前命名空间 + 当前VNode的标签类型+属性，判断子节点的命名空间继承规则
+ * 核心逻辑：判断是否是「能嵌套HTML的特殊标签」，若是则返回undefined(等价HTML命名空间)，否则继承父级命名空间
+ *
+ * @param {VNode} { type, props } - 解构传入的当前VNode节点，仅用到两个属性：
+ *                                  type：当前节点的标签类型（如 'foreignObject' / 'annotation-xml' / 'div' / 'svg'）
+ *                                  props：当前节点的属性对象（可能为null/undefined）
+ * @param {ElementNamespace} currentNamespace - 当前父元素的命名空间（父级传递下来的，如svg/mathml/html）
+ * @returns {ElementNamespace} - 返回子节点应该使用的最终命名空间：要么是undefined(HTML)，要么继承父级的命名空间
+ */
 function resolveChildrenNamespace(
   { type, props }: VNode,
   currentNamespace: ElementNamespace,
 ): ElementNamespace {
-  return (currentNamespace === 'svg' && type === 'foreignObject') ||
-    (currentNamespace === 'mathml' &&
-      type === 'annotation-xml' &&
-      props &&
-      props.encoding &&
-      props.encoding.includes('html'))
-    ? undefined
-    : currentNamespace
+  // 核心判断逻辑：满足以下两个特殊场景之一 → 返回undefined(子节点用HTML命名空间)，否则返回父级命名空间
+  return (
+    // 场景1：父级是SVG命名空间 + 当前标签是foreignObject → SVG的官方特殊标签，内部支持嵌套HTML
+    (currentNamespace === 'svg' && type === 'foreignObject') ||
+      // 场景2：父级是MathML命名空间 + 当前标签是annotation-xml + 存在encoding属性 + encoding属性包含'html' → MathML的HTML嵌套场景
+      (currentNamespace === 'mathml' &&
+        type === 'annotation-xml' &&
+        props &&
+        props.encoding &&
+        props.encoding.includes('html'))
+      ? // 满足任一特殊场景 → 返回undefined，Vue内部会将undefined解析为「html命名空间」
+        undefined
+      : // 不满足特殊场景 → 子节点继承父级的命名空间（默认规则）
+        currentNamespace
+  )
 }
 
 function toggleRecurse(

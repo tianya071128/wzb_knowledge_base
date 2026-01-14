@@ -1,23 +1,20 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import HelloWorld from './components/HelloWorld.vue';
 
 const handleClick = () => {
   console.log('click');
 };
+
+const msg = ref('Hello World');
 </script>
 
 <template>
-  <div @click="handleClick">
-    <a href="https://vite.dev" target="_blank">
-      <img ^src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div>
+    <HelloWorld :msg="msg">
+      <div>插槽</div>
+    </HelloWorld>
   </div>
-  <HelloWorld msg="Vite + Vue">
-    <div>插槽</div>
-  </HelloWorld>
 </template>
 
 <style scoped>

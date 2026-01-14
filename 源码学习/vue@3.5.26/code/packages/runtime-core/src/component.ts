@@ -604,107 +604,155 @@ const emptyAppContext = createAppContext()
 
 let uid = 0
 
+/**
+ * Vue3 底层核心函数 - 组件内部实例【唯一工厂创建函数】，组件实例的「毛坯诞生地」
+ * 核心职责：纯函数无副作用，创建并初始化组件核心内部实例 ComponentInternalInstance，为实例的所有属性赋默认初始值，返回结构完整的实例毛坯
+ * 核心边界：只创建实例+初始化字段，不执行任何业务逻辑（无setup执行、无props解析、无渲染操作），后续由setupComponent完成组件初始化
+ * 核心特性：纯工厂模式、继承父组件上下文、原型链实现依赖注入、开发/生产环境差异化优化、字段无遗漏、兼容所有组件类型、无副作用
+ *
+ *  - 1. 创建并初始化「组件内部实例」的所有字段
+ *  - 2. 初始化一些字段
+ *
+ * @param {VNode} vnode 当前组件的根VNode节点，获取组件类型/应用上下文等核心信息
+ * @param {ComponentInternalInstance | null} parent 父组件的内部实例，用于继承上下文、依赖注入、确定组件层级关系
+ * @param {SuspenseBoundary | null} suspense 父级Suspense异步边界，用于标记组件的异步归属，处理异步组件逻辑
+ * @returns {ComponentInternalInstance} 返回初始化完成的组件内部实例「毛坯」，后续交给setupComponent做精细化初始化
+ */
 export function createComponentInstance(
   vnode: VNode,
   parent: ComponentInternalInstance | null,
   suspense: SuspenseBoundary | null,
 ): ComponentInternalInstance {
+  // 1. 获取组件的「真实定义类型」，vnode.type在组件VNode中就是我们编写的组件本身(对象/单文件组件)
   const type = vnode.type as ConcreteComponent
-  // inherit parent app context - or - if root, adopt from root vnode
+
+  // 2. 继承/获取 应用上下文appContext - 核心继承规则
+  // inherit parent app context - or - if root, adopt from root vnode 继承父应用上下文 - 或者 - 如果是根应用，则从根应用节点（vnode）继承
+  // 优先级：有父组件 → 继承父组件的appContext > 无父组件 → 使用当前VNode的appContext > 兜底使用空上下文
+  // 作用：实现全局配置(全局组件/指令/provide)在组件树中全局共享
   const appContext =
     (parent ? parent.appContext : vnode.appContext) || emptyAppContext
 
+  // 3. 核心：创建并初始化 组件内部实例的所有属性，赋默认初始值 ✅
   const instance: ComponentInternalInstance = {
-    uid: uid++,
-    vnode,
-    type,
-    parent,
-    appContext,
-    root: null!, // to be immediately set
-    next: null,
-    subTree: null!, // will be set synchronously right after creation
-    effect: null!,
-    update: null!, // will be set synchronously right after creation
-    job: null!,
-    scope: new EffectScope(true /* detached */),
-    render: null,
-    proxy: null,
-    exposed: null,
-    exposeProxy: null,
-    withProxy: null,
+    // ===== 基础标识 & 核心关联 - 组件的基础身份信息 =====
+    uid: uid++, // 全局自增唯一ID，每个组件实例一个唯一标识，永不重复
+    vnode, // 当前组件对应的根VNode，实例与VNode永久绑定
+    type, // 当前组件的真实定义(setup/render/props等)
+    parent, // 父组件实例，构建组件树层级关系，用于上下文继承
+    appContext, // 应用上下文，全局配置共享
+    root: null!, // to be immediately set 立即设置 --> 组件树的根实例，【立即会被赋值】，根组件的root是自己，子组件的root是根组件
+    next: null, // 组件更新时的下一个VNode，用于异步更新队列调度
+    // 组件渲染生成的子VNode树，创建后会立即赋值，是patch渲染的核心依据
+    subTree: null!, // will be set synchronously right after creation 创建后会同步设置
+    effect: null!, // 组件的核心渲染副作用effect(setupRenderEffect创建)，数据变化触发重渲染的核心
+    // 组件的更新函数，创建后立即赋值，手动触发组件更新的入口
+    update: null!, // will be set synchronously right after creation 创建后会同步设置
+    job: null!, // 组件更新的调度任务，加入到微任务队列中执行，实现异步更新
+    scope: new EffectScope(true /* detached */), // 独立的副作用作用域，统一管理组件内所有响应式副作用，卸载时一键销毁防内存泄漏
 
-    provides: parent ? parent.provides : Object.create(appContext.provides),
-    ids: parent ? parent.ids : ['', 0, 0],
-    accessCache: null!,
-    renderCache: [],
+    // ===== 渲染相关 - 组件的渲染配置与缓存 =====
+    render: null, // 组件的渲染函数，后续由setupComponent解析赋值(setup返回的函数/组件自身的render)
+    proxy: null, // 组件的代理对象，开发环境用于this的属性访问校验/警告，生产环境为null
+    exposed: null, // 组件通过expose暴露的属性，供父组件通过ref访问
+    exposeProxy: null, // 暴露属性的代理对象，做访问控制
+    withProxy: null, // with语句的代理对象，兼容Vue2的with语法
 
-    // local resolved assets
-    components: null,
-    directives: null,
+    // ===== 依赖注入 & 缓存 - 跨组件通信与性能优化 =====
+    provides: parent ? parent.provides : Object.create(appContext.provides), // 依赖注入的核心，原型链继承：子继承父，根继承全局，实现跨层级传值
+    ids: parent ? parent.ids : ['', 0, 0], // 组件的唯一标识数组，用于v-for的key优化/缓存
+    accessCache: null!, // 属性访问缓存，优化组件内属性的访问速度
+    renderCache: [], // 渲染缓存，缓存组件内的静态节点/组件，避免重复创建VNode提升性能
 
-    // resolved props and emits options
-    propsOptions: normalizePropsOptions(type, appContext),
-    emitsOptions: normalizeEmitsOptions(type, appContext),
+    // ===== 资源配置 - 组件内解析的本地资源 =====
+    // local resolved assets 本地解析资产
+    components: null, // 组件内注册的局部组件，后续解析赋值
+    directives: null, // 组件内注册的局部指令，后续解析赋值
 
+    // ===== Props & Emits 配置 - 组件的属性与事件配置 =====
+    // resolved props and emits options 解析 props 并发出选项
+    propsOptions: normalizePropsOptions(type, appContext), // 标准化组件的props配置，解析props的类型/默认值/校验规则
+    emitsOptions: normalizeEmitsOptions(type, appContext), // 标准化组件的emits配置，解析自定义事件的校验规则
+
+    // ===== 事件派发 - 组件的emit方法相关 =====
     // emit
-    emit: null!, // to be set immediately
-    emitted: null,
+    emit: null!, // to be set immediately 立即设置 --> 组件的事件派发方法，【立即会被赋值】，绑定了当前实例上下文
+    emitted: null, // 记录组件已经派发过的事件，避免重复派发
 
-    // props default value
-    propsDefaults: EMPTY_OBJ,
+    // props default value props 默认值
+    propsDefaults: EMPTY_OBJ, // props的默认值对象，后续解析赋值
 
+    // ===== 透传属性 - inheritAttrs 配置 =====
     // inheritAttrs
-    inheritAttrs: type.inheritAttrs,
+    inheritAttrs: type.inheritAttrs, // 是否继承父组件的非props属性到根元素，默认true
 
+    // ===== 核心状态容器 - 组件的所有数据都存在这里 ✅【业务开发最常用】=====
     // state
-    ctx: EMPTY_OBJ,
-    data: EMPTY_OBJ,
-    props: EMPTY_OBJ,
-    attrs: EMPTY_OBJ,
-    slots: EMPTY_OBJ,
-    refs: EMPTY_OBJ,
-    setupState: EMPTY_OBJ,
-    setupContext: null,
+    ctx: EMPTY_OBJ, // 组件的渲染上下文，组件内部的this指向该对象，开发/生产环境差异化创建
+    data: EMPTY_OBJ, // 组件的data数据(Vue2选项式)，响应式数据容器
+    props: EMPTY_OBJ, // 组件接收的props属性，解析后赋值，响应式
+    attrs: EMPTY_OBJ, // 组件接收的非props属性，透传属性容器
+    slots: EMPTY_OBJ, // 组件接收的插槽内容，解析后赋值
+    refs: EMPTY_OBJ, // 组件内的ref引用集合，所有ref="xxx"的元素/组件都存在这里
+    setupState: EMPTY_OBJ, // setup函数的返回值对象，setup内定义的响应式数据/方法都存在这里
+    setupContext: null, // setup函数的上下文对象，包含emit/slots/attrs等
 
+    // ===== 异步组件 & Suspense 相关 - 异步加载逻辑 =====
     // suspense related
-    suspense,
-    suspenseId: suspense ? suspense.pendingId : 0,
-    asyncDep: null,
-    asyncResolved: false,
+    suspense, // 父级Suspense异步边界，标记组件是否属于异步边界
+    suspenseId: suspense ? suspense.pendingId : 0, // 异步边界的唯一ID，用于调度异步组件的加载状态
+    asyncDep: null, // 组件的异步依赖Promise，标记是否为异步组件(setup返回Promise)
+    asyncResolved: false, // 异步组件是否加载完成的状态标记
 
-    // lifecycle hooks
-    // not using enums here because it results in computed properties
-    isMounted: false,
-    isUnmounted: false,
-    isDeactivated: false,
-    bc: null,
-    c: null,
-    bm: null,
-    m: null,
-    bu: null,
-    u: null,
-    um: null,
-    bum: null,
-    da: null,
-    a: null,
-    rtg: null,
-    rtc: null,
-    ec: null,
-    sp: null,
+    // ===== 生命周期状态标记 - 组件的运行状态 =====
+    // lifecycle hooks 生命周期挂钩
+    // not using enums here because it results in computed properties 此处不使用枚举，因为它会导致计算属性
+    isMounted: false, // 是否已挂载完成
+    isUnmounted: false, // 是否已卸载
+    isDeactivated: false, // 是否已被KeepAlive失活
+
+    // ===== 生命周期钩子函数 - 所有钩子初始值为null，后续注册时赋值 ✅【简写含义全注释】=====
+    bc: null, // beforeCreate 生命周期钩子
+    c: null, // created 生命周期钩子
+    bm: null, // beforeMount 生命周期钩子
+    m: null, // mounted 生命周期钩子
+    bu: null, // beforeUpdate 生命周期钩子
+    u: null, // updated 生命周期钩子
+    um: null, // unmounted 生命周期钩子
+    bum: null, // beforeUnmount 生命周期钩子
+    da: null, // deactivated 生命周期钩子(KeepAlive)
+    a: null, // activated 生命周期钩子(KeepAlive)
+    rtg: null, // renderTracked 生命周期钩子，追踪渲染依赖
+    rtc: null, // renderTriggered 生命周期钩子，触发渲染时调用
+    ec: null, // errorCaptured 生命周期钩子，捕获子组件错误
+    sp: null, // suspense 相关钩子，处理异步加载状态
   }
+
+  // 4. 差异化创建组件的「渲染上下文ctx」- 开发环境/生产环境分离，兼顾调试与性能
   if (__DEV__) {
+    // 开发环境：创建带调试能力的上下文，包含属性访问校验、警告提示、this代理等，提升开发体验
     instance.ctx = createDevRenderContext(instance)
   } else {
+    // 生产环境：极简上下文，只保留实例的引用(_指向当前实例)，无任何调试逻辑，极致压缩体积提升性能
     instance.ctx = { _: instance }
   }
+
+  // 5. 赋值组件树的「根实例」- 核心规则
+  // 有父组件 → 继承父组件的根实例 | 无父组件(根组件) → 根实例就是自己
   instance.root = parent ? parent.root : instance
+
+  // 6. 赋值组件的「emit方法」- 绑定当前实例上下文，永久挂载到实例上
+  // 绑定后：组件内部调用emit('event')，本质就是调用emit(instance, 'event')，自动携带当前实例
   instance.emit = emit.bind(null, instance)
 
-  // apply custom element special handling
+  // 7. 兼容处理：自定义元素(Web Component)的特殊初始化逻辑
+  // vnode.ce是自定义元素的处理钩子，存在时执行，完成自定义元素的实例绑定
+  // apply custom element special handling 应用自定义元素特殊处理
   if (vnode.ce) {
     vnode.ce(instance)
   }
 
+  // 8. 返回最终的「组件内部实例毛坯」，后续交给setupComponent做精细化初始化
   return instance
 }
 
