@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 defineProps<{ msg: string }>();
 
 const count = ref(0);
+
+watch(count, () => {
+  console.log('测试');
+});
+
+defineExpose({
+  count,
+});
 </script>
 
 <template>

@@ -288,9 +288,9 @@ export function normalizeEmitsOptions(
   return normalized
 }
 
-// Check if an incoming prop key is a declared emit event listener.
-// e.g. With `emits: { click: null }`, props named `onClick` and `onclick` are
-// both considered matched listeners.
+// Check if an incoming prop key is a declared emit event listener. 检查传入的 prop 键是否为已声明的发射事件监听器
+// e.g. With `emits: { click: null }`, props named `onClick` and `onclick` are 例如，在`emits: { click: null }`的情况下，名为`onClick`和`onclick`的属性是
+// both considered matched listeners. 两者都被视为匹配的listeners
 export function isEmitListener(
   options: ObjectEmitsOptions | null,
   key: string,

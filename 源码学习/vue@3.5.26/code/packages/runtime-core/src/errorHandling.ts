@@ -67,6 +67,16 @@ export const ErrorTypeStrings: Record<ErrorTypes, string> = {
 
 export type ErrorTypes = LifecycleHooks | ErrorCodes | WatchErrorCodes
 
+/**
+ * 调用函数并处理可能发生的错误
+ * 尝试执行给定的函数，如果发生错误则调用错误处理程序
+ *
+ * @param fn - 要执行的函数
+ * @param instance - 组件内部实例，用于错误追踪，可以为空
+ * @param type - 错误类型，标识错误来源
+ * @param args - 可选参数数组，传递给函数的参数
+ * @returns 函数执行结果，如果有错误则返回 undefined 或错误处理结果
+ */
 export function callWithErrorHandling(
   fn: Function,
   instance: ComponentInternalInstance | null | undefined,
@@ -74,8 +84,10 @@ export function callWithErrorHandling(
   args?: unknown[],
 ): any {
   try {
+    // 执行函数，如果有参数则展开参数执行，否则直接调用函数
     return args ? fn(...args) : fn()
   } catch (err) {
+    // 捕获异常并进行处理
     handleError(err, instance, type)
   }
 }

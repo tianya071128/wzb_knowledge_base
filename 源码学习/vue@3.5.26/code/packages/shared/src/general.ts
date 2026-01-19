@@ -57,6 +57,13 @@ export const isSymbol = (val: unknown): val is symbol => typeof val === 'symbol'
 export const isObject = (val: unknown): val is Record<any, any> =>
   val !== null && typeof val === 'object'
 
+/**
+ * 检查给定值是否为Promise对象
+ * 判断依据是该值具有isObject或isFunction类型，并且拥有then和catch方法
+ *
+ * @param val - 待检查的值
+ * @returns 如果val是Promise则返回true，否则返回false
+ */
 export const isPromise = <T = any>(val: unknown): val is Promise<T> => {
   return (
     (isObject(val) || isFunction(val)) &&
@@ -106,8 +113,17 @@ export const isBuiltInDirective: (key: string) => boolean =
     'bind,cloak,else-if,else,for,html,if,model,on,once,pre,show,slot,text,memo',
   )
 
+/**
+ * 缓存字符串处理函数的结果，避免重复计算
+ * 对于相同的输入字符串，直接从缓存中返回之前计算的结果
+ *
+ * @param fn - 需要被缓存的字符串处理函数，接收一个字符串参数并返回处理后的字符串
+ * @returns 返回一个具有相同签名的函数，但带有缓存功能
+ */
 const cacheStringFunction = <T extends (str: string) => string>(fn: T): T => {
+  // 创建一个空对象作为缓存存储，使用Record<string, string>类型定义键值对
   const cache: Record<string, string> = Object.create(null)
+  // 返回一个新的函数，该函数首先检查缓存中是否已有结果，如果没有则调用原函数并将结果存入缓存
   return ((str: string) => {
     const hit = cache[str]
     return hit || (cache[str] = fn(str))
@@ -116,6 +132,11 @@ const cacheStringFunction = <T extends (str: string) => string>(fn: T): T => {
 
 const camelizeRE = /-\w/g
 /**
+ * 将连字符格式的字符串转换为驼峰命名格式
+ * 例如: 'foo-bar' => 'fooBar', 'foo-bar-baz' => 'fooBarBaz'
+ *
+ * @param str - 需要进行驼峰化的字符串，通常是以连字符分隔的字符串
+ * @returns 返回转换为驼峰命名格式的字符串
  * @private
  */
 export const camelize: (str: string) => string = cacheStringFunction(
