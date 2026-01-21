@@ -152,7 +152,7 @@ export class ReactiveEffect<T = any>
     // TODO cleanupEffect
 
     if (!(this.flags & EffectFlags.ACTIVE)) {
-      // stopped during cleanup
+      // stopped during cleanup 清理期间停止
       return this.fn()
     }
 
@@ -169,8 +169,8 @@ export class ReactiveEffect<T = any>
     } finally {
       if (__DEV__ && activeSub !== this) {
         warn(
-          'Active effect was not restored correctly - ' +
-            'this is likely a Vue internal bug.',
+          'Active effect was not restored correctly - ' + // 主动效果未正确恢复
+            'this is likely a Vue internal bug.', // 这可能是 Vue 内部错误
         )
       }
       cleanupDeps(this)

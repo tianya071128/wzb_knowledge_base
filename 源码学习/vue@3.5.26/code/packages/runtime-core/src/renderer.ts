@@ -1740,6 +1740,7 @@ function baseCreateRenderer(
    * 核心逻辑：三分支极简分发 → 无旧VNode=首次渲染 → 是缓存组件则激活，否则挂载；有旧VNode=组件更新
    * 处理场景：普通组件挂载、缓存组件激活、组件增量更新，覆盖Vue所有组件的渲染生命周期
    *
+   *  - 初始挂载: 调用 mountComponent 方法创建组件
    *
    * @param {VNode | null} n1 组件的旧VNode节点，null 表示【组件首次渲染/挂载】
    * @param {VNode} n2 组件的新VNode节点，必传（当前要渲染的最新组件节点）
@@ -1807,7 +1808,11 @@ function baseCreateRenderer(
    * 处理范围：所有普通Vue组件的首次挂载，兼容Vue2兼容模式、异步组件、KeepAlive组件、开发环境所有调试能力
    * 核心特性：无冗余逻辑、步骤严谨、兼容所有场景、响应式核心绑定、承上启下连接VNode与真实DOM
    *
-   *  - 1. 创建实例: createComponentInstance 方法创建实例, 初始化一些字段
+   *  - 1. 创建实例: createComponentInstance 方法创建实例, 初始化一些字段, 不做更多处理
+   *  - 2. 执行 steup 方法(同时适配处理选项式 API): setupComponent 方法大致会处理 props、slots, 最主要执行 steup 方法
+   *  - 3. 调用 setupRenderEffect 方法
+   *        - 大致为将渲染VNode包装为响应式副作用，实现「状态变更 → 自动更新 DOM」
+   *        - 生成VNode, 调用 patch 方法渲染VNode
    *
    * @param {VNode} initialVNode 组件的根VNode节点，组件的虚拟载体，挂载后会赋值真实DOM到el属性
    * @param {RendererElement} container 真实DOM容器，组件最终要挂载到的父容器
@@ -1932,37 +1937,91 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 内部核心函数 - 组件VNode更新的【核心处理入口】
+   * 核心使命：处理组件类型VNode的更新逻辑，判断组件是否需要真正更新，
+   *          区分「异步SUSPENSE未解析」「正常更新」「无需更新」三种场景，执行对应逻辑
+   * 核心关联：在patch过程中，当新旧VNode均为组件类型时被调用，是组件更新的核心分发器
+   *
+   *
+   * @param {VNode} n1 旧的组件VNode（prevVNode）
+   * @param {VNode} n2 新的组件VNode（nextVNode）
+   * @param {boolean} optimized 是否开启优化更新（由编译阶段标记，如静态提升/补丁标记）
+   */
   const updateComponent = (n1: VNode, n2: VNode, optimized: boolean) => {
+    // ========== 核心：复用组件实例 ==========
+    // 组件更新时，新旧VNode指向同一个组件实例（避免重复创建实例），将n2的component指向n1的实例
     const instance = (n2.component = n1.component)!
+
+    // ========== 第一步：判断组件是否需要更新 ==========
+    // shouldUpdateComponent：核心判断逻辑，对比新旧VNode的props/slots/shapeFlag等，返回是否需要更新组件
     if (shouldUpdateComponent(n1, n2, optimized)) {
       if (
-        __FEATURE_SUSPENSE__ &&
-        instance.asyncDep &&
-        !instance.asyncResolved
+        __FEATURE_SUSPENSE__ && // 开启SUSPENSE特性
+        instance.asyncDep && // 组件有异步依赖（如Suspense包裹的异步组件）
+        !instance.asyncResolved // 异步依赖尚未解析完成
       ) {
-        // async & still pending - just update props and slots
-        // since the component's reactive effect for render isn't set-up yet
+        // async & still pending - just update props and slots 异步且仍待处理 - 只需更新 props 和 slot
+        // since the component's reactive effect for render isn't set-up yet 因为组件的渲染反应效果尚未设置
+        // 场景说明：异步组件仍处于pending状态（渲染未完成），此时无需触发完整的render更新，
+        // 仅需更新props和slots（因为组件的渲染响应式effect还未建立，触发update也无效）
+
         if (__DEV__) {
-          pushWarningContext(n2)
+          pushWarningContext(n2) // 开发环境：推入警告上下文（关联当前VNode，方便警告定位）
         }
+        // 预渲染阶段更新：仅更新组件的props/slots/attrs等状态，不触发render更新
         updateComponentPreRender(instance, n2, optimized)
         if (__DEV__) {
           popWarningContext()
         }
         return
       } else {
+        // 标记组件实例的下一个VNode为新VNode（n2），供update effect使用
         // normal update
         instance.next = n2
-        // instance.update is the reactive effect.
+        // instance.update is the reactive effect. instance.update 是反应效果
+        // ✅ 核心：执行组件的更新effect（instance.update是响应式effect函数）
+        // instance.update由setupRenderEffect创建，执行后会触发renderComponentRoot生成新VNode，再执行patch更新DOM
         instance.update()
       }
-    } else {
-      // no update needed. just copy over properties
+    }
+    // ========== 分支2：无需更新组件 ==========
+    else {
+      // no update needed. just copy over properties 无需更新。只需复制属性
+      // 无需更新时，直接复用旧VNode的el（真实DOM节点），保证新VNode和真实DOM的关联正确
       n2.el = n1.el
+      // 更新组件实例的vnode属性为新VNode（保持实例和最新VNode的关联）
       instance.vnode = n2
     }
   }
 
+  /**
+   * Vue3 核心内部函数 - 组件渲染副作用的【唯一创建入口】，也是组件挂载/更新逻辑的「终极执行器」
+   * 核心使命：创建响应式副作用（ReactiveEffect）包裹组件的挂载/更新逻辑，让组件状态变更时自动触发DOM渲染/更新；
+   *          首次执行触发组件「挂载」，后续响应式状态变更触发「更新」，是连接组件状态与DOM的核心桥梁
+   * 核心特性：① 区分挂载（mount）/更新（update）两个阶段，执行对应生命周期钩子；② 兼容SSR水合（hydration）；③ 支持Suspense/KeepAlive/Teleport；
+   *          ④ 开发环境性能打点、调试工具集成；⑤ 完美处理组件递归更新、HOC高阶组件；⑥ 统一的错误/兼容处理
+   *
+   *  - 定义 componentUpdateFn（组件挂载 / 更新的实际执行体）
+   *      -- 首次挂载
+   *          --- 生成 VNode: 调用组件的 render 方法生成 VNode
+   *          --- 挂载：调用 patch 方法渲染VNode
+   *      -- 状态更新: 渲染函数(render)依赖的响应式数据发生变更, 就会重新触发 componentUpdateFn 方法启动更新
+   *          --- 获取最新的 VNode: 调用组件的 render 方法生成 VNode
+   *          --- 更新：调用 patch 方法比对新旧 VNode
+   *  - 创建响应式副作用：将 componentUpdateFn 包装为响应式副作用，实现「状态变更 → 自动更新 DOM」
+   *  - 首次执行 update() --> 最终执行 componentUpdateFn 方法
+   *
+   *
+   * @param {ComponentInternalInstance} instance 组件内部实例，所有操作基于该实例
+   * @param {VNode} initialVNode 组件初始VNode，首次挂载时使用
+   * @param {Container} container 组件挂载的目标容器（DOM元素/ShadowRoot等）
+   * @param {Anchor} anchor 挂载的锚点元素，用于指定插入位置（比如兄弟节点前）
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense边界，用于异步组件管理
+   * @param {ElementNamespace} namespace 元素命名空间（如svg/html/svg），处理不同命名空间的DOM操作
+   * @param {boolean} optimized 是否启用优化模式（编译期优化）
+   * @returns {void} 无返回值，所有副作用直接绑定到组件实例
+   */
   const setupRenderEffect: SetupRenderEffectFn = (
     instance,
     initialVNode,
@@ -1972,33 +2031,48 @@ function baseCreateRenderer(
     namespace: ElementNamespace,
     optimized,
   ) => {
+    // ========== 核心内部函数：组件挂载/更新的「实际执行逻辑」 ==========
+    // componentUpdateFn 是副作用的核心执行体，分为「首次挂载」和「状态更新」两个分支
     const componentUpdateFn = () => {
+      // ========== 分支1：首次挂载阶段（!instance.isMounted） ==========
       if (!instance.isMounted) {
-        let vnodeHook: VNodeHook | null | undefined
-        const { el, props } = initialVNode
-        const { bm, m, parent, root, type } = instance
-        const isAsyncWrapperVNode = isAsyncWrapper(initialVNode)
+        let vnodeHook: VNodeHook | null | undefined // 存储VNode钩子函数（如onVnodeBeforeMount）
+        const { el, props } = initialVNode // 从初始VNode获取宿主元素、props
+        const { bm, m, parent, root, type } = instance // 解构实例的生命周期钩子/关联实例
+        const isAsyncWrapperVNode = isAsyncWrapper(initialVNode) // 判断是否为异步包装VNode
 
+        // 暂停组件递归更新：执行beforeMount钩子时禁止递归触发组件更新，避免逻辑混乱
         toggleRecurse(instance, false)
-        // beforeMount hook
+
+        // 1. 执行组件的 beforeMount 生命周期钩子（选项式API：beforeMount，组合式API：onBeforeMount）
+        // beforeCreate 和 created 钩子会在 ./componentOptions.ts 文件中的 applyOptions 方法中执行
+        // beforeMount hook before挂载钩子
         if (bm) {
           invokeArrayFns(bm)
         }
-        // onVnodeBeforeMount
+
+        // 2. 执行 VNode 钩子：onVnodeBeforeMount（组件VNode的挂载前钩子）
+        // onVnodeBeforeMount 挂载前的 onVnode
         if (
           !isAsyncWrapperVNode &&
           (vnodeHook = props && props.onVnodeBeforeMount)
         ) {
           invokeVNodeHook(vnodeHook, parent, initialVNode)
         }
+
+        // 3. 兼容Vue2：触发 hook:beforeMount 事件（__COMPAT__ 模式下）
         if (
           __COMPAT__ &&
           isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
         ) {
           instance.emit('hook:beforeMount')
         }
+
+        // 恢复组件递归更新
         toggleRecurse(instance, true)
 
+        // ========== 挂载核心逻辑：分「SSR水合」和「普通挂载」 ==========
+        // 场景1：SSR客户端激活（Hydration）- 复用服务端渲染的DOM，只做状态激活
         if (el && hydrateNode) {
           // vnode has adopted host node - perform hydration instead of mount.
           const hydrateSubTree = () => {
@@ -2036,8 +2110,11 @@ function baseCreateRenderer(
           } else {
             hydrateSubTree()
           }
-        } else {
-          // custom element style injection
+        }
+        // 场景2：普通客户端挂载（非SSR）
+        else {
+          // custom element style injection 自定义元素样式注入
+          // 自定义元素（Custom Element）样式注入：ShadowRoot场景下的样式处理
           if (
             root.ce &&
             // @ts-expect-error _def is private
@@ -2046,34 +2123,45 @@ function baseCreateRenderer(
             root.ce._injectChildStyle(type)
           }
 
+          // 开发环境：记录render耗时
           if (__DEV__) {
             startMeasure(instance, `render`)
           }
+          // ✅ 核心：生成组件根VNode（subTree）→ 执行renderComponentRoot（调用组件render函数）
           const subTree = (instance.subTree = renderComponentRoot(instance))
+          // 开发环境：结束render耗时
           if (__DEV__) {
             endMeasure(instance, `render`)
           }
+
+          // 开发环境：记录patch耗时
           if (__DEV__) {
             startMeasure(instance, `patch`)
           }
+          // ✅ 核心：执行patch，将VNode挂载到真实DOM容器 → 首次DOM渲染的核心
           patch(
-            null,
-            subTree,
-            container,
-            anchor,
-            instance,
-            parentSuspense,
-            namespace,
+            null, // 旧VNode为null（首次挂载）
+            subTree, // 新VNode（组件根VNode）
+            container, // 挂载容器
+            anchor, // 锚点元素
+            instance, // 当前组件实例
+            parentSuspense, // 父级Suspense
+            namespace, // 元素命名空间
           )
           if (__DEV__) {
             endMeasure(instance, `patch`)
           }
+          // 关联初始VNode的el到真实DOM元素（subTree.el是patch后生成的真实DOM）
           initialVNode.el = subTree.el
         }
+
+        // 4. 执行 mounted 生命周期钩子（异步队列执行，确保DOM已挂载完成）
         // mounted hook
         if (m) {
           queuePostRenderEffect(m, parentSuspense)
         }
+
+        // 5. 执行 VNode 钩子：onVnodeMounted（异步队列执行）
         // onVnodeMounted
         if (
           !isAsyncWrapperVNode &&
@@ -2085,6 +2173,8 @@ function baseCreateRenderer(
             parentSuspense,
           )
         }
+
+        // 6. 兼容Vue2：触发 hook:mounted 事件（异步队列执行）
         if (
           __COMPAT__ &&
           isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
@@ -2095,9 +2185,10 @@ function baseCreateRenderer(
           )
         }
 
-        // activated hook for keep-alive roots.
-        // #1742 activated hook must be accessed after first render
-        // since the hook may be injected by a child keep-alive
+        // activated hook for keep-alive roots. 激活保持活动根的钩子
+        // #1742 activated hook must be accessed after first render #1742 必须在首次渲染后访问已激活的钩子
+        // since the hook may be injected by a child keep-alive 由于钩子可能被子进程保持活动状态时注入
+        // 7. KeepAlive 专属：执行 activated 钩子（首次挂载且组件被KeepAlive包裹时）
         if (
           initialVNode.shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE ||
           (parent &&
@@ -2105,6 +2196,7 @@ function baseCreateRenderer(
             parent.vnode.shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE)
         ) {
           instance.a && queuePostRenderEffect(instance.a, parentSuspense)
+          // 兼容Vue2：触发 hook:activated 事件
           if (
             __COMPAT__ &&
             isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
@@ -2115,17 +2207,25 @@ function baseCreateRenderer(
             )
           }
         }
+
+        // 8. 标记组件已挂载完成，后续执行进入「更新阶段」
         instance.isMounted = true
 
+        // 9. 开发环境/生产调试工具：通知devtools组件已添加
         if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
           devtoolsComponentAdded(instance)
         }
 
-        // #2458: deference mount-only object parameters to prevent memleaks
+        // 10. 内存泄漏预防：解除对挂载阶段临时变量的引用
+        // #2458: deference mount-only object parameters to prevent memleaks 遵循仅挂载对象参数以防止内存泄漏
         initialVNode = container = anchor = null as any
-      } else {
+      }
+      // 分支2：状态更新阶段（instance.isMounted 为 true）
+      else {
+        // 解构实例的更新相关变量：next（待更新VNode）、bu（beforeUpdate钩子）、u（updated钩子）等
         let { next, bu, u, parent, vnode } = instance
 
+        // Suspense 兼容：处理未完成水合的异步根组件，避免更新崩溃
         if (__FEATURE_SUSPENSE__) {
           const nonHydratedAsyncRoot = locateNonHydratedAsyncRoot(instance)
           // we are trying to update some async comp before hydration
@@ -2147,17 +2247,23 @@ function baseCreateRenderer(
           }
         }
 
-        // updateComponent
-        // This is triggered by mutation of component's own state (next: null)
-        // OR parent calling processComponent (next: VNode)
+        // updateComponent 更新组件
+        // This is triggered by mutation of component's own state (next: null) 这是由组件自身状态（next：null）的突变触发的
+        // OR parent calling processComponent (next: VNode) 或者父级调用 processComponent 函数（下一个参数为 VNode）
+
+        // 更新组件的前置处理：区分「自身状态更新」和「父组件触发更新」
         let originNext = next
         let vnodeHook: VNodeHook | null | undefined
+        // 开发环境：推入警告上下文，方便定位更新相关的警告
         if (__DEV__) {
           pushWarningContext(next || instance.vnode)
         }
 
-        // Disallow component effect recursion during pre-lifecycle hooks.
+        // Disallow component effect recursion during pre-lifecycle hooks. 在前生命周期钩子期间禁止组件效应递归
+        // 暂停组件递归更新：执行beforeUpdate钩子时禁止递归触发更新
         toggleRecurse(instance, false)
+
+        // 处理待更新VNode（父组件触发更新时next有值，自身状态更新时next为null）
         if (next) {
           next.el = vnode.el
           updateComponentPreRender(instance, next, optimized)
@@ -2165,61 +2271,81 @@ function baseCreateRenderer(
           next = vnode
         }
 
+        // 1. 执行 beforeUpdate 生命周期钩子
         // beforeUpdate hook
         if (bu) {
           invokeArrayFns(bu)
         }
+
+        // 2. 执行 VNode 钩子：onVnodeBeforeUpdate
         // onVnodeBeforeUpdate
         if ((vnodeHook = next.props && next.props.onVnodeBeforeUpdate)) {
           invokeVNodeHook(vnodeHook, parent, next, vnode)
         }
+
+        // 3. 兼容Vue2：触发 hook:beforeUpdate 事件
         if (
           __COMPAT__ &&
           isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
         ) {
           instance.emit('hook:beforeUpdate')
         }
+
+        // 恢复组件递归更新
         toggleRecurse(instance, true)
 
         // render
         if (__DEV__) {
           startMeasure(instance, `render`)
         }
+
+        // 4. 生成新的组件根VNode（nextTree）→ 基于最新状态重新执行render函数
         const nextTree = renderComponentRoot(instance)
         if (__DEV__) {
           endMeasure(instance, `render`)
         }
-        const prevTree = instance.subTree
-        instance.subTree = nextTree
+        const prevTree = instance.subTree // 缓存旧的subTree（更新前的VNode）
+        instance.subTree = nextTree // 更新实例的subTree为新VNode
 
+        // 5. ✅ 核心：执行patch，对比新旧VNode，更新真实DOM
         if (__DEV__) {
           startMeasure(instance, `patch`)
         }
         patch(
-          prevTree,
-          nextTree,
-          // parent may have changed if it's in a teleport
+          prevTree, // 旧VNode
+          nextTree, // 新VNode
+          // parent may have changed if it's in a teleport 如果处于传送状态，父级可能已更改
+          // 挂载容器：Teleport场景下父节点可能变化，取旧VNode的真实父节点 --> 通过不依赖平台的方法实时获取一次
           hostParentNode(prevTree.el!)!,
-          // anchor may have changed if it's in a fragment
+          // anchor may have changed if it's in a fragment 如果锚点位于片段中，则可能已更改
+          // 锚点元素：Fragment场景下锚点可能变化，取旧VNode的下一个宿主节点
           getNextHostNode(prevTree),
-          instance,
-          parentSuspense,
-          namespace,
+          instance, // 当前组件实例
+          parentSuspense, // 父级Suspense
+          namespace, // 元素命名空间
         )
         if (__DEV__) {
           endMeasure(instance, `patch`)
         }
+
+        // 6. 关联新VNode的el到真实DOM元素
         next.el = nextTree.el
+
+        // 7. HOC（高阶组件）专属：自身触发更新时，更新父组件VNode的el（保证HOC的DOM关联正确）
         if (originNext === null) {
-          // self-triggered update. In case of HOC, update parent component
-          // vnode el. HOC is indicated by parent instance's subTree pointing
-          // to child component's vnode
+          // self-triggered update. In case of HOC, update parent component 自触发更新。若发生 HOC（高阶组件），则更新父组件
+          // vnode el. HOC is indicated by parent instance's subTree pointing vnode元素。HOC由父实例的子树指向来指示
+          // to child component's vnode 到子组件的虚拟节点（vnode）
           updateHOCHostEl(instance, nextTree.el)
         }
+
+        // 8. 执行 updated 生命周期钩子（异步队列执行，确保DOM已更新完成）
         // updated hook
         if (u) {
           queuePostRenderEffect(u, parentSuspense)
         }
+
+        // 9. 执行 VNode 钩子：onVnodeUpdated（异步队列执行）
         // onVnodeUpdated
         if ((vnodeHook = next.props && next.props.onVnodeUpdated)) {
           queuePostRenderEffect(
@@ -2227,6 +2353,8 @@ function baseCreateRenderer(
             parentSuspense,
           )
         }
+
+        // 10. 兼容Vue2：触发 hook:updated 事件（异步队列执行）
         if (
           __COMPAT__ &&
           isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
@@ -2237,31 +2365,39 @@ function baseCreateRenderer(
           )
         }
 
+        // 11. 开发环境/生产调试工具：通知devtools组件已更新
         if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
           devtoolsComponentUpdated(instance)
         }
 
+        // 12. 开发环境：弹出警告上下文，恢复默认
         if (__DEV__) {
           popWarningContext()
         }
       }
     }
 
-    // create reactive effect for rendering
-    instance.scope.on()
+    // ========== 核心：创建响应式副作用（ReactiveEffect），绑定到组件实例 ==========
+    // create reactive effect for rendering 创建渲染反应效果
+    instance.scope.on() // 激活组件副作用作用域，接管后续副作用管理
     const effect = (instance.effect = new ReactiveEffect(componentUpdateFn))
-    instance.scope.off()
+    instance.scope.off() // 关闭组件副作用作用域（仅创建时临时开启）
 
+    // 1. 定义instance.update：手动触发副作用执行的方法（强制更新组件）
     const update = (instance.update = effect.run.bind(effect))
+    // 2. 定义instance.job：调度器任务（通过队列执行，避免重复更新）
     const job: SchedulerJob = (instance.job = effect.runIfDirty.bind(effect))
-    job.i = instance
-    job.id = instance.uid
+    job.i = instance // 关联任务到组件实例（调度器用）
+    job.id = instance.uid // 任务唯一ID（去重/排序用）
+    // 3. 设置副作用调度器：状态变更时，将job推入更新队列，而非立即执行（批处理优化）
     effect.scheduler = () => queueJob(job)
 
+    // 4. 允许组件递归更新：#1801 #2043 组件渲染副作用需要支持递归更新（如更新中修改状态）
     // allowRecurse
-    // #1801, #2043 component render effects should allow recursive updates
+    // #1801, #2043 component render effects should allow recursive updates 组件渲染效果应该允许递归更新
     toggleRecurse(instance, true)
 
+    // 5. 开发环境：绑定依赖收集/触发的钩子（onTrack/onTrigger），用于调试
     if (__DEV__) {
       effect.onTrack = instance.rtc
         ? e => invokeArrayFns(instance.rtc!, e)
@@ -2271,25 +2407,54 @@ function baseCreateRenderer(
         : void 0
     }
 
+    // 6. ✅ 首次执行update：触发组件「首次挂载」→ 执行componentUpdateFn的挂载分支
     update()
   }
 
+  /**
+   * Vue3 内部核心函数 - 组件预渲染阶段的【状态同步函数】
+   * 核心使命：在组件真正执行render更新前，同步更新组件实例的核心状态（props/slots），
+   *          并处理props更新触发的预刷新watcher；仅同步状态，不触发组件的render/补丁更新，
+   *          主要用于「异步组件pending」「SUSPENSE未解析」等无需立即渲染的场景
+   * 核心关联：在updateComponent的SUSPENSE异步未解析分支中被调用，是组件“只更状态不渲染”的核心逻辑
+   *
+   *
+   * @param {ComponentInternalInstance} instance 待更新的组件内部实例
+   * @param {VNode} nextVNode 新的组件VNode（包含最新的props/slots）
+   * @param {boolean} optimized 是否开启编译优化（用于props/slots的优化更新）
+   */
   const updateComponentPreRender = (
     instance: ComponentInternalInstance,
     nextVNode: VNode,
     optimized: boolean,
   ) => {
+    // ========== 步骤1：绑定新VNode到组件实例 ==========
+    // 确保新VNode的component属性指向当前组件实例，建立VNode与实例的关联
     nextVNode.component = instance
+
+    // ========== 步骤2：保存旧props，更新实例的VNode关联 ==========
+    // 缓存实例当前的旧props（用于后续props对比更新）
     const prevProps = instance.vnode.props
+    // 将组件实例的vnode属性更新为新VNode（同步实例与最新VNode的关联）
     instance.vnode = nextVNode
+    // 清空实例的next属性（待更新VNode），避免残留的next影响后续逻辑
     instance.next = null
+
+    // ========== 步骤3：核心更新 - Props和Slots ==========
+    // 1. 更新组件实例的props：对比新旧props，同步最新props到instance.props
     updateProps(instance, nextVNode.props, prevProps, optimized)
+    // 2. 更新组件实例的slots：对比新旧slots，同步最新slots到instance.slots
     updateSlots(instance, nextVNode.children, optimized)
 
+    // ========== 步骤4：处理预刷新回调（Pre-Flush Watchers） ==========
+    // 暂停响应式依赖追踪：避免更新过程中触发不必要的依赖收集（性能优化）
     pauseTracking()
-    // props update may have triggered pre-flush watchers.
-    // flush them before the render update.
+    // props update may have triggered pre-flush watchers. props 更新可能触发了 pre-flush 观察者
+    // flush them before the render update. 在渲染更新之前刷新它们
+    // props更新可能触发预刷新阶段的watcher（如watch的flush: 'pre'），
+    // 需要在组件render更新前手动刷新这些watcher，保证状态同步
     flushPreFlushCbs(instance)
+    // 恢复响应式依赖追踪：还原正常的依赖收集逻辑
     resetTracking()
   }
 
@@ -3216,18 +3381,43 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 内部核心工具函数 - 递归获取指定VNode对应的「下一个宿主节点（真实DOM节点）」
+   * 核心使命：在patch更新阶段（尤其是列表/Fragment/Teleport场景），精准找到当前VNode对应的真实DOM节点的下一个兄弟节点，
+   *          作为patch的锚点（anchor），保证DOM插入/移动的位置准确；处理组件、Suspense、Teleport等特殊VNode类型的边界场景
+   * 核心关联：在setupRenderEffect的update分支中，调用patch时作为锚点参数传入，是DOM操作位置精准性的关键保障
+   *
+   * @type {NextFn} 函数类型：接收VNode，返回Element | Text | Comment | null（真实DOM节点/空）
+   * @param {VNode} vnode 目标VNode，需要获取其对应的下一个真实DOM节点
+   * @returns {Element | Text | Comment | null} 当前VNode对应的下一个宿主节点（真实DOM），无则返回null
+   */
   const getNextHostNode: NextFn = vnode => {
+    // ========== 分支1：处理组件类型VNode（ShapeFlags.COMPONENT） ==========
+    // 组件VNode本身无直接对应的真实DOM，需递归获取组件内部根VNode（subTree）的下一个宿主节点
     if (vnode.shapeFlag & ShapeFlags.COMPONENT) {
       return getNextHostNode(vnode.component!.subTree)
     }
+    // ========== 分支2：处理Suspense类型VNode（开启Suspense特性时） ==========
     if (__FEATURE_SUSPENSE__ && vnode.shapeFlag & ShapeFlags.SUSPENSE) {
+      // Suspense有专属的next方法，返回其内部逻辑计算的下一个宿主节点（适配异步加载场景）
       return vnode.suspense!.next()
     }
+
+    // ========== 分支3：基础逻辑：获取当前VNode对应真实DOM的下一个兄弟节点 ==========
+    // 优先取vnode.anchor（锚点节点），无则取vnode.el（当前VNode对应的真实DOM节点），
+    // 调用平台无关的hostNextSibling获取下一个兄弟节点（适配浏览器/小程序等不同平台）
     const el = hostNextSibling((vnode.anchor || vnode.el)!)
+
+    // ========== 分支4：修复Teleport场景的下一个节点查找问题（#9071, #9313） ==========
+    // 问题背景：Teleport的内容会被移动到其他DOM位置，导致nextSibling查找时被干扰，
+    // 比如Teleport内容的结束标记会出现在正常节点之间，需跳过这些标记
+    // TeleportEndKey：Vue3内部标记Teleport内容结束的特殊Symbol键
     // #9071, #9313
-    // teleported content can mess up nextSibling searches during patch so
-    // we need to skip them during nextSibling search
+    // teleported content can mess up nextSibling searches during patch so 传送的内容可能会在补丁期间扰乱 nextSibling 搜索，因此
+    // we need to skip them during nextSibling search 我们需要在 nextSibling 搜索期间跳过它们
     const teleportEnd = el && el[TeleportEndKey]
+
+    // 如果找到Teleport结束标记节点，则跳过它，继续找下一个兄弟节点；否则返回原el
     return teleportEnd ? hostNextSibling(teleportEnd) : el
   }
 

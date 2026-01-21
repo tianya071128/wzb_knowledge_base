@@ -620,7 +620,7 @@ if (__DEV__ && !__TEST__) {
 export const RuntimeCompiledPublicInstanceProxyHandlers: ProxyHandler<any> =
   /*@__PURE__*/ extend({}, PublicInstanceProxyHandlers, {
     get(target: ComponentRenderContext, key: string) {
-      // fast path for unscopables when using `with` block
+      // fast path for unscopables when using `with` block // 使用“with”块时不可作用域的快速路径
       if ((key as any) === Symbol.unscopables) {
         return
       }

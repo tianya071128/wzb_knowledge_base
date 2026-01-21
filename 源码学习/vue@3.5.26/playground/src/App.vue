@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
-
-const handleClick = () => {
-  console.log('click');
-};
+import ComponentDemo from './components/组件的渲染/ComponentDemo.vue';
 
 const msg = ref('Hello World');
 </script>
 
 <template>
   <div>
-    <HelloWorld :msg="msg">
+    <ComponentDemo :msg="msg">
       <div>插槽</div>
-    </HelloWorld>
+    </ComponentDemo>
   </div>
 </template>
 

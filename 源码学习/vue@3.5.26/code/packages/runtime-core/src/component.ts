@@ -998,6 +998,11 @@ export let isInSSRComponentSetup = false
  * 核心定位：承上启下的桥接函数，上接实例创建，下接渲染副作用创建，初始化完成后组件具备完整可渲染能力
  * 核心特性：区分有状态/无状态组件、兼容SSR服务端渲染、兼容编译优化、支持异步setup、纯初始化无副作用、无冗余逻辑
  *
+ *  - 处理 props 并挂载到 instance.props
+ *  - 处理 slots 并挂载到 instance.props
+ *  - 执行 setupStatefulComponent 方法，完成组件的setup函数执行
+ *     -- 内部会执行 setCurrentInstance 方法, 会激活组件实例的 instance.scope, 从而收集其中所创建的响应式副作用 (即计算属性和侦听器)
+ *
  * @param {ComponentInternalInstance} instance 组件内部实例（来自createComponentInstance的毛坯实例）
  * @param {boolean} isSSR 是否为服务端渲染模式，默认false，true时走SSR专属初始化逻辑
  * @param {boolean} optimized 是否启用编译优化模式，默认false，true时优化插槽初始化性能
@@ -1045,6 +1050,8 @@ export function setupComponent(
  * 核心能力：覆盖组件setup阶段的所有核心逻辑，兼容同步/异步setup，实现this代理，统一错误处理，极致性能优化
  * 核心价值：业务开发中所有setup、this、组件状态的底层支撑，所有.vue组件的核心初始化逻辑都在此落地
  *
+ *  - 主要是执行 setup 方法
+ *     -- 内部会执行 setCurrentInstance 方法, 会激活组件实例的 instance.scope, 从而收集其中所创建的响应式副作用 (即计算属性和侦听器)
  *
  * @param {ComponentInternalInstance} instance 组件内部实例，所有初始化结果挂载到该实例
  * @param {boolean} isSSR 是否为服务端渲染，SSR场景跳过浏览器端专属逻辑
@@ -1293,40 +1300,72 @@ export function registerRuntimeCompiler(_compile: any): void {
 // dev only
 export const isRuntimeOnly = (): boolean => !compile
 
+/**
+ * 完成Vue组件实例的最终初始化设置（组件挂载前的核心收尾逻辑）
+ * 核心职责：
+ *  1. 标准化模板/渲染函数（无render时编译template生成render）
+ *  2. 兼容处理Vue2.x的Options API
+ *  3. 兼容模式下的旧版render函数转换
+ *  4. 开发环境下对缺失模板/渲染函数的场景给出友好警告
+ *
+ * @param {ComponentInternalInstance} instance - 组件内部实例（Vue核心的组件实例对象）
+ * @param {boolean} isSSR - 是否为SSR（服务端渲染）环境
+ * @param {boolean} [skipOptions] - 是否跳过Options API的应用（仅兼容模式下使用）
+ * @returns {void}
+ */
 export function finishComponentSetup(
   instance: ComponentInternalInstance,
   isSSR: boolean,
   skipOptions?: boolean,
 ): void {
+  // 从组件实例中获取组件选项（类型断言为ComponentOptions便于操作）
   const Component = instance.type as ComponentOptions
 
+  // ====================== 兼容模式处理（Vue2 -> Vue3） ======================
   if (__COMPAT__) {
+    // 转换旧版（Vue2）的render函数，适配Vue3的渲染逻辑
     convertLegacyRenderFn(instance)
 
+    // 开发环境下，校验组件自定义的兼容配置是否合法
     if (__DEV__ && Component.compatConfig) {
       validateCompatConfig(Component.compatConfig)
     }
   }
 
-  // template / render function normalization
-  // could be already set when returned from setup()
+  // ====================== 模板/渲染函数标准化（核心逻辑） ======================
+  // template / render function normalization 模板/渲染函数规范化
+  // could be already set when returned from setup() 从setup()返回时可能已经设置好了
+  // 仅当实例未设置render函数时才处理（setup返回的render优先级更高）
   if (!instance.render) {
-    // only do on-the-fly compile if not in SSR - SSR on-the-fly compilation
-    // is done by server-renderer
+    // only do on-the-fly compile if not in SSR - SSR on-the-fly compilation 仅在不在 SSR 中时进行即时编译 - SSR 即时编译
+    // is done by server-renderer 由服务器渲染器完成
+
+    // 非SSR环境 + 存在编译器 + 组件未定义render函数时，才进行运行时模板编译
+    // 注：SSR的运行时编译由server-renderer单独处理，此处不参与
+    // 也就是处理 template 选项, 运行时编辑模板 --> https://cn.vuejs.org/api/options-rendering.html#template
     if (!isSSR && compile && !Component.render) {
+      // 确定要编译的模板来源（优先级：内联模板 > 组件自身template > 合并后的Options模板）
       const template =
         (__COMPAT__ &&
           instance.vnode.props &&
           instance.vnode.props['inline-template']) ||
         Component.template ||
         (__FEATURE_OPTIONS_API__ && resolveMergedOptions(instance).template)
+
+      // 存在模板时，编译生成render函数
       if (template) {
+        // 开发环境：开启编译性能打点（用于调试编译耗时）
         if (__DEV__) {
           startMeasure(instance, `compile`)
         }
+
+        // 组装最终的编译器选项（多层合并，优先级：组件级 > 应用级 > 默认）
+        // 1. 从应用上下文获取基础配置（自定义元素判断、编译器基础配置）
         const { isCustomElement, compilerOptions } = instance.appContext.config
+        // 2. 从组件选项获取自定义配置（模板分隔符、组件级编译器选项）
         const { delimiters, compilerOptions: componentCompilerOptions } =
           Component
+        // 3. 多层合并配置（后合并的配置会覆盖前序同名配置）
         const finalCompilerOptions: CompilerOptions = extend(
           extend(
             {
@@ -1352,47 +1391,59 @@ export function finishComponentSetup(
       }
     }
 
+    // 将组件的render函数（或空函数NOOP）挂载到实例上，作为内部渲染函数
+    // 注：NOOP是空函数，避免render为undefined导致渲染报错
     instance.render = (Component.render || NOOP) as InternalRenderFunction
 
-    // for runtime-compiled render functions using `with` blocks, the render
-    // proxy used needs a different `has` handler which is more performant and
-    // also only allows a whitelist of globals to fallthrough.
+    // for runtime-compiled render functions using `with` blocks, the render 对于使用`with`块进行运行时编译的渲染函数，其渲染过程
+    // proxy used needs a different `has` handler which is more performant and 所使用的代理需要一个不同的`has`处理程序，这个处理程序性能更高
+    // also only allows a whitelist of globals to fallthrough. 也只允许白名单中的全局变量通过
     if (installWithProxy) {
       installWithProxy(instance)
     }
   }
 
-  // support for 2.x options
+  // ====================== Options API 支持（Vue2.x 语法适配） ======================
+  // support for 2.x options 支持 2.x 选项
+  // 启用Options API 且 非兼容模式跳过选项时，应用2.x的Options API逻辑
   if (__FEATURE_OPTIONS_API__ && !(__COMPAT__ && skipOptions)) {
+    // 设置当前组件实例（保证Options API中this指向正确）
     const reset = setCurrentInstance(instance)
+    // 暂停响应式追踪（避免Options API初始化时触发不必要的依赖收集）
     pauseTracking()
     try {
+      // 核心：应用组件的Options API（props/methods/watch/computed等）
       applyOptions(instance)
     } finally {
+      // 恢复响应式追踪（无论是否报错，都要恢复）
       resetTracking()
+      // 重置当前组件实例（避免污染后续逻辑）
       reset()
     }
   }
 
-  // warn missing template/render
-  // the runtime compilation of template in SSR is done by server-render
+  // ====================== 开发环境警告（缺失模板/渲染函数） ======================
+  // warn missing template/render 警告缺少模板/渲染
+  // the runtime compilation of template in SSR is done by server-render SSR中模板的运行时编译是由server-render完成的
+
+  // 条件：开发环境 + 组件无render + 实例render为空函数 + 非SSR环境
   if (__DEV__ && !Component.render && instance.render === NOOP && !isSSR) {
     if (!compile && Component.template) {
       /* v8 ignore start */
       warn(
-        `Component provided template option but ` +
-          `runtime compilation is not supported in this build of Vue.` +
+        `Component provided template option but ` + // 组件提供了模板选项，但是
+          `runtime compilation is not supported in this build of Vue.` + // 此版本的 Vue 不支持运行时编译
           (__ESM_BUNDLER__
-            ? ` Configure your bundler to alias "vue" to "vue/dist/vue.esm-bundler.js".`
+            ? ` Configure your bundler to alias "vue" to "vue/dist/vue.esm-bundler.js".` // 将您的捆绑器配置为将“vue”别名为“vue/dist/vue.esm-bundler.js”
             : __ESM_BROWSER__
-              ? ` Use "vue.esm-browser.js" instead.`
+              ? ` Use "vue.esm-browser.js" instead.` // 使用“vue.esm-browser.js”代替
               : __GLOBAL__
-                ? ` Use "vue.global.js" instead.`
+                ? ` Use "vue.global.js" instead.` // 使用“vue.global.js”代替
                 : ``) /* should not happen */,
       )
       /* v8 ignore stop */
     } else {
-      warn(`Component is missing template or render function: `, Component)
+      warn(`Component is missing template or render function: `, Component) // 组件缺少模板或渲染功能
     }
   }
 }

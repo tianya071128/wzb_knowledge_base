@@ -10,8 +10,8 @@ export let currentRenderingInstance: ComponentInternalInstance | null = null
 export let currentScopeId: string | null = null
 
 /**
- * Note: rendering calls maybe nested. The function returns the parent rendering
- * instance if present, which should be restored after the render is done:
+ * Note: rendering calls maybe nested. The function returns the parent rendering 注意：渲染调用可能是嵌套的。该函数返回父级渲染
+ * instance if present, which should be restored after the render is done: 实例（如果存在），应在渲染完成后恢复
  *
  * ```js
  * const prev = setCurrentRenderingInstance(i)
@@ -19,13 +19,23 @@ export let currentScopeId: string | null = null
  * setCurrentRenderingInstance(prev)
  * ```
  */
+/**
+ * 设置当前渲染实例，并更新当前作用域ID
+ * 这个函数用于在渲染期间标记当前渲染实例，以便在解析资源（如组件、指令）时使用
+ *
+ * @param instance 要设置的组件内部实例，可以为null表示没有当前渲染实例
+ * @returns 返回之前设置的渲染实例，如果没有则返回null
+ */
 export function setCurrentRenderingInstance(
   instance: ComponentInternalInstance | null,
 ): ComponentInternalInstance | null {
   const prev = currentRenderingInstance
   currentRenderingInstance = instance
+
+  // 获取组件类型上的作用域ID
   currentScopeId = (instance && instance.type.__scopeId) || null
   // v2 pre-compiled components uses _scopeId instead of __scopeId
+  // v2预编译组件使用_scopeId而不是__scopeId
   if (__COMPAT__ && !currentScopeId) {
     currentScopeId = (instance && (instance.type as any)._scopeId) || null
   }
