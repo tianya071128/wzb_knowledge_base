@@ -430,6 +430,10 @@ const isElementRoot = (vnode: VNode) => {
  *          区分「编译优化模式（optimized）」和「手动render函数模式」，优化判断效率
  * 核心关联：在updateComponent中被调用，是组件是否执行instance.update()的唯一依据
  *
+ * - 判断是否应该更新组件: 当父组件重新渲染时, 遇到 组件VNode 时, 此时就需要根据 组件VNode 进行判断是否需要更新组件
+ *    - 开发环境下, 热更新状态: 需要更新
+ *    - 新VNode有指令/过渡 - 强制更新
+ *    - 对比新旧 VNode.props(包含了组件的 props、attrs、emits),以及 VNode.slots 插槽, 存在变化项则需要更新
  *
  * @param {VNode} prevVNode 旧的组件VNode（上一轮渲染的VNode）
  * @param {VNode} nextVNode 新的组件VNode（本轮待渲染的VNode）

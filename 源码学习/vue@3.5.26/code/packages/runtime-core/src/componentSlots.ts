@@ -158,8 +158,8 @@ const normalizeVNodeSlots = (
     !(__COMPAT__ && isCompatEnabled(DeprecationTypes.RENDER_FUNCTION, instance))
   ) {
     warn(
-      `Non-function value encountered for default slot. ` +
-        `Prefer function slots for better performance.`,
+      `Non-function value encountered for default slot. ` + // 默认槽遇到非函数值
+        `Prefer function slots for better performance.`, // 优先选择函数槽以获得更好的性能
     )
   }
   const normalized = normalizeSlotValue(children)
@@ -234,15 +234,34 @@ export const initSlots = (
   // 4. 兜底情况：children为null/undefined → 无任何插槽，instance.slots 为空对象，无需处理
 }
 
+/**
+ * Vue3 内部核心函数 - 组件插槽（Slots）的【精准更新函数】
+ * 核心使命：根据父组件传入的最新VNode子节点（children），更新组件实例的slots对象，
+ *          区分「编译优化插槽」「动态插槽」「原始插槽」，处理HMR热更新、稳定插槽跳过更新、
+ *          过期插槽清理等边界场景，保证插槽内容与父组件传入的最新状态同步
+ *
+ *
+ * @param {ComponentInternalInstance} instance 待更新的组件内部实例
+ * @param {VNodeNormalizedChildren} children 新的VNode子节点（父组件传入的插槽内容）
+ * @param {boolean} optimized 是否开启编译优化（决定插槽更新策略）
+ * @returns {void} 无返回值，直接修改instance的slots对象
+ */
 export const updateSlots = (
   instance: ComponentInternalInstance,
   children: VNodeNormalizedChildren,
   optimized: boolean,
 ): void => {
+  // ========== 第一步：解构组件实例的核心属性 ==========
   const { vnode, slots } = instance
+  // 标记：是否需要检查并删除过期插槽（默认true，即默认需要清理）
   let needDeletionCheck = true
+  // 对比目标：用于判断插槽是否过期（默认空对象，后续根据场景赋值）
   let deletionComparisonTarget = EMPTY_OBJ
+
+  // ========== 分支1：当前VNode包含插槽子节点（SLOTS_CHILDREN标记） ==========
+  // ShapeFlags.SLOTS_CHILDREN：表示VNode的children是插槽对象（而非普通VNode数组）
   if (vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+    // 类型断言：children是原始插槽对象（RawSlots），_属性存储插槽标记（SlotFlags）
     const type = (children as RawSlots)._
     if (type) {
       // compiled slots.

@@ -280,61 +280,100 @@ function isInHmrContext(instance: ComponentInternalInstance | null) {
   }
 }
 
+/**
+ * Vue3 内部核心函数 - 组件Props/Attrs的【精准更新函数】
+ * 核心使命：对比新旧原始Props，更新组件实例的`props`（声明式Props）和`attrs`（非Props属性），
+ *          区分「编译优化模式」和「全量更新模式」，处理Props/Attrs分离、Emit监听过滤、Vue2兼容等边界场景，
+ *          最终触发$attrs的响应式更新（保证插槽中使用$attrs时能实时刷新）
+ *
+ * - 更新 props 和 attrs, 直接更新 instance.props 和 instance.attrs
+ *    -- 疑问? - 为什么 attrs 变化后, 需要触发响应式更新...
+ *    -- 因为 attrs 是非响应式对象, 不同于 props
+ *
+ * @param {ComponentInternalInstance} instance 待更新的组件内部实例
+ * @param {Data | null} rawProps 新的原始Props（未处理的父组件传入属性）
+ * @param {Data | null} rawPrevProps 旧的原始Props（上一轮的父组件传入属性）
+ * @param {boolean} optimized 是否开启编译优化（决定更新策略：精准更新/全量更新）
+ * @returns {void} 无返回值，直接修改instance的props/attrs
+ */
 export function updateProps(
   instance: ComponentInternalInstance,
   rawProps: Data | null,
   rawPrevProps: Data | null,
   optimized: boolean,
 ): void {
+  // ========== 第一步：解构组件实例的核心属性 ==========
   const {
-    props,
-    attrs,
-    vnode: { patchFlag },
+    props, // 组件实例的声明式Props
+    attrs, // 组件实例的非Props属性（$attrs，响应式对象）
+    vnode: { patchFlag }, // 组件VNode的补丁标记（编译阶段生成，标记动态Props类型）
   } = instance
+  // 解响应式：获取props的原始对象（避免响应式代理干扰属性对比）
   const rawCurrentProps = toRaw(props)
+  // 组件声明的Props选项（仅取第一个元素，）
   const [options] = instance.propsOptions
+  // 标记：attrs是否发生变化（用于后续触发$attrs的响应式更新）
   let hasAttrsChanged = false
 
+  // ========== 分支1：编译优化模式 - 精准更新（性能优先） ==========
   if (
-    // always force full diff in dev
-    // - #1942 if hmr is enabled with sfc component
-    // - vite#872 non-sfc component used by sfc component
-    !(__DEV__ && isInHmrContext(instance)) &&
-    (optimized || patchFlag > 0) &&
-    !(patchFlag & PatchFlags.FULL_PROPS)
+    // always force full diff in dev 始终在开发中强制执行完整差异
+    // - #1942 if hmr is enabled with sfc component 如果使用 sfc 组件启用 hmr
+    // - vite#872 non-sfc component used by sfc component SFC 组件使用的非 SFC 组件
+    !(__DEV__ && isInHmrContext(instance)) && // 非开发环境HMR场景（开发环境HMR强制全量更新，避免漏更）；
+    (optimized || patchFlag > 0) && // 开启编译优化 或 patchFlag>0（有编译标记）
+    !(patchFlag & PatchFlags.FULL_PROPS) // 非FULL_PROPS标记（无需全量更新）
   ) {
+    // 子分支1.1：patchFlag包含PROPS（仅更新动态Props列表）
     if (patchFlag & PatchFlags.PROPS) {
-      // Compiler-generated props & no keys change, just set the updated
-      // the props.
+      // Compiler-generated props & no keys change, just set the updated 编译器生成的 props & 没有键改变，只需设置更新的
+      // the props. 道具
+      // 编译阶段标记的动态Props列表（仅包含可能变化的Props）
       const propsToUpdate = instance.vnode.dynamicProps!
+      // 遍历所有动态Props，逐一更新
       for (let i = 0; i < propsToUpdate.length; i++) {
         let key = propsToUpdate[i]
-        // skip if the prop key is a declared emit event listener
+        // skip if the prop key is a declared emit event listener 如果 prop 键是已声明的发射事件侦听器，则跳过
+        // 跳过：当前key是组件声明的Emit监听事件（如onUpdate:modelValue）
+        // Emit监听不属于业务Props，无需更新到props/attrs
         if (isEmitListener(instance.emitsOptions, key)) {
           continue
         }
-        // PROPS flag guarantees rawProps to be non-null
+
+        // PROPS flag guarantees rawProps to be non-null PROPS 标志保证 rawProps 不为空
         const value = rawProps![key]
+        // 场景A：组件声明了Props选项（options存在）
         if (options) {
-          // attr / props separation was done on init and will be consistent
-          // in this code path, so just check if attrs have it.
+          // attr / props separation was done on init and will be consistent 在初始化阶段已经完成了属性/道具的分离，并将保持一致性
+          // in this code path, so just check if attrs have it. 在这个代码路径中，只需检查属性（attrs）是否包含它
+
+          // 核心逻辑：Props/Attrs分离（初始化时已区分，此处保持一致）
+          // 如果key存在于attrs中 → 属于非声明式Props，更新到attrs
           if (hasOwn(attrs, key)) {
             if (value !== attrs[key]) {
-              attrs[key] = value
-              hasAttrsChanged = true
+              attrs[key] = value // 更新attrs值
+              hasAttrsChanged = true // 标记attrs变化
             }
-          } else {
+          }
+          // key不存在于attrs中 → 属于声明式Props，更新到props
+          else {
+            // 驼峰化key（兼容kebab-case转camelCase，如user-name → userName）
             const camelizedKey = camelize(key)
+
+            // 解析Prop值（处理默认值、类型转换、校验等），更新到props
             props[camelizedKey] = resolvePropValue(
-              options,
-              rawCurrentProps,
-              camelizedKey,
-              value,
-              instance,
-              false /* isAbsent */,
+              options, // 组件声明的Props选项
+              rawCurrentProps, // 当前Props的原始对象
+              camelizedKey, // 驼峰化的Prop名
+              value, // 新值
+              instance, // 组件实例
+              false /* isAbsent */, // 标记：Prop不是缺失状态（有新值）
             )
           }
-        } else {
+        }
+        // 场景B：组件未声明Props选项（options不存在）
+        else {
+          // Vue2兼容逻辑：处理Native后缀事件、跳过特殊Attr
           if (__COMPAT__) {
             if (isOn(key) && key.endsWith('Native')) {
               key = key.slice(0, -6) // remove Native postfix
@@ -342,6 +381,8 @@ export function updateProps(
               continue
             }
           }
+
+          // 未声明Props时，所有属性都归入attrs，对比并更新
           if (value !== attrs[key]) {
             attrs[key] = value
             hasAttrsChanged = true
@@ -349,24 +390,35 @@ export function updateProps(
         }
       }
     }
-  } else {
-    // full props update.
+  }
+  // ========== 分支2：全量更新模式 - 兜底更新（功能优先） ==========
+  else {
+    // full props update. 完整道具更新
+
+    // 子分支2.1：全量更新Props/Attrs（返回是否修改了attrs）
     if (setFullProps(instance, rawProps, props, attrs)) {
       hasAttrsChanged = true
     }
-    // in case of dynamic props, check if we need to delete keys from
-    // the props object
-    let kebabKey: string
+
+    // in case of dynamic props, check if we need to delete keys from 如果是动态道具，请检查我们是否需要从中删除键
+    // the props object 道具对象
+
+    // 子分支2.2：清理Props中已移除的Key（处理动态Props删除场景）
+    let kebabKey: string // 存储kebab-case的Key（如userName → user-name）
+    // 遍历当前Props的所有Key，检查是否在新rawProps中存在
     for (const key in rawCurrentProps) {
       if (
-        !rawProps ||
+        !rawProps || // 新rawProps为空 → 清空所有Props
         // for camelCase
+        // 新rawProps中无当前camelCase Key，且无对应的kebabCase Key（兼容命名格式）
         (!hasOwn(rawProps, key) &&
-          // it's possible the original props was passed in as kebab-case
-          // and converted to camelCase (#955)
+          // it's possible the original props was passed in as kebab-case 原始的props可能以“驼峰式大小写”的形式传入
+          // and converted to camelCase (#955) 原始的props可能以“驼峰式大小写”的形式传入
           ((kebabKey = hyphenate(key)) === key || !hasOwn(rawProps, kebabKey)))
       ) {
+        // 场景A：组件声明了Props选项 → 解析缺失状态的Prop值（如重置默认值）
         if (options) {
+          // 旧Props中存在该Key → 需要重置（避免残留）
           if (
             rawPrevProps &&
             // for camelCase
@@ -383,32 +435,43 @@ export function updateProps(
               true /* isAbsent */,
             )
           }
-        } else {
+        }
+        // 场景B：组件未声明Props选项 → 直接删除Props中的Key
+        else {
           delete props[key]
         }
       }
     }
-    // in the case of functional component w/o props declaration, props and
-    // attrs point to the same object so it should already have been updated.
+
+    // in the case of functional component w/o props declaration, props and 如果功能组件没有 props 声明，props 和
+    // attrs point to the same object so it should already have been updated. attrs 指向同一个对象，因此它应该已经被更新。
+
+    // 子分支2.3：清理Attrs中已移除的Key（Props和Attrs指向不同对象时）
+    // 函数式组件未声明Props时，props和attrs指向同一对象，已在setFullProps中处理
     if (attrs !== rawCurrentProps) {
       for (const key in attrs) {
+        // 新rawProps中无当前Key，且无对应的Native后缀Key（Vue2兼容）
         if (
           !rawProps ||
           (!hasOwn(rawProps, key) &&
             (!__COMPAT__ || !hasOwn(rawProps, key + 'Native')))
         ) {
-          delete attrs[key]
-          hasAttrsChanged = true
+          delete attrs[key] // 删除Attrs中已移除的Key
+          hasAttrsChanged = true // 标记attrs变化
         }
       }
     }
   }
 
-  // trigger updates for $attrs in case it's used in component slots
+  // ========== 最终步骤1：触发$attrs的响应式更新 ==========
+  // 如果attrs发生变化，触发响应式更新（保证插槽/模板中使用$attrs时能实时刷新）
+  // trigger updates for $attrs in case it's used in component slots 如果 $attrs 在组件槽中使用，则触发更新
   if (hasAttrsChanged) {
     trigger(instance.attrs, TriggerOpTypes.SET, '')
   }
 
+  // ========== 最终步骤2：开发环境Props校验 ==========
+  // 校验新rawProps是否符合组件声明的Props规则（类型/必填等）
   if (__DEV__) {
     validateProps(rawProps || {}, props, instance)
   }
@@ -420,6 +483,7 @@ export function updateProps(
  * 核心能力：过滤保留属性、连字符→驼峰自动转换、区分声明Props/事件监听/透传Attrs、批量处理Props类型转换与默认值、返回Attrs变化状态
  * 核心特性：纯数据处理无副作用、兼容连字符/驼峰props写法、严格区分属性边界、兼容Vue2迁移模式、极致性能优化(单次遍历)
  *
+ *  - 处理 props 和 attrs, 通过引用关系, 直接修改入参
  *
  * @param {ComponentInternalInstance} instance 组件内部实例，获取声明的props/emits配置
  * @param {Data | null} rawProps 父组件传入的原始未处理属性对象，可为null（无属性传入）

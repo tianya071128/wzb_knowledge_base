@@ -999,7 +999,7 @@ export let isInSSRComponentSetup = false
  * 核心特性：区分有状态/无状态组件、兼容SSR服务端渲染、兼容编译优化、支持异步setup、纯初始化无副作用、无冗余逻辑
  *
  *  - 处理 props 并挂载到 instance.props
- *  - 处理 slots 并挂载到 instance.props
+ *  - 处理 slots 并挂载到 instance.slots
  *  - 执行 setupStatefulComponent 方法，完成组件的setup函数执行
  *     -- 内部会执行 setCurrentInstance 方法, 会激活组件实例的 instance.scope, 从而收集其中所创建的响应式副作用 (即计算属性和侦听器)
  *

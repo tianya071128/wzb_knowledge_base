@@ -517,7 +517,7 @@ function baseCreateRenderer(
     // 存在旧VNode 且 新旧VNode的类型不匹配（isSameVNodeType判断：type+key双匹配）
     // 类型不一致时无法做差异化更新，最优解是：先卸载旧VNode对应的整棵DOM树，后续直接挂载新节点
     if (n1 && !isSameVNodeType(n1, n2)) {
-      anchor = getNextHostNode(n1)
+      anchor = getNextHostNode(n1) // 先找到对应的锚点DOM节点
       unmount(n1, parentComponent, parentSuspense, true)
       n1 = null
     }
@@ -1809,10 +1809,12 @@ function baseCreateRenderer(
    * 核心特性：无冗余逻辑、步骤严谨、兼容所有场景、响应式核心绑定、承上启下连接VNode与真实DOM
    *
    *  - 1. 创建实例: createComponentInstance 方法创建实例, 初始化一些字段, 不做更多处理
-   *  - 2. 执行 steup 方法(同时适配处理选项式 API): setupComponent 方法大致会处理 props、slots, 最主要执行 steup 方法
+   *  - 2. 执行 setup 方法(同时适配处理选项式 API): setupComponent 方法大致会处理 props、slots, 最主要执行 setup 方法
    *  - 3. 调用 setupRenderEffect 方法
    *        - 大致为将渲染VNode包装为响应式副作用，实现「状态变更 → 自动更新 DOM」
-   *        - 生成VNode, 调用 patch 方法渲染VNode
+   *        - 调用组件的 render 函数生成VNode
+   *        - 根据生成的VNode, 调用 patch 方法渲染VNode
+   *        - 在生成 VNode 的过程中, 会类似于 watch 方法, 监听其中的依赖值, 实现依赖变更后, 自动更新
    *
    * @param {VNode} initialVNode 组件的根VNode节点，组件的虚拟载体，挂载后会赋值真实DOM到el属性
    * @param {RendererElement} container 真实DOM容器，组件最终要挂载到的父容器
@@ -1943,6 +1945,10 @@ function baseCreateRenderer(
    *          区分「异步SUSPENSE未解析」「正常更新」「无需更新」三种场景，执行对应逻辑
    * 核心关联：在patch过程中，当新旧VNode均为组件类型时被调用，是组件更新的核心分发器
    *
+   *  - 更新组件: 父组件触发更新
+   *     -- 通过 shouldUpdateComponent 方法比对是否需要更新组件
+   *     -- 需要更新: 直接调用 instance.update() 触发组件的更新
+   *     -- 无需更新: 更新其引用, 引用最新的 VNode
    *
    * @param {VNode} n1 旧的组件VNode（prevVNode）
    * @param {VNode} n2 新的组件VNode（nextVNode）
@@ -2418,6 +2424,8 @@ function baseCreateRenderer(
    *          主要用于「异步组件pending」「SUSPENSE未解析」等无需立即渲染的场景
    * 核心关联：在updateComponent的SUSPENSE异步未解析分支中被调用，是组件“只更状态不渲染”的核心逻辑
    *
+   *  - 1. 修正 instance 引用最新的 组件VNode
+   *  - 2. 更新 props、attrs、slots
    *
    * @param {ComponentInternalInstance} instance 待更新的组件内部实例
    * @param {VNode} nextVNode 新的组件VNode（包含最新的props/slots）
@@ -3180,6 +3188,7 @@ function baseCreateRenderer(
       invokeVNodeHook(vnodeHook, parentComponent, vnode)
     }
 
+    // 组件的卸载
     if (shapeFlag & ShapeFlags.COMPONENT) {
       unmountComponent(vnode.component!, parentSuspense, doRemove)
     } else {
@@ -3311,24 +3320,56 @@ function baseCreateRenderer(
     hostRemove(end)
   }
 
+  /**
+   * Vue3 内部核心函数 - 组件卸载的【全生命周期处理入口】
+   * 核心使命：执行组件卸载的完整逻辑，包括：
+   *  1. 触发卸载前钩子（beforeUnmount）；
+   *  2. 停止组件的响应式作用域（停止所有effect）；
+   *  3. 卸载组件的子树（subTree）DOM；
+   *  4. 触发卸载后钩子（unmounted）；
+   *  5. 兼容Vue2的destroyed生命周期事件；
+   *  6. 标记组件为已卸载状态，通知开发工具；
+   * 核心关联：在组件销毁阶段（如v-if移除、路由切换）被调用，是组件从内存/DOM中清理的核心逻辑
+   *
+   *
+   * @param {ComponentInternalInstance} instance 待卸载的组件内部实例
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense边界（用于调度后置钩子）
+   * @param {boolean} [doRemove] 是否移除真实DOM节点（默认undefined，true=移除DOM，false=仅卸载逻辑）
+   * @returns {void} 无返回值，直接修改组件实例状态并清理资源
+   */
   const unmountComponent = (
     instance: ComponentInternalInstance,
     parentSuspense: SuspenseBoundary | null,
     doRemove?: boolean,
   ) => {
+    // ========== 步骤1：开发环境 - 注销HMR热更新注册 ==========
+    // 如果是开发环境且组件有HMR标识，注销组件的HMR注册，避免热更新残留
     if (__DEV__ && instance.type.__hmrId) {
       unregisterHMR(instance)
     }
 
-    const { bum, scope, job, subTree, um, m, a } = instance
+    // ========== 步骤2：解构组件实例的核心钩子/状态 ==========
+    const {
+      bum, // beforeUnmount  卸载前钩子
+      scope, // 组件的响应式作用域（包含组件内所有的effect）
+      job, // 组件的调度任务（如异步setup的解析任务）
+      subTree, // 组件的根VNode子树（对应真实DOM）
+      um, // 卸载后钩子
+      m, // 挂载钩子（失效处理）
+      a, // 激活钩子（keep-alive相关，失效处理）
+    } = instance
+
+    // 失效处理：标记挂载/激活钩子为已失效（避免卸载后误触发）
     invalidateMount(m)
     invalidateMount(a)
 
+    // ========== 步骤3：触发组件卸载前钩子（beforeUnmount） ==========
     // beforeUnmount hook
     if (bum) {
-      invokeArrayFns(bum)
+      invokeArrayFns(bum) // 执行beforeUnmount钩子数组（支持多个钩子）
     }
 
+    // ========== 步骤4：Vue2兼容 - 触发 hook:beforeDestroy 事件 ==========
     if (
       __COMPAT__ &&
       isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
@@ -3336,20 +3377,32 @@ function baseCreateRenderer(
       instance.emit('hook:beforeDestroy')
     }
 
-    // stop effects in component scope
+    // ========== 步骤5：核心 - 停止组件的响应式作用域 ==========
+    // scope是组件的专属响应式作用域，包含所有组件内的effect（如render effect、watch、computed）
+    // stop()后：所有effect不再执行，响应式依赖收集停止，彻底释放响应式资源
+    // stop effects in component scope 停止组件范围内的效果
     scope.stop()
 
-    // job may be null if a component is unmounted before its async
-    // setup has resolved.
+    // ========== 步骤6：处理组件调度任务 + 卸载子树DOM ==========
+    // job may be null if a component is unmounted before its async 如果组件在异步之前卸载，则作业可能为空
+    // setup has resolved. 设置已解决
+    // job可能为null：组件异步setup未解析完成就被卸载（如异步组件加载中被移除）
     if (job) {
-      // so that scheduler will no longer invoke it
+      // so that scheduler will no longer invoke it 这样调度程序将不再调用它
+      // 标记任务为已销毁：调度器（scheduler）不再执行该任务
       job.flags! |= SchedulerJobFlags.DISPOSED
+      // 递归卸载组件的子树（subTree）：清理子组件、真实DOM节点
       unmount(subTree, instance, parentSuspense, doRemove)
     }
+
+    // ========== 步骤7：触发组件卸载后钩子（unmounted） ==========
+    // 卸载后钩子放入后置渲染队列（PostRenderEffect）：保证DOM卸载完成后执行
     // unmounted hook
     if (um) {
       queuePostRenderEffect(um, parentSuspense)
     }
+
+    // ========== 步骤8：Vue2兼容 - 触发destroyed事件 ==========
     if (
       __COMPAT__ &&
       isCompatEnabled(DeprecationTypes.INSTANCE_EVENT_HOOKS, instance)
@@ -3359,6 +3412,9 @@ function baseCreateRenderer(
         parentSuspense,
       )
     }
+
+    // ========== 步骤9：标记组件为已卸载状态 ==========
+    // 放入后置队列：保证所有卸载逻辑完成后再标记状态
     queuePostRenderEffect(() => {
       instance.isUnmounted = true
     }, parentSuspense)

@@ -25,7 +25,7 @@ defineExpose({
       </button>
     </div>
 
-    <component-parent-update :count="count" />
+    <component-parent-update v-if="count < 2" :count="count" />
 
     <slot></slot>
   </div>
