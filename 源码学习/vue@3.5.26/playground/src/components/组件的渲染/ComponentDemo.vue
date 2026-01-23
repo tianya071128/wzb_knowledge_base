@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
+import './组件的渲染';
 import ComponentParentUpdate from './ComponentParentUpdate.vue';
 
 defineProps<{ msg: string }>();
 
 const count = ref(0);
-
-watch(count, () => {
-  console.log('测试');
-});
 
 defineExpose({
   count,

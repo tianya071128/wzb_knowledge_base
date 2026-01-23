@@ -3,14 +3,14 @@
  */
 
 import { h, createRenderer, type ComponentInternalInstance } from 'vue';
-import ComponentDemo from './ComponentDemo.vue';
+import ComponentParentUpdate from './ComponentParentUpdate.vue';
 
 /**
  * 1. 生成 组件VNode
  *     - 内部会调用 _createVNode 生成一个 组件VNode, 生成格式如下, 具体定义点击跳转
  *     - 注意: 生成组件VNode时, 不会调用组件的 render 方法生成其组件模板的 子树VNode
  */
-let vnode = h(ComponentDemo);
+let vnode = h(ComponentParentUpdate);
 /**
  * {
  *    // 组件的定义
