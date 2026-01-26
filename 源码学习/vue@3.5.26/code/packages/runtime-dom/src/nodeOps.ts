@@ -54,6 +54,11 @@ export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
     parent.insertBefore(child, anchor || null)
   },
 
+  /**
+   * 从宿主环境中移除指定的真实节点，清理节点相关的所有资源，无返回值
+   * 会自动处理节点的父级关联、事件解绑等，避免内存泄漏
+   * @param el 要被移除的「真实宿主节点」(元素/文本/注释都可以)
+   */
   remove: child => {
     const parent = child.parentNode
     if (parent) {

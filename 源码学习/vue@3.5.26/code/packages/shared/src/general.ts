@@ -26,6 +26,11 @@ export const isModelListener = (key: string): key is `onUpdate:${string}` =>
 
 export const extend: typeof Object.assign = Object.assign
 
+/**
+ * 从数组中移除指定元素
+ * @param arr 要操作的数组
+ * @param el 要从数组中移除的元素
+ */
 export const remove = <T>(arr: T[], el: T): void => {
   const i = arr.indexOf(el)
   if (i > -1) {

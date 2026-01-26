@@ -5,7 +5,7 @@
 import { h, patchProp } from 'vue';
 
 /**
- * 1. 元素 VNode 的
+ * 1. 元素 VNode 的生成
  *     - 与其他类型类似, 都是需要先生成 VNode, 这是元素的抽象实现
  */
 
@@ -61,4 +61,16 @@ console.log('子元素是文本的元素：', h('div', 'hello world'));
  *            --- 无标记兜底更新：无任何优化标记时，调用 patchProps 全量更新，保证正确性。
  *        -- 文本内容更新
  *        -- 钩子/指令后置异步执行
+ */
+
+/**
+ * 4. 销毁阶段: 逻辑在 packages/runtime-core/src/renderer.ts, 点击 unmount 方法查看具体逻辑
+ *     - 销毁时机: 组件销毁时或者v-if或其他方式
+ *     - 销毁阶段会调用 unmount 方法
+ *          - 先调用 unmountChildren 方法递归处理子节点
+ *          - 最终调用 remove 方法销毁元素, 根据类型不同执行的逻辑
+ *             -- 1. Fragment节点移除所有子节点的DOM
+ *             -- 2. Static静态节点清理缓存并移除DOM
+ *             -- 3. 带过渡动画的元素执行完动画后再移除DOM
+ *             -- 4. 普通元素直接移除DOM并触发过渡afterLeave钩
  */

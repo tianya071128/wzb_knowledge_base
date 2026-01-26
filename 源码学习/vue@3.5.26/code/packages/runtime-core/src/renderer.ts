@@ -778,12 +778,12 @@ function baseCreateRenderer(
     container: RendererElement,
     namespace: ElementNamespace,
   ) => {
-    // static nodes are only patched during dev for HMR
+    // static nodes are only patched during dev for HMR 静态节点仅在 HMR 开发期间修补
     if (n2.children !== n1.children) {
       const anchor = hostNextSibling(n1.anchor!)
-      // remove existing
+      // remove existing 删除现有的
       removeStaticNode(n1)
-      // insert new
+      // insert new 插入新的
       ;[n2.el, n2.anchor] = hostInsertStaticContent!(
         n2.children as string,
         container,
@@ -1715,10 +1715,10 @@ function baseCreateRenderer(
           traverseStaticChildren(n1, n2, true /* shallow */)
         }
       } else {
-        // keyed / unkeyed, or manual fragments.
-        // for keyed & unkeyed, since they are compiler generated from v-for,
-        // each child is guaranteed to be a block so the fragment will never
-        // have dynamicChildren.
+        // keyed / unkeyed, or manual fragments. 键控/非键控，或手动片段
+        // for keyed & unkeyed, since they are compiler generated from v-for, 对于键控和非键控，因为它们是由v-for指令生成的编译器代码
+        // each child is guaranteed to be a block so the fragment will never 每个子元素都保证是一个块，因此片段永远不会
+        // have dynamicChildren. 拥有动态子节点
         patchChildren(
           n1,
           n2,
@@ -3137,6 +3137,24 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * Vue3 内部核心函数 - 所有类型VNode卸载的【统一入口】
+   * 核心使命：根据VNode的类型（组件/元素/Teleport/Suspense/Fragment等），
+   *          执行差异化的卸载逻辑，包括：清理ref、清理缓存、触发钩子/指令、
+   *          递归卸载子节点、移除DOM等，是VNode从内存/DOM中清理的总调度器
+   * 核心关联：在组件卸载、v-if移除、路由切换等场景被调用，承接unmountComponent等专用卸载函数
+   *
+   *  根据不同类型, 执行不同的方法用于卸载:
+   *   - 组件VNode: 调用 unmountComponent 方法执行
+   *   - 原生元素VNode: 先递归卸载子节点，再执行 remove 方法执行时机卸载
+   *
+   * @param {VNode} vnode 待卸载的VNode节点
+   * @param {ComponentInternalInstance | null} parentComponent 父组件实例（用于上下文传递）
+   * @param {SuspenseBoundary | null} parentSuspense 父级Suspense边界（用于钩子调度）
+   * @param {boolean} [doRemove=false] 是否移除真实DOM节点（false=仅卸载逻辑，true=移除DOM）
+   * @param {boolean} [optimized=false] 是否开启编译优化（决定卸载子节点的策略）
+   * @returns {void} 无返回值，完成VNode的全维度清理
+   */
   const unmount: UnmountFn = (
     vnode,
     parentComponent,
@@ -3144,63 +3162,83 @@ function baseCreateRenderer(
     doRemove = false,
     optimized = false,
   ) => {
+    // ========== 第一步：解构VNode的核心属性 ==========
     const {
-      type,
-      props,
-      ref,
-      children,
-      dynamicChildren,
-      shapeFlag,
-      patchFlag,
-      dirs,
-      cacheIndex,
+      type, // VNode类型（组件/元素/Fragment/Teleport等）
+      props, // VNode的props（包含vnode钩子、指令等）
+      ref, // VNode绑定的ref（需清理）
+      children, // VNode的子节点（普通子节点）
+      dynamicChildren, // 编译优化的动态子节点（仅包含动态更新的子节点）
+      shapeFlag, // VNode形状标记（标识类型：组件/元素/数组子节点等）
+      patchFlag, // VNode补丁标记（标识动态内容类型）
+      dirs, // VNode上绑定的指令（如v-model/v-show）
+      cacheIndex, // VNode在父组件renderCache中的索引（memo缓存）
     } = vnode
 
+    // ========== 第二步：处理补丁标记为BAIL的场景 ==========
+    // PatchFlags.BAIL：表示编译优化中断，需降级为非优化模式卸载
     if (patchFlag === PatchFlags.BAIL) {
       optimized = false
     }
 
+    // ========== 第三步：清理VNode绑定的ref ==========
     // unset ref
     if (ref != null) {
-      pauseTracking()
+      pauseTracking() // 暂停响应式依赖收集（清理ref无需收集依赖）
+      // 将ref的值设为null，完成ref解绑（最后一个参数true表示卸载阶段）
       setRef(ref, null, parentSuspense, vnode, true)
-      resetTracking()
+      resetTracking() // 恢复依赖收集
     }
 
-    // #6593 should clean memo cache when unmount
+    // ========== 第四步：清理memo缓存（cacheIndex存在时） ==========
+    // #6593 should clean memo cache when unmount 卸载时应清理备忘录缓存
+    // 修复：unmount时清理memo指令的缓存，避免缓存残留导致渲染异常
     if (cacheIndex != null) {
       parentComponent!.renderCache[cacheIndex] = undefined
     }
 
+    // ========== 第五步：特殊处理 - KeepAlive组件（不真卸载，仅失活） ==========
+    // ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE：标识该组件需被KeepAlive缓存
     if (shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
+      // 调用KeepAlive上下文的deactivate方法（仅失活组件，保留DOM和实例）
       ;(parentComponent!.ctx as KeepAliveContext).deactivate(vnode)
-      return
+      return // 直接返回，不执行后续卸载逻辑
     }
 
+    // ========== 第六步：预处理钩子/指令的执行条件 ==========
+    // 条件1：是否执行指令钩子 → 元素类型VNode且有指令绑定
     const shouldInvokeDirs = shapeFlag & ShapeFlags.ELEMENT && dirs
+    // 条件2：是否执行VNode钩子 → 非异步包装VNode（异步组件包装器跳过）
     const shouldInvokeVnodeHook = !isAsyncWrapper(vnode)
 
+    // ========== 第七步：触发VNode的beforeUnmount钩子 ==========
     let vnodeHook: VNodeHook | undefined | null
     if (
       shouldInvokeVnodeHook &&
-      (vnodeHook = props && props.onVnodeBeforeUnmount)
+      (vnodeHook = props && props.onVnodeBeforeUnmount) // 获取beforeUnmount钩子
     ) {
-      invokeVNodeHook(vnodeHook, parentComponent, vnode)
+      invokeVNodeHook(vnodeHook, parentComponent, vnode) // 执行钩子
     }
 
-    // 组件的卸载
+    // ========== 第八步：核心 - 按VNode类型执行差异化卸载 ==========
+    // 子分支8.1：组件类型VNode → 调用组件专属卸载函数
     if (shapeFlag & ShapeFlags.COMPONENT) {
       unmountComponent(vnode.component!, parentSuspense, doRemove)
-    } else {
+    }
+    // 子分支8.2：非组件类型VNode（元素/Teleport/Suspense/Fragment等）
+    else {
+      // 子分支8.2.1：Suspense类型VNode → 调用Suspense专属卸载
       if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
         vnode.suspense!.unmount(parentSuspense, doRemove)
         return
       }
 
+      // 子分支8.2.2：元素类型VNode → 触发指令的beforeUnmount钩子
       if (shouldInvokeDirs) {
         invokeDirectiveHook(vnode, null, parentComponent, 'beforeUnmount')
       }
 
+      // 子分支8.2.3：Teleport类型VNode → 调用Teleport专属remove方法
       if (shapeFlag & ShapeFlags.TELEPORT) {
         ;(vnode.type as typeof TeleportImpl).remove(
           vnode,
@@ -3209,19 +3247,23 @@ function baseCreateRenderer(
           internals,
           doRemove,
         )
-      } else if (
+      }
+      // 子分支8.2.4：编译优化的动态子节点 → 快速卸载仅动态子节点
+      // 如果是静态子节点, 说明不存在该节点上没有绑定指令等等因素, 只要父元素从 DOM 树中卸载, 自然就会被卸载掉
+      else if (
         dynamicChildren &&
         // #5154
-        // when v-once is used inside a block, setBlockTracking(-1) marks the
-        // parent block with hasOnce: true
-        // so that it doesn't take the fast path during unmount - otherwise
-        // components nested in v-once are never unmounted.
+        // when v-once is used inside a block, setBlockTracking(-1) marks the 当 v-once 在块内使用时，setBlockTracking(-1) 标记
+        // parent block with hasOnce: true 带有 hasOnce: true 的父块
+        // so that it doesn't take the fast path during unmount - otherwise 这样在卸载期间它不会采用快速路径 - 否则
+        // components nested in v-once are never unmounted. 嵌套在 v-once 中的组件永远不会被卸载。
         !dynamicChildren.hasOnce &&
-        // #1153: fast path should not be taken for non-stable (v-for) fragments
+        // #1153: fast path should not be taken for non-stable (v-for) fragments 对于不稳定 (v-for) 片段，不应采用快速路径
         (type !== Fragment ||
           (patchFlag > 0 && patchFlag & PatchFlags.STABLE_FRAGMENT))
       ) {
-        // fast path for block nodes: only need to unmount dynamic children.
+        // 快速路径：仅卸载动态子节点（静态子节点无需处理）
+        // fast path for block nodes: only need to unmount dynamic children. 块节点的快速路径：只需要卸载动态子节点
         unmountChildren(
           dynamicChildren,
           parentComponent,
@@ -3229,7 +3271,9 @@ function baseCreateRenderer(
           false,
           true,
         )
-      } else if (
+      }
+      // 子分支8.2.5：Fragment/数组子节点 → 全量卸载子节点
+      else if (
         (type === Fragment &&
           patchFlag &
             (PatchFlags.KEYED_FRAGMENT | PatchFlags.UNKEYED_FRAGMENT)) ||
@@ -3238,27 +3282,58 @@ function baseCreateRenderer(
         unmountChildren(children as VNode[], parentComponent, parentSuspense)
       }
 
+      // ========== 第九步：移除真实DOM节点（doRemove=true时） ==========
+      // 仅当需要移除DOM时执行（如永久卸载，非KeepAlive失活）
       if (doRemove) {
-        remove(vnode)
+        remove(vnode) // 从DOM树中移除VNode对应的真实节点
       }
     }
 
+    // ========== 第十步：触发VNode的unmounted钩子 + 指令的unmounted钩子 ==========
+    // 条件：有VNode unmounted钩子 或 有指令需要执行unmounted
     if (
       (shouldInvokeVnodeHook &&
         (vnodeHook = props && props.onVnodeUnmounted)) ||
       shouldInvokeDirs
     ) {
+      // 放入后置渲染队列：保证DOM移除完成后执行（避免钩子中操作已移除的DOM）
       queuePostRenderEffect(() => {
+        // 执行VNode unmounted钩子
         vnodeHook && invokeVNodeHook(vnodeHook, parentComponent, vnode)
+        // 执行指令unmounted钩子
         shouldInvokeDirs &&
           invokeDirectiveHook(vnode, null, parentComponent, 'unmounted')
       }, parentSuspense)
     }
   }
 
+  /**
+   * Vue3 内部核心函数 - 移除VNode对应的真实DOM节点的【专用函数】
+   * 核心使命：根据VNode类型（Fragment/Static/普通元素）执行差异化的DOM移除逻辑，
+   *          兼容过渡动画（transition）的leave/delayLeave钩子，保证：
+   *
+   *   1. Fragment节点移除所有子节点的DOM；
+   *   2. Static静态节点清理缓存并移除DOM；
+   *   3. 带过渡动画的元素执行完动画后再移除DOM；
+   *   4. 普通元素直接移除DOM并触发过渡afterLeave钩子；
+   * 核心关联：在unmount函数中`doRemove=true`时被调用，是VNode从DOM树中清理的最终执行者
+   *
+   *
+   * @param {VNode} vnode 待移除DOM的VNode节点
+   * @returns {void} 无返回值，完成真实DOM节点的移除
+   */
   const remove: RemoveFn = vnode => {
-    const { type, el, anchor, transition } = vnode
+    // ========== 第一步：解构VNode的核心属性 ==========
+    const {
+      type, // VNode类型（Fragment/Static/元素/组件等）
+      el, // VNode对应的真实DOM节点（或Fragment的第一个子节点
+      anchor, // Fragment类型VNode的锚点节点（用于定位子节点范围）
+      transition, // VNode绑定的过渡动画配置（包含leave/delayLeave/afterLeave等钩子）
+    } = vnode
+
+    // ========== 分支1：Fragment类型VNode → 移除Fragment的所有子DOM节点 ==========
     if (type === Fragment) {
+      // 开发环境特殊场景：DEV_ROOT_FRAGMENT（根Fragment）+ 有过渡动画且未持久化
       if (
         __DEV__ &&
         vnode.patchFlag > 0 &&
@@ -3266,52 +3341,81 @@ function baseCreateRenderer(
         transition &&
         !transition.persisted
       ) {
+        // 遍历Fragment的所有子VNode，逐个移除DOM
         ;(vnode.children as VNode[]).forEach(child => {
+          // 注释节点直接移除DOM
           if (child.type === Comment) {
             hostRemove(child.el!)
-          } else {
+          }
+          // 非注释节点递归调用remove（处理子节点的过渡动画）
+          else {
             remove(child)
           }
         })
-      } else {
-        removeFragment(el!, anchor!)
+      }
+      // 普通Fragment场景：调用专用函数移除Fragment的DOM范围
+      else {
+        removeFragment(el!, anchor!) // el=第一个子节点，anchor=锚点，定位Fragment的DOM范围
       }
       return
     }
 
+    // ========== 分支2：Static静态节点 → 移除静态节点DOM并清理缓存 ==========
     if (type === Static) {
-      removeStaticNode(vnode)
+      removeStaticNode(vnode) // 专用函数：清理静态节点缓存 + 移除DOM
       return
     }
 
+    // ========== 通用逻辑：定义DOM移除的核心执行函数 ==========
     const performRemove = () => {
+      // 核心：调用平台无关的DOM移除API（如浏览器环境为el.remove()）
       hostRemove(el!)
+      // 过渡动画：执行afterLeave钩子（动画完成后的收尾操作）
       if (transition && !transition.persisted && transition.afterLeave) {
         transition.afterLeave()
       }
     }
 
+    // ========== 分支3：普通元素 + 有过渡动画且未持久化 → 先执行过渡动画再移除DOM ==========
     if (
-      vnode.shapeFlag & ShapeFlags.ELEMENT &&
-      transition &&
-      !transition.persisted
+      vnode.shapeFlag & ShapeFlags.ELEMENT && // 元素类型VNode
+      transition && // 有过渡动画配置
+      !transition.persisted // 过渡未持久化（persisted=true表示保留DOM）
     ) {
+      // 解构过渡动画的核心钩子
       const { leave, delayLeave } = transition
+      // 定义执行离开动画的函数：执行leave钩子，动画完成后调用performRemove移除DOM
       const performLeave = () => leave(el!, performRemove)
+
+      // 有delayLeave钩子（延迟执行离开动画）
       if (delayLeave) {
+        // 调用delayLeave：参数为DOM、最终移除函数、离开动画函数
         delayLeave(vnode.el!, performRemove, performLeave)
-      } else {
+      }
+      // 无延迟：直接执行离开动画
+      else {
         performLeave()
       }
-    } else {
+    }
+    // ========== 分支4：无过渡动画 / 非元素类型 → 直接移除DOM ==========
+    else {
       performRemove()
     }
   }
 
+  /**
+   * 移除片段（fragment）中的所有DOM节点
+   * 片段（fragment）是一种特殊的虚拟节点类型，它本身不对应实际的DOM元素，
+   * 而是作为一个容器，包含多个子节点。此函数负责移除片段中包含的所有DOM节点。
+   *
+   * @param cur - 要移除的第一个渲染节点
+   * @param end - 要移除的最后一个渲染节点
+   */
   const removeFragment = (cur: RendererNode, end: RendererNode) => {
-    // For fragments, directly remove all contained DOM nodes.
-    // (fragment child nodes cannot have transition)
+    // For fragments, directly remove all contained DOM nodes. 对于片段，直接移除其中包含的所有DOM节点
+    // (fragment child nodes cannot have transition) （片段子节点不能有转换）
     let next
+    // 从片段的起始节点删除到结束节点
     while (cur !== end) {
       next = hostNextSibling(cur)!
       hostRemove(cur)
@@ -3424,6 +3528,17 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * 卸载子节点数组中的所有元素
+   * 遍历子节点数组，并逐个调用unmount函数卸载指定范围内的子节点
+   *
+   * @param children - 要卸载的子节点数组
+   * @param parentComponent - 父组件实例
+   * @param parentSuspense - 父级Suspense组件实例
+   * @param doRemove - 是否从DOM中移除节点，默认为false
+   * @param optimized - 是否启用优化模式，默认为false
+   * @param start - 开始卸载的索引位置，默认为0
+   */
   const unmountChildren: UnmountChildrenFn = (
     children,
     parentComponent,
@@ -3432,6 +3547,7 @@ function baseCreateRenderer(
     optimized = false,
     start = 0,
   ) => {
+    // 遍历从start索引开始的所有子节点并执行卸载操作
     for (let i = start; i < children.length; i++) {
       unmount(children[i], parentComponent, parentSuspense, doRemove, optimized)
     }

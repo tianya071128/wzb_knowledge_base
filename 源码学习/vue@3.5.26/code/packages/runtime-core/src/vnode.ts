@@ -137,19 +137,32 @@ export type VNodeRef =
 
 export type VNodeNormalizedRefAtom = {
   /**
-   * component instance
+   * 该 ref 所属的组件内部实例（上下文）
+   *
+   * component instance 组件实例
    */
   i: ComponentInternalInstance
   /**
-   * Actual ref
+   * 实际的 ref 核心值（VNodeRef 是 ref 的原始类型）
+   *   1. 字符串：如 ref="foo" → r = "foo"；
+   *   2. 函数：如 ref={el => {}} → r = 该函数；
+   *   3. 响应式 ref 对象：如 ref={fooRef}（setup 中声明的 const fooRef = ref()）→ r = fooRef；
+   * - 这是 ref 的 “核心值”，Vue 最终要把 DOM / 组件实例赋值给这个 r
+   *
+   * Actual ref 实际参考值
    */
   r: VNodeRef
   /**
-   * setup ref key
+   * 挂载到 componetnsInstance.refs 参考使用的 key
+   *
+   * setup ref key 设置参考键
    */
   k?: string
   /**
-   * refInFor marker
+   * refInFor 标记（是否在 v-for 循环中）
+   *  - 作用：Vue 识别到 f: true 时，会把多个 ref 收集到数组中（而非覆盖）
+   *
+   * refInFor marker refInFor 标记
    */
   f?: boolean
 }
@@ -548,18 +561,32 @@ const createVNodeWithArgsTransform = (
 const normalizeKey = ({ key }: VNodeProps): VNode['key'] =>
   key != null ? key : null
 
+/**
+ * 标准化 ref 属性，将其转换为规范化的引用对象
+ *
+ * @param ref - ref 引用值，可以是字符串、函数、Ref 对象或数字类型
+ * @param ref_key - ref 的键名，用于标识 ref 的名称
+ * @param ref_for - 表示是否为 v-for 循环中的 ref，布尔值
+ * @returns 返回标准化后的 VNodeNormalizedRefAtom 对象或 null
+ */
 const normalizeRef = ({
   ref,
   ref_key,
   ref_for,
 }: VNodeProps): VNodeNormalizedRefAtom | null => {
+  // 将数字类型的 ref 转换为字符串类型
   if (typeof ref === 'number') {
     ref = '' + ref
   }
   return (
     ref != null
       ? isString(ref) || isRef(ref) || isFunction(ref)
-        ? { i: currentRenderingInstance, r: ref, k: ref_key, f: !!ref_for }
+        ? {
+            i: currentRenderingInstance,
+            r: ref,
+            k: ref_key,
+            f: !!ref_for,
+          }
         : ref
       : null
   ) as any
@@ -596,7 +623,7 @@ function createBaseVNode(
     type,
     props,
     key: props && normalizeKey(props), // key - 用于性能优化，用于判断VNode是否相同
-    ref: props && normalizeRef(props),
+    ref: props && normalizeRef(props), // ref - 模板引用处理
     scopeId: currentScopeId,
     slotScopeIds: null,
     children,

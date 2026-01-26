@@ -1540,13 +1540,33 @@ export function createSetupContext(
   }
 }
 
+/**
+ * Vue3 内部核心函数 - 获取组件【对外暴露的公共实例】的专用函数
+ * 核心使命：
+ *   1. 优先返回组件通过 `defineExpose`/`expose()` 暴露的属性（封装为Proxy，仅允许访问暴露属性+Vue内置公共属性）；
+ *   2. 未暴露属性时，返回组件默认的公共代理（instance.proxy）；
+ *   3. 对暴露的属性做封装：自动解包Ref、标记为非响应式、拦截非法属性访问；
+ * 核心关联：模板Ref绑定组件时（如 `<MyComp ref="compRef" />`），ref的值就是该函数返回的公共实例；
+ *          也用于 `$parent`/`$children` 等组件间访问场景。
+ *
+ *
+ * @param {ComponentInternalInstance} instance 组件内部实例（私有，包含所有内部状态）
+ * @returns {ComponentPublicInstance | ComponentInternalInstance['exposed'] | null} 组件对外的公共实例：
+ *          - 有exposed时：返回封装后的Proxy（仅暴露指定属性+内置公共属性）；
+ *          - 无exposed时：返回instance.proxy（默认公共代理）；
+ *          - 极端场景：返回null（如组件未初始化完成）。
+ */
 export function getComponentPublicInstance(
   instance: ComponentInternalInstance,
 ): ComponentPublicInstance | ComponentInternalInstance['exposed'] | null {
+  // ========== 分支1：组件通过defineExpose/expose()暴露了属性 → 返回封装后的Proxy ==========
   if (instance.exposed) {
     return (
+      // 优先使用缓存的exposeProxy（避免重复创建Proxy，提升性能）
       instance.exposeProxy ||
+      // 缓存未命中 → 创建新的Proxy并赋值给exposeProxy
       (instance.exposeProxy = new Proxy(proxyRefs(markRaw(instance.exposed)), {
+        // Proxy的get拦截：拦截属性访问（控制公共实例能访问的属性）
         get(target, key: string) {
           if (key in target) {
             return target[key]
@@ -1554,12 +1574,19 @@ export function getComponentPublicInstance(
             return publicPropertiesMap[key](instance)
           }
         },
+        // Proxy的has拦截：拦截`key in instance`判断（保证in操作符的一致性）
         has(target, key: string) {
           return key in target || key in publicPropertiesMap
         },
       }))
     )
-  } else {
+  }
+  // ========== 分支2：组件未暴露任何属性 → 返回默认的公共代理（instance.proxy） ==========
+  else {
+    // instance.proxy是组件默认的公共代理：
+    // - 包含setup返回的所有属性；
+    // - 包含Vue内置的公共属性（$el/$props等）；
+    // - 是模板中`this`的指向；
     return instance.proxy
   }
 }

@@ -3,14 +3,30 @@ import { defineAsyncComponent, ref } from 'vue';
 
 const msg = ref('Hello World');
 
-const demos = ['原生元素的渲染', '组件的渲染'];
+const demos = [
+  '原生元素的渲染',
+  '文本和注释节点的渲染',
+  '组件的渲染',
+  '片段的渲染',
+  'ref',
+];
 const active = ref('');
 
 const ComponentDemoAsync = defineAsyncComponent(
-  () => import('./components/组件的渲染/ComponentDemo.vue')
+  () => import('./components/VNode的渲染/组件的渲染/ComponentDemo.vue')
 );
 const NativeElementsDemoAsync = defineAsyncComponent(
-  () => import('./components/原生元素的渲染/NativeElementsDemo.vue')
+  () => import('./components/VNode的渲染/原生元素的渲染/NativeElementsDemo.vue')
+);
+const TextAndCommonDemoAsync = defineAsyncComponent(
+  () =>
+    import('./components/VNode的渲染/文本和注释节点的渲染/TextAndCommonDemo.vue')
+);
+const FragmentDemoAsync = defineAsyncComponent(
+  () => import('./components/VNode的渲染/片段的渲染/FragmentDemo.vue')
+);
+const RefDemoAsync = defineAsyncComponent(
+  () => import('./components/特殊 Attributes/ref/RefDemo.vue')
 );
 </script>
 
@@ -40,6 +56,10 @@ const NativeElementsDemoAsync = defineAsyncComponent(
       <ComponentDemoAsync v-if="active === '组件的渲染'" :msg="msg">
         <div>插槽</div>
       </ComponentDemoAsync>
+      <TextAndCommonDemoAsync
+        v-if="active === '文本和注释节点的渲染'"></TextAndCommonDemoAsync>
+      <FragmentDemoAsync v-if="active === '片段的渲染'"></FragmentDemoAsync>
+      <RefDemoAsync v-if="active === 'ref'"></RefDemoAsync>
     </div>
   </div>
 </template>
