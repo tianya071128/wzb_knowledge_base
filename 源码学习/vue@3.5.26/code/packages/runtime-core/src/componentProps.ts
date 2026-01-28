@@ -52,10 +52,33 @@ export type Prop<T, D = T> = PropOptions<T, D> | PropType<T>
 
 type DefaultFactory<T> = (props: Data) => T | null | undefined
 
+/**
+ * 定义 Vue 组件 prop 的选项配置接口
+ * 包含了类型检查、默认值、验证器等配置项
+ *
+ * @template T - prop 的类型
+ * @template D - 默认值的类型
+ */
 export interface PropOptions<T = any, D = T> {
+  /**
+   * 指定 prop 的类型，可以是原生构造函数（如 String、Number）、自定义类型或 null
+   * 设置为 true 可跳过类型检查
+   */
   type?: PropType<T> | true | null
+  /**
+   * 标识该 prop 是否为必需的，如果设置为 true，在父组件未传递该 prop 时会抛出警告
+   */
   required?: boolean
+  /**
+   * prop 的默认值，可以是基本类型的值、返回默认值的工厂函数、null、undefined 或对象
+   */
   default?: D | DefaultFactory<D> | null | undefined | object
+  /**
+   * 自定义验证函数，接收 prop 值和所有 props 对象作为参数，返回布尔值表示验证是否通过
+   * @param value - prop 的当前值
+   * @param props - 组件的所有 props 对象
+   * @returns 验证结果，true 表示验证通过
+   */
   validator?(value: unknown, props: Data): boolean
   /**
    * @internal
@@ -181,14 +204,16 @@ export type ExtractDefaultPropTypes<O> = O extends object
   : {}
 
 type NormalizedProp = PropOptions & {
+  /** 是否需要布尔类型转换 */
   [BooleanFlags.shouldCast]?: boolean
+  /** 是否需要将字符串类型转换为 Boolean */
   [BooleanFlags.shouldCastTrue]?: boolean
 }
 
 // normalized value is a tuple of the actual normalized options 标准化值是实际标准化选项的元组
 // and an array of prop keys that need value casting (booleans and defaults) 以及需要值转换的 prop 键数组（布尔值和默认值）
 export type NormalizedProps = Record<string, NormalizedProp>
-// [标准化 props options, 需要值转换的 prop 键数组]
+// [标准化 props options, 需要值转换的 prop 键数组 -> 存在 Boolean 类型或者配置了 default 值的 prop 键]
 export type NormalizedPropsOptions = [NormalizedProps, string[]] | []
 
 /**
@@ -197,7 +222,18 @@ export type NormalizedPropsOptions = [NormalizedProps, string[]] | []
  * 核心特性：严格区分声明式Props和透传Attrs、区分有状态/无状态组件差异化处理、兼容SSR、开发环境校验、遵循单向数据流、纯初始化无副作用
  * 核心价值：业务中setup(props)/this.props/ctx.attrs的底层数据来源，所有属性相关的规则都在此实现
  *  - 初始化 Props 和 Attrs 的存储容器, 最终赋值给组件实例
+ *      -- instance.props 和 instance.attrs
  *  - 调用 setFullProps 完成 Props 和 Attrs 的赋值
+ *      - 处理 props 和 attrs, 通过引用关系, 直接修改入参
+ *      - props 处理:
+ *         -- 通过之前解析的 propsOptions 获取声明的props配置对象(驼峰key)，包含类型/默认值/校验规则
+ *         -- 从 vnode.props 中提取父组件传入的值
+ *             --- 如果需要转换值: 可能需要将其转换成布尔值或者其它相关值, 最后跟其他设置了默认值的统一处理
+ *             --- 不需要转换值: 直接添加到 props 容器中
+ *         -- 最后处理存在转换值或默认值的, 通过 resolvePropValue 方法进行处理
+ *      - attrs 处理:
+ *          -- 从 vnode.props 中提取父组件传入的值
+ *          -- 不属于 props 或者 emits 的, 则统一添加到 attrs 容器中
  *  - 差异化挂载处理后的 Props 对象到实例
  *      -- 有状态组件
  *          --- SSR 场景：直接挂载原始props对象 → 服务端渲染是「一次性渲染」，无数据更新、无响应式依赖，不需要创建响应式对象，节省性能；
@@ -484,6 +520,15 @@ export function updateProps(
  * 核心特性：纯数据处理无副作用、兼容连字符/驼峰props写法、严格区分属性边界、兼容Vue2迁移模式、极致性能优化(单次遍历)
  *
  *  - 处理 props 和 attrs, 通过引用关系, 直接修改入参
+ *  - props 处理:
+ *     -- 通过之前解析的 propsOptions 获取声明的props配置对象(驼峰key)，包含类型/默认值/校验规则
+ *     -- 从 vnode.props 中提取父组件传入的值
+ *         --- 如果需要转换值: 可能需要将其转换成布尔值或者其它相关值, 最后跟其他设置了默认值的统一处理
+ *         --- 不需要转换值: 直接添加到 props 容器中
+ *     -- 最后处理存在转换值或默认值的, 通过 resolvePropValue 方法进行处理
+ *  - attrs 处理:
+ *      -- 从 vnode.props 中提取父组件传入的值
+ *      -- 不属于 props 或者 emits 的, 则统一添加到 attrs 容器中
  *
  * @param {ComponentInternalInstance} instance 组件内部实例，获取声明的props/emits配置
  * @param {Data | null} rawProps 父组件传入的原始未处理属性对象，可为null（无属性传入）
@@ -607,6 +652,24 @@ function setFullProps(
   return hasAttrsChanged
 }
 
+/**
+ * Vue3 内部核心函数 - 解析组件Prop的【最终运行时值】的专用函数
+ * 核心使命：
+ *    1. 处理Prop默认值：支持静态默认值、函数式默认值（绑定正确的this/上下文）；
+ *    2. 处理布尔类型Prop的自动转换：适配模板中`<Comp checked>`/`<Comp checked="">`等写法；
+ *    3. 反射默认值到自定义元素（CE）：保证自定义元素Props默认值生效；
+ *    4. 缓存函数式默认值的执行结果：避免重复执行，提升性能；
+ * 核心关联：组件Props初始化/更新阶段调用，是Prop最终值的“计算引擎”，决定模板中使用的Prop实际值。
+ *
+ *
+ * @param {NormalizedProps} options 标准化后的Props配置（来自normalizePropsOptions）
+ * @param {Data} props 组件当前的Props对象（原始传入值）
+ * @param {string} key 当前处理的Prop名称（驼峰命名）
+ * @param {unknown} value 原始传入的Prop值（可能为undefined/空字符串等）
+ * @param {ComponentInternalInstance} instance 组件内部实例（上下文）
+ * @param {boolean} isAbsent 该Prop是否完全未传入（true=未传，false=传了但值为undefined/其他）
+ * @returns {unknown} 解析后的Prop最终值
+ */
 function resolvePropValue(
   options: NormalizedProps,
   props: Data,
@@ -615,46 +678,72 @@ function resolvePropValue(
   instance: ComponentInternalInstance,
   isAbsent: boolean,
 ) {
+  // ========== 步骤1：获取当前Prop的标准化配置 ==========
   const opt = options[key]
+  // 该Prop有标准化配置（需处理默认值/布尔转换）
   if (opt != null) {
+    // ========== 步骤2：判断是否有默认值配置 ==========
     const hasDefault = hasOwn(opt, 'default')
-    // default values
+
+    // ========== 分支1：处理Prop默认值（传入值为undefined时） ==========
+    // default values 默认值
     if (hasDefault && value === undefined) {
+      // 获取Prop的默认值配置
       const defaultValue = opt.default
+
+      // 子分支1.1：函数式默认值（非Function类型Prop + 未跳过工厂函数 + 默认值是函数）
       if (
-        opt.type !== Function &&
-        !opt.skipFactory &&
-        isFunction(defaultValue)
+        opt.type !== Function && // Prop类型不是Function（避免把Function类型Prop的默认值当函数执行）
+        !opt.skipFactory && // 未标记跳过工厂函数（内部标记，用于特殊场景）
+        isFunction(defaultValue) // 默认值是函数（如default: () => ({ a: 1 })）
       ) {
-        const { propsDefaults } = instance
+        const { propsDefaults } = instance // 组件实例的Props默认值缓存（避免函数默认值重复执行）
+        // 缓存命中：直接使用已执行的默认值结果
         if (key in propsDefaults) {
           value = propsDefaults[key]
-        } else {
+        }
+        // 缓存未命中：执行函数式默认值并缓存结果
+        else {
+          // 设置当前组件实例上下文（保证函数内能访问getCurrentInstance()）
           const reset = setCurrentInstance(instance)
+          // 执行默认值函数，计算最终默认值并缓存
           value = propsDefaults[key] = defaultValue.call(
+            // 函数this绑定：
+            // - Vue2兼容模式：绑定到模拟的this（包含props/key等）
+            // - 非兼容模式：绑定到null（符合Vue3设计，默认值函数无this）
             __COMPAT__ &&
               isCompatEnabled(DeprecationTypes.PROPS_DEFAULT_THIS, instance)
               ? createPropsDefaultThis(instance, props, key)
               : null,
-            props,
+            props, // 函数第一个参数：传入组件当前Props对象（便于默认值依赖其他Props）
           )
-          reset()
+          reset() // 重置当前组件实例上下文（避免污染）
         }
-      } else {
-        value = defaultValue
       }
-      // #9006 reflect default value on custom element
+      // 子分支1.2：静态默认值（非函数类型）
+      else {
+        value = defaultValue // 直接使用静态默认值（如default: 1 / default: []）
+      }
+
+      // ========== 特殊处理：自定义元素（CE）反射默认值 ==========
+      // #9006 reflect default value on custom element 反映自定义元素的默认值
       if (instance.ce) {
         instance.ce._setProp(key, value)
       }
     }
+
+    // ========== 分支2：处理布尔类型Prop的自动转换 ==========
+    // 该Prop需要布尔类型转换
     // boolean casting
     if (opt[BooleanFlags.shouldCast]) {
+      // 子分支2.1：Prop完全未传入 且 无默认值 → 转换为false
       if (isAbsent && !hasDefault) {
         value = false
-      } else if (
-        opt[BooleanFlags.shouldCastTrue] &&
-        (value === '' || value === hyphenate(key))
+      }
+      // 子分支2.2：需要将空字符串/匹配key的字符串转为true（如checked="" → true）
+      else if (
+        opt[BooleanFlags.shouldCastTrue] && // 开启“空字符串转true”规则
+        (value === '' || value === hyphenate(key)) // 匹配空字符串 或 连字符形式的key（如checked="checked"）
       ) {
         value = true
       }
@@ -665,100 +754,161 @@ function resolvePropValue(
 
 const mixinPropsCache = new WeakMap<ConcreteComponent, NormalizedPropsOptions>()
 
+/**
+ * Vue3 内部核心函数 - 组件Props选项的【标准化处理总入口】
+ * 核心使命：
+ *   1. 处理Props的缓存逻辑（避免重复标准化，提升性能）；
+ *   2. 合并mixins/extends中的Props（继承链上的Props合并）；
+ *   3. 将原始Props（数组/对象形式）转换为统一的标准化格式；
+ *   4. 识别需要布尔类型转换的Props，标记cast规则并收集对应key；
+ *   5. 开发环境校验Props格式合法性（如数组Props必须是字符串）；
+ * 核心关联：组件初始化阶段（createComponentInstance）调用，为Props校验、赋值、类型转换提供标准化数据。
+ *
+ *  --> 最终统一Props配置对象，用于后续处理Props校验、赋值、类型转换
+ *
+ *
+ * @param {ConcreteComponent} comp 目标组件（选项式/函数式组件）
+ * @param {AppContext} appContext 应用上下文（存储全局mixins、Props缓存等）
+ * @param {boolean} [asMixin=false] 是否作为Mixin处理（决定使用哪个缓存）
+ * @returns {NormalizedPropsOptions} 标准化后的Props配置：
+ *          - [0]: 标准化Props对象（key=驼峰命名，value=标准化Prop配置）；
+ *          - [1]: 需要类型转换的Props key数组（布尔类型/有默认值的Props）。
+ */
 export function normalizePropsOptions(
   comp: ConcreteComponent,
   appContext: AppContext,
   asMixin = false,
 ): NormalizedPropsOptions {
+  // ========== 步骤1：初始化缓存 & 检查缓存命中 ==========
+  // 选择缓存：Options API开启时，Mixin用mixinPropsCache，否则用应用上下文的propsCache
   const cache =
     __FEATURE_OPTIONS_API__ && asMixin ? mixinPropsCache : appContext.propsCache
-  const cached = cache.get(comp)
+  const cached = cache.get(comp) // 从缓存获取已标准化的Props
+  // 缓存命中，直接返回（避免重复处理）
   if (cached) {
     return cached
   }
 
-  const raw = comp.props
-  const normalized: NormalizedPropsOptions[0] = {}
-  const needCastKeys: NormalizedPropsOptions[1] = []
+  // ========== 步骤2：初始化核心变量 ==========
+  const raw = comp.props // 组件原始Props选项（数组/对象/undefined）
+  const normalized: NormalizedPropsOptions[0] = {} // 标准化后的Props对象
+  const needCastKeys: NormalizedPropsOptions[1] = [] // 需要类型转换的Props key数组
 
+  // ========== 步骤3：合并mixins/extends中的Props（Options API场景） ==========
   // apply mixin/extends props
-  let hasExtends = false
+  let hasExtends = false // 标记是否有继承的Props（mixins/extends）
   if (__FEATURE_OPTIONS_API__ && !isFunction(comp)) {
+    // 定义递归合并Props的函数（处理mixins/extends）
     const extendProps = (raw: ComponentOptions) => {
+      // Vue2兼容：如果raw是函数（Vue2构造函数），取其options
       if (__COMPAT__ && isFunction(raw)) {
         raw = raw.options
       }
-      hasExtends = true
+      hasExtends = true // 标记有继承的Props
+      // 递归标准化子级（mixins/extends）的Props
       const [props, keys] = normalizePropsOptions(raw, appContext, true)
-      extend(normalized, props)
-      if (keys) needCastKeys.push(...keys)
+      extend(normalized, props) // 合并子级Props到当前normalized
+      if (keys) needCastKeys.push(...keys) // 合并需要转换的key
     }
+
+    // 3.1 合并应用上下文的全局mixins Props（非Mixin场景）
     if (!asMixin && appContext.mixins.length) {
       appContext.mixins.forEach(extendProps)
     }
+    // 3.2 合并组件extends的Props
     if (comp.extends) {
       extendProps(comp.extends)
     }
+    // 3.3 合并组件mixins的Props
     if (comp.mixins) {
       comp.mixins.forEach(extendProps)
     }
   }
 
+  // ========== 步骤4：无原始Props且无继承Props → 返回空数组 ==========
   if (!raw && !hasExtends) {
+    // 组件是对象类型 → 存入缓存（避免下次重复处理）
     if (isObject(comp)) {
       cache.set(comp, EMPTY_ARR as any)
     }
     return EMPTY_ARR as any
   }
 
+  // ========== 分支1：原始Props是数组形式（如props: ['foo', 'bar']） ==========
   if (isArray(raw)) {
     for (let i = 0; i < raw.length; i++) {
+      // 开发环境校验：数组Props必须是字符串（否则警告）
       if (__DEV__ && !isString(raw[i])) {
-        warn(`props must be strings when using array syntax.`, raw[i])
+        warn(`props must be strings when using array syntax.`, raw[i]) // 使用数组语法时 props 必须是字符串
       }
+
+      // 转换为驼峰命名（兼容kebab-case，如'foo-bar'→'fooBar'）
       const normalizedKey = camelize(raw[i])
+      // 校验Prop名称合法性（不能是保留字、非法字符等）
       if (validatePropName(normalizedKey)) {
+        // 数组形式Props无配置，标准化为空对象
         normalized[normalizedKey] = EMPTY_OBJ
       }
     }
-  } else if (raw) {
+  }
+  // ========== 分支2：原始Props是对象形式（如props: { foo: { type: String } }） ==========
+  else if (raw) {
+    // 开发环境校验：Props必须是对象（否则警告）
     if (__DEV__ && !isObject(raw)) {
-      warn(`invalid props options`, raw)
+      warn(`invalid props options`, raw) // 无效的道具选项
     }
+
+    // 遍历原始Props的每个key
     for (const key in raw) {
+      // 转换为驼峰命名（兼容kebab-case）
       const normalizedKey = camelize(key)
+      // 校验Prop名称合法性
       if (validatePropName(normalizedKey)) {
-        const opt = raw[key]
+        const opt = raw[key] // 原始Prop配置
+        // 标准化Prop配置：
+        // - 数组/函数类型（如type: [String, Number] / type: String）→ 包装为{ type: opt }
+        // - 其他对象类型 → 浅拷贝（避免修改原始配置）
         const prop: NormalizedProp = (normalized[normalizedKey] =
           isArray(opt) || isFunction(opt) ? { type: opt } : extend({}, opt))
-        const propType = prop.type
-        let shouldCast = false
-        let shouldCastTrue = true
+        const propType = prop.type // Prop的类型配置（type字段）
+        let shouldCast = false // 是否需要布尔类型转换
+        let shouldCastTrue = true // 布尔转换规则：是否将空字符串/匹配字符串转为true
 
+        // ========== 子分支：处理数组类型的Prop.type（如[type: [String, Boolean]]） ==========
         if (isArray(propType)) {
           for (let index = 0; index < propType.length; ++index) {
             const type = propType[index]
-            const typeName = isFunction(type) && type.name
+            const typeName = isFunction(type) && type.name // 获取类型名称（如'Boolean'/'String'）
 
+            // 包含Boolean类型 → 标记需要布尔转换
             if (typeName === 'Boolean') {
               shouldCast = true
               break
-            } else if (typeName === 'String') {
-              // If we find `String` before `Boolean`, e.g. `[String, Boolean]`,
-              // we need to handle the casting slightly differently. Props
-              // passed as `<Comp checked="">` or `<Comp checked="checked">`
-              // will either be treated as strings or converted to a boolean
-              // `true`, depending on the order of the types.
+            }
+            // 先遇到String类型（如[String, Boolean]）→ 调整转换规则
+            else if (typeName === 'String') {
+              // If we find `String` before `Boolean`, e.g. `[String, Boolean]`, 如果我们在`Boolean`之前找到`String`，例如`[String, Boolean]`，
+              // we need to handle the casting slightly differently. Props 我们需要以稍微不同的方式来处理选角问题。属性
+              // passed as `<Comp checked="">` or `<Comp checked="checked">` 以 `<Comp checked="">` 或 `<Comp checked="checked">` 的形式传递
+              // will either be treated as strings or converted to a boolean 要么被视为字符串，要么被转换为布尔值
+              // `true`, depending on the order of the types. 根据类型的顺序，结果为`true`
               shouldCastTrue = false
             }
           }
-        } else {
+        }
+        // ========== 子分支：处理单个函数类型的Prop.type（如type: Boolean） ==========
+        else {
+          // 类型是Boolean → 标记需要布尔转换
           shouldCast = isFunction(propType) && propType.name === 'Boolean'
         }
 
+        // ========== 标记布尔转换规则到标准化Prop配置 ==========
         prop[BooleanFlags.shouldCast] = shouldCast
         prop[BooleanFlags.shouldCastTrue] = shouldCastTrue
-        // if the prop needs boolean casting or default value
+
+        // ========== 收集需要类型转换的Prop key ==========
+        // 条件：需要布尔转换 或 有默认值 → 加入needCastKeys
+        // if the prop needs boolean casting or default value 如果 prop 需要布尔转换或默认值
         if (shouldCast || hasOwn(prop, 'default')) {
           needCastKeys.push(normalizedKey)
         }
@@ -766,18 +916,26 @@ export function normalizePropsOptions(
     }
   }
 
+  // ========== 步骤5：组装结果 & 存入缓存 ==========
   const res: NormalizedPropsOptions = [normalized, needCastKeys]
+  // 组件是对象类型 → 存入缓存（下次直接复用）
   if (isObject(comp)) {
     cache.set(comp, res)
   }
   return res
 }
 
+/**
+ * 验证属性名称是否有效
+ * 检查属性名不能以'$'开头且不能是保留属性
+ * @param key 要验证的属性名称
+ * @returns 如果属性名称有效则返回true，否则返回false
+ */
 function validatePropName(key: string) {
   if (key[0] !== '$' && !isReservedProp(key)) {
     return true
   } else if (__DEV__) {
-    warn(`Invalid prop name: "${key}" is a reserved property.`)
+    warn(`Invalid prop name: "${key}" is a reserved property.`) // 无效的属性名：“${key}”是保留属性
   }
   return false
 }
@@ -808,22 +966,52 @@ function getType(ctor: Prop<any> | null): string {
 /**
  * dev only
  */
+/**
+ * Vue3 内部核心函数 - 组件Props合法性校验的【总入口】
+ * 核心使命：
+ *   1. 遍历组件所有标准化的Props配置，逐个调用`validateProp`执行精准校验；
+ *   2. 预处理校验所需的核心参数（解响应式Props值、判断Prop是否未传入、开发环境只读包装）；
+ *   3. 触发Props的类型、必填、自定义验证函数等所有校验规则，开发环境下抛出不合法警告；
+ *
+ * 核心关联：组件初始化/Props更新阶段调用，是Vue Props校验体系的“总调度器”，保证传入的Props符合声明的规则。
+ * @param {Data} rawProps 父组件传入的原始Props对象（未标准化，可能是kebab-case命名）
+ * @param {Data} props 组件内部已解析的Props响应式对象（最终生效的Props值）
+ * @param {ComponentInternalInstance} instance 组件内部实例（包含Props配置、上下文等）
+ * @returns {void} 无返回值，校验不通过时开发环境会触发警告
+ */
 function validateProps(
   rawProps: Data,
   props: Data,
   instance: ComponentInternalInstance,
 ) {
+  // ========== 步骤1：解响应式 → 获取Props的原始值（避免校验时触发依赖收集） ==========
+  // toRaw：剥离响应式包装，拿到纯对象（校验Props值无需响应式，提升性能）
   const resolvedValues = toRaw(props)
+
+  // ========== 步骤2：获取标准化的Props配置（来自normalizePropsOptions的处理结果） ==========
+  // instance.propsOptions[0]：标准化后的Props对象（key=驼峰命名，value=Prop校验规则）
   const options = instance.propsOptions[0]
+
+  // ========== 步骤3：预处理原始Props的key → 转换为驼峰命名（用于判断Prop是否未传入） ==========
+  // 遍历原始Props的所有key，转换为驼峰命名（如'foo-bar'→'fooBar'），存入数组
+  // 作用：后续判断某个Prop是否“完全未传入”（父组件没写这个Prop）
   const camelizePropsKey = Object.keys(rawProps).map(key => camelize(key))
+
+  // ========== 步骤4：遍历所有标准化Props配置 → 逐个执行校验 ==========
   for (const key in options) {
+    // 获取当前Prop的标准化校验规则（如type、required、validator等）
     let opt = options[key]
+    // 跳过无配置的Prop（理论上不会出现，兜底处理）
     if (opt == null) continue
+
+    // ========== 核心：调用validateProp执行单个Prop的精准校验 ==========
     validateProp(
-      key,
-      resolvedValues[key],
-      opt,
+      key, // 当前校验的Prop名称（驼峰命名）
+      resolvedValues[key], // 当前Prop的实际值（解响应式后的原始值）
+      opt, // 当前Prop的标准化校验规则
+      // 开发环境：包装为浅层只读对象（避免校验函数意外修改Props值）；生产环境：直接用原始值
       __DEV__ ? shallowReadonly(resolvedValues) : resolvedValues,
+      // 标记该Prop是否“完全未传入”：原始Props的驼峰key数组中不包含当前key → 未传入
       !camelizePropsKey.includes(key),
     )
   }
@@ -832,6 +1020,24 @@ function validateProps(
 /**
  * dev only
  */
+/**
+ * Vue3 内部核心函数 - 单个Prop的【精准校验执行者】
+ * 核心使命：
+ *    1. 校验Prop必填性：声明required=true但未传入时抛出警告；
+ *    2. 跳过非必填且值为空的Prop：无需校验；
+ *    3. 校验Prop类型：匹配声明的type（支持数组类型，如[type: [String, Number]]）；
+ *    4. 执行自定义校验函数：validator返回false时抛出警告；
+ *    5. 开发环境仅：抛出精准的校验失败警告，生产环境无开销；
+ * 核心关联：被validateProps调用，是Vue Props校验体系的“最小执行单元”，决定单个Prop是否合法。
+ *
+ *
+ * @param {string} name 当前校验的Prop名称（驼峰命名，如fooBar）
+ * @param {unknown} value 当前Prop的实际值（解响应式后的原始值）
+ * @param {PropOptions} prop 当前Prop的标准化校验规则（type/required/validator等）
+ * @param {Data} props 组件完整的Props对象（供自定义validator使用）
+ * @param {boolean} isAbsent 该Prop是否完全未传入（true=父组件没写这个Prop，false=传了但值可能为null/undefined）
+ * @returns {void} 无返回值，校验失败时开发环境触发console警告
+ */
 function validateProp(
   name: string,
   value: unknown,
@@ -839,35 +1045,54 @@ function validateProp(
   props: Data,
   isAbsent: boolean,
 ) {
+  // ========== 步骤1：解构Prop的核心校验规则 ==========
   const { type, required, validator, skipCheck } = prop
+
+  // ========== 分支1：校验必填性（required=true但完全未传入） ==========
   // required!
   if (required && isAbsent) {
-    warn('Missing required prop: "' + name + '"')
+    warn('Missing required prop: "' + name + '"') // 缺少必需的道具
     return
   }
-  // missing but optional
+
+  // ========== 分支2：非必填且值为空（null/undefined）→ 跳过校验 ==========
+  // 场景：Prop声明非必填，且传入值为null/undefined（可能是默认值未触发，或父组件传了undefined）
+  // missing but optional 缺失但可选
   if (value == null && !required) {
     return
   }
+
+  // ========== 分支3：校验Prop类型（有type规则且未跳过校验） ==========
+  // 条件：type存在 + type不是true（内部标记） + 未标记skipCheck（跳过校验）
   // type check
   if (type != null && type !== true && !skipCheck) {
-    let isValid = false
+    let isValid = false // 类型是否匹配的标记
+    // 统一格式：将单个type转为数组（如type: String → [String]，兼容type: [String, Number]）
     const types = isArray(type) ? type : [type]
-    const expectedTypes = []
-    // value is valid as long as one of the specified types match
+    const expectedTypes = [] // 收集期望的类型名称（用于警告信息）
+
+    // 遍历所有声明的类型，只要匹配其中一个则类型校验通过
+    // value is valid as long as one of the specified types match 只要指定类型之一匹配，值就有效
     for (let i = 0; i < types.length && !isValid; i++) {
+      // 核心：调用assertType校验当前值是否匹配指定类型
+      // 返回值：valid（是否匹配）、expectedType（期望的类型名称，如"Number"/"Array"）
       const { valid, expectedType } = assertType(value, types[i])
-      expectedTypes.push(expectedType || '')
-      isValid = valid
+      expectedTypes.push(expectedType || '') // 收集期望类型（用于拼接警告信息）
+      isValid = valid // 只要有一个类型匹配，isValid变为true，循环终止
     }
+
+    // 类型校验失败 → 抛出精准的类型不匹配警告
     if (!isValid) {
       warn(getInvalidTypeMessage(name, value, expectedTypes))
       return
     }
   }
+
+  // ========== 分支4：执行自定义校验函数（有validator且未跳过前面的校验） ==========
+  // 条件：有自定义validator + validator执行返回false（校验失败）
   // custom validator
   if (validator && !validator(value, props)) {
-    warn('Invalid prop: custom validator check failed for prop "' + name + '".')
+    warn('Invalid prop: custom validator check failed for prop "' + name + '".') // 无效的道具：道具的自定义验证器检查失败
   }
 }
 
@@ -883,12 +1108,22 @@ type AssertionResult = {
 /**
  * dev only
  */
+/**
+ * 检查值是否符合指定的类型
+ * 该函数用于开发环境中的类型验证，检查给定值是否与期望的 Prop 类型匹配
+ *
+ * @param value - 要检查类型的值，可以是任意类型
+ * @param type - 用于验证的 Prop 构造函数或 null
+ * @returns 返回一个对象，包含验证结果和期望的类型名称
+ */
 function assertType(
   value: unknown,
   type: PropConstructor | null,
 ): AssertionResult {
   let valid
+  // 获取期望的类型名称
   const expectedType = getType(type)
+
   if (expectedType === 'null') {
     valid = value === null
   } else if (isSimpleType(expectedType)) {

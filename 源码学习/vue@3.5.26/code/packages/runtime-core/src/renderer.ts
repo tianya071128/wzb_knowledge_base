@@ -1988,6 +1988,7 @@ function baseCreateRenderer(
         // instance.update is the reactive effect. instance.update 是反应效果
         // ✅ 核心：执行组件的更新effect（instance.update是响应式effect函数）
         // instance.update由setupRenderEffect创建，执行后会触发renderComponentRoot生成新VNode，再执行patch更新DOM
+        // 触发组件的重渲染, 在组件的渲染包裹函数中, 才会处理 props和attrs相关
         instance.update()
       }
     }

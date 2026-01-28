@@ -8,7 +8,9 @@ const demos = [
   '文本和注释节点的渲染',
   '组件的渲染',
   '片段的渲染',
-  'ref',
+  '模板引用ref',
+  'Props和Attrs',
+  'emits',
 ];
 const active = ref('');
 
@@ -26,7 +28,13 @@ const FragmentDemoAsync = defineAsyncComponent(
   () => import('./components/VNode的渲染/片段的渲染/FragmentDemo.vue')
 );
 const RefDemoAsync = defineAsyncComponent(
-  () => import('./components/特殊 Attributes/ref/RefDemo.vue')
+  () => import('./components/基础/模板引用ref/RefDemo.vue')
+);
+const PropsAndAttrsDemoAsync = defineAsyncComponent(
+  () => import('./components/组件相关概念/propsAndAttrs/PropsAndAttrsDemo.vue')
+);
+const EmitsDemoAsync = defineAsyncComponent(
+  () => import('./components/组件相关概念/emits/EmitsDemo.vue')
 );
 </script>
 
@@ -59,7 +67,10 @@ const RefDemoAsync = defineAsyncComponent(
       <TextAndCommonDemoAsync
         v-if="active === '文本和注释节点的渲染'"></TextAndCommonDemoAsync>
       <FragmentDemoAsync v-if="active === '片段的渲染'"></FragmentDemoAsync>
-      <RefDemoAsync v-if="active === 'ref'"></RefDemoAsync>
+      <RefDemoAsync v-if="active === '模板引用ref'"></RefDemoAsync>
+      <PropsAndAttrsDemoAsync
+        v-if="active === 'Props和Attrs'"></PropsAndAttrsDemoAsync>
+      <EmitsDemoAsync v-if="active === 'emits'"></EmitsDemoAsync>
     </div>
   </div>
 </template>

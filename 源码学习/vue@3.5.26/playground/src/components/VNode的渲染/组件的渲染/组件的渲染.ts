@@ -63,6 +63,9 @@ console.log('组件VNode：', vnode);
  *            --- 新VNode有指令/过渡 - 强制更新
  *            --- 对比新旧 VNode.props(包含了组件的 props、attrs、emits),以及 VNode.slots 插槽, 存在变化项则需要更新
  *        -- 当需要更新时, 调用组件实例(VNode.component 属性引用)的 update() 方法触发更新, 也就会触发 setupRenderEffect 方法中封装的函数执行
+ *            --- 虽然 props 和 attrs 是响应式的, 但是并不是在父组件直接调用 updateComponentPreRender 来更新 props、attrs、slots
+ *            --- 而是直接比对 props 和 slots 的变更, 调用 instance.update() 方法触发子组件更新
+ *            --- 即使在模板中没有使用到 props, 也会触发更新
  *        -- 此时父组件传入的 props 和 slots 可能会发生变化, 所以会调用 updateComponentPreRender 方法更新父组件传入的信息
  *            --- 修正 instance 引用最新的 组件VNode
  *            --- 更新 props、attrs、slots

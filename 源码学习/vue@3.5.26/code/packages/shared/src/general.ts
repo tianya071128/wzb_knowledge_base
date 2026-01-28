@@ -152,6 +152,10 @@ export const camelize: (str: string) => string = cacheStringFunction(
 
 const hyphenateRE = /\B([A-Z])/g
 /**
+ * 将驼峰命名的字符串转换为短横线分隔的格式
+ * 例如：camelCase -> camel-case, HTMLElement -> h-t-m-l-element
+ * @param str 输入的字符串
+ * @returns 转换后的短横线分隔的字符串
  * @private
  */
 export const hyphenate: (str: string) => string = cacheStringFunction(
@@ -168,6 +172,14 @@ export const capitalize: <T extends string>(str: T) => Capitalize<T> =
 
 /**
  * @private
+ */
+/**
+ * 将输入字符串转换为事件处理器键名
+ * 如果输入为空字符串，则返回空字符串；否则在首字母大写的输入字符串前加上'on'前缀
+ * 例如: 'click' => 'onClick', 'input' => 'OnInput', '' => ''
+ *
+ * @param str - 需要转换为事件处理器键名的字符串
+ * @returns 返回转换后的事件处理器键名，如果输入为空则返回空字符串
  */
 export const toHandlerKey: <T extends string>(
   str: T,

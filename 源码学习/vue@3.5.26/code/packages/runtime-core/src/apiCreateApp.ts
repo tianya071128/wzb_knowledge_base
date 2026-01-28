@@ -184,12 +184,12 @@ export interface AppContext {
    */
   optionsCache: WeakMap<ComponentOptions, MergedComponentOptions>
   /**
-   * Cache for normalized props options
+   * Cache for normalized props options 缓存规范化的 props 选项
    * @internal
    */
   propsCache: WeakMap<ConcreteComponent, NormalizedPropsOptions>
   /**
-   * Cache for normalized emits options
+   * Cache for normalized emits options 缓存规范化的 emits 选项
    * @internal
    */
   emitsCache: WeakMap<ConcreteComponent, ObjectEmitsOptions | null>

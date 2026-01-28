@@ -250,7 +250,7 @@ export const ARRAY_ITERATE_KEY: unique symbol = Symbol(
 )
 
 /**
- * Tracks access to a reactive property.
+ * Tracks access to a reactive property. 跟踪对反应性属性的访问
  *
  * This will check which effect is running at the moment and record it as dep
  * which records all effects that depend on the reactive property.
