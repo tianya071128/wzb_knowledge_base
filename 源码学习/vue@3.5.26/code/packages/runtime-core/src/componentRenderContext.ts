@@ -74,7 +74,7 @@ export type ContextualRenderFn = {
 }
 
 /**
- * Wrap a slot function to memoize current rendering instance
+ * Wrap a slot function to memoize current rendering instance 包装一个槽函数来记住当前渲染实例
  * @private compiler helper
  */
 export function withCtx(

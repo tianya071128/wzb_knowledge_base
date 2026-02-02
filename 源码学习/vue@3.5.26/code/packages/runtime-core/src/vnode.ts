@@ -1038,24 +1038,40 @@ export function createCommentVNode(
     : createVNode(Comment, null, text)
 }
 
+/**
+ * Vue3 核心通用函数 - 任意子节点类型 → 标准VNode的**统一标准化入口**
+ * 核心关联：被createVNode、renderSlot、normalizeChildren等核心函数调用，是Vue虚拟DOM体系中**所有子节点进入渲染流程前的必经步骤**，
+ *            为渲染器（renderer）提供统一的VNode输入，是虚拟DOM渲染的基础保障。
+ * @param {VNodeChild} child 待标准化的原始子节点，为Vue内置联合类型，包含所有可能的子节点类型
+ * @returns {VNode} 标准化后的**唯一标准VNode实例**，类型为注释/片段/已有VNode克隆/文本中的一种
+ */
 export function normalizeVNode(child: VNodeChild): VNode {
+  // 分支1：空值（null/undefined）或布尔值 → 转为注释VNode作为空占位符
+  // 场景：模板中v-if="false"、v-else等返回布尔值/空值的情况，用注释节点占位不影响DOM结构
   if (child == null || typeof child === 'boolean') {
-    // empty placeholder
+    // empty placeholder 空占位符
     return createVNode(Comment)
-  } else if (isArray(child)) {
-    // fragment
+  }
+  // 分支2：原始子节点为数组 → 转为Fragment（片段）VNode，包裹所有子节点
+  else if (isArray(child)) {
+    // fragment 分段
     return createVNode(
       Fragment,
       null,
-      // #3666, avoid reference pollution when reusing vnode
+      // #3666, avoid reference pollution when reusing vnode 重用vnode时避免引用污染
       child.slice(),
     )
-  } else if (isVNode(child)) {
-    // already vnode, this should be the most common since compiled templates
-    // always produce all-vnode children arrays
+  }
+  // 分支3：原始子节点已是VNode实例 → 按需克隆（仅已挂载的克隆），直接返回/返回克隆体
+  // 场景：编译后的模板几乎都会生成纯VNode数组，这是**最常见的执行分支**
+  else if (isVNode(child)) {
+    // already vnode, this should be the most common since compiled templates 已经是vnode，这应该是编译模板以来最常见的
+    // always produce all-vnode children arrays 始终生成全 vnode 子数组
     return cloneIfMounted(child)
-  } else {
-    // strings and numbers
+  }
+  // 分支4：其他类型（字符串/数字/Symbol等基本类型）→ 转为文本VNode
+  else {
+    // strings and numbers 字符串和数字
     return createVNode(Text, null, String(child))
   }
 }
@@ -1079,58 +1095,108 @@ export function cloneIfMounted(child: VNode): VNode {
     : cloneVNode(child)
 }
 
+/**
+ * Vue3 内部核心函数 - VNode子节点的【标准化处理核心】
+ * 核心使命：
+ *   1. 统一子节点格式：将任意类型的children（null/数组/对象/函数/基本类型）转换为Vue内部可统一处理的标准化格式；
+ *   2. 标记子节点类型：为VNode设置对应的ShapeFlags子节点标记（数组/文本/插槽），支撑后续渲染/patch逻辑；
+ *   3. 处理插槽（Slots）：解析插槽对象、绑定渲染上下文、标记插槽稳定性（静态/动态/转发）、设置动态插槽补丁标记；
+ *   4. 特殊VNode适配：为ELEMENT/TELEPORT类型VNode做专属子节点处理（如Teleport强制子节点为数组）；
+ *   5. 编译插槽兼容：处理withCtx编译的插槽标记（_c/_d），保证编译插槽的标准化逻辑正确执行；
+ *
+ * 核心关联：VNode创建阶段（createVNode/h/tsx）同步调用，是Vue虚拟DOM渲染体系的前置基础，决定子节点后续如何被渲染和更新。
+ * @param {VNode} vnode 待处理的VNode实例（最终将标准化后的子节点和标记挂载到该实例）
+ * @param {unknown} children 原始未标准化的子节点（任意类型，如模板中的子元素、组件的插槽、直接的文本/数字等）
+ * @returns {void} 无返回值，直接修改入参vnode的children和shapeFlag属性
+ */
 export function normalizeChildren(vnode: VNode, children: unknown): void {
+  // 初始化子节点类型标记（0表示未初始化，后续会赋值为ShapeFlags中的子节点类型）
   let type = 0
+  // 解构VNode自身的形状标记（用于判断VNode类型：ELEMENT/TELEPORT/组件等）
   const { shapeFlag } = vnode
+
+  // ========== 分支1：原始children为null/undefined → 标准化为null ==========
   if (children == null) {
     children = null
-  } else if (isArray(children)) {
+  }
+  // ========== 分支2：原始children为数组 → 标记为数组子节点 ==========
+  else if (isArray(children)) {
     type = ShapeFlags.ARRAY_CHILDREN
   } else if (typeof children === 'object') {
+    // 子分支3.1：当前VNode是普通DOM元素/TELEPORT → 提取插槽default作为子节点（不处理插槽结构）
     if (shapeFlag & (ShapeFlags.ELEMENT | ShapeFlags.TELEPORT)) {
-      // Normalize slot to plain children for plain element and Teleport
+      // Normalize slot to plain children for plain element and Teleport 将插槽标准化为普通元素和传送的普通子元素
+      // 普通元素/TELEPORT不支持复杂插槽，仅提取插槽对象的default插槽作为子节点
       const slot = (children as any).default
       if (slot) {
-        // _c marker is added by withCtx() indicating this is a compiled slot
+        // _c marker is added by withCtx() indicating this is a compiled slot _c 标记由 withCtx() 添加，指示这是一个编译槽
         slot._c && (slot._d = false)
+        // 递归调用标准化：执行插槽函数得到实际子节点，继续标准化处理
         normalizeChildren(vnode, slot())
+        // 标准化完成后将_d置为true，恢复标记
         slot._c && (slot._d = true)
       }
-      return
-    } else {
+      return // 已递归处理完子节点，直接返回（无需后续赋值）
+    }
+    // 子分支3.2：当前VNode是组件 → 标记为插槽子节点，处理插槽对象的上下文和稳定性
+    else {
       type = ShapeFlags.SLOTS_CHILDREN
+      // 获取插槽对象的内置标记（_：SlotFlags，标识插槽类型：STABLE/动态/转发等）
       const slotFlag = (children as RawSlots)._
+      // 情况1：插槽未标准化（无_slotFlag）且不是Vue内部对象 → 绑定当前渲染上下文
       if (!slotFlag && !isInternalObject(children)) {
-        // if slots are not normalized, attach context instance
-        // (compiled / normalized slots already have context)
+        // if slots are not normalized, attach context instance 如果插槽未标准化，则附加上下文实例
+        // (compiled / normalized slots already have context) （已编译/已规范化的插槽已有上下文）
+        // 未编译/未标准化的插槽需要绑定渲染实例上下文，保证插槽内可访问组件实例（如this/setup上下文）
         ;(children as RawSlots)._ctx = currentRenderingInstance
-      } else if (slotFlag === SlotFlags.FORWARDED && currentRenderingInstance) {
-        // a child component receives forwarded slots from the parent.
-        // its slot type is determined by its parent's slot type.
+      }
+      // 情况2：插槽是**转发插槽（FORWARDED）** 且存在当前渲染实例 → 继承父组件的插槽稳定性标记
+      else if (slotFlag === SlotFlags.FORWARDED && currentRenderingInstance) {
+        // 转发插槽：子组件从父组件接收的插槽，其稳定性由父组件的插槽类型决定
+        // a child component receives forwarded slots from the parent. 子组件接收来自父组件的转发槽
+        // its slot type is determined by its parent's slot type. 它的槽类型由其父槽类型决定。
         if (
           (currentRenderingInstance.slots as RawSlots)._ === SlotFlags.STABLE
         ) {
+          // 父组件是静态插槽 → 子组件转发插槽也标记为静态
           ;(children as RawSlots)._ = SlotFlags.STABLE
         } else {
+          // 父组件是动态插槽 → 子组件转发插槽标记为动态，并为VNode添加动态插槽补丁标记
           ;(children as RawSlots)._ = SlotFlags.DYNAMIC
           vnode.patchFlag |= PatchFlags.DYNAMIC_SLOTS
         }
       }
     }
-  } else if (isFunction(children)) {
+  }
+  // ========== 分支4：原始children为函数 → 转换为默认插槽对象，绑定渲染上下文 ==========
+  else if (isFunction(children)) {
+    // 函数式children会被Vue解析为**默认插槽**，包装为标准插槽对象
+    // 绑定currentRenderingInstance作为插槽上下文，保证函数内可访问组件实例
     children = { default: children, _ctx: currentRenderingInstance }
     type = ShapeFlags.SLOTS_CHILDREN
-  } else {
+  }
+  // ========== 分支5：原始children为基本类型（字符串/数字/布尔等）→ 标准化为文本 ==========
+  else {
+    // 所有非对象/非函数/非数组的基本类型，统一转换为字符串（如数字123→"123"，布尔true→"true"）
     children = String(children)
-    // force teleport children to array so it can be moved around
+
+    // force teleport children to array so it can be moved around 强制将子项传送到阵列中，以便可以四处移动
+    // 特殊处理：TELEPORT类型VNode → 强制转为数组包裹的文本VNode（TELEPORT需要移动子节点，数组更易操作）
     if (shapeFlag & ShapeFlags.TELEPORT) {
       type = ShapeFlags.ARRAY_CHILDREN
+      // 创建文本VNode，包裹标准化后的字符串，放入数组
       children = [createTextVNode(children as string)]
-    } else {
+    }
+    // 普通VNode（如ELEMENT/组件）→ 标记为文本子节点
+    else {
       type = ShapeFlags.TEXT_CHILDREN
     }
   }
+
+  // ========== 最终步骤：将标准化后的子节点和类型标记挂载到VNode ==========
+  // 为VNode赋值标准化后的子节点（指定类型为VNodeNormalizedChildren，保证类型安全）
   vnode.children = children as VNodeNormalizedChildren
+  // 将子节点类型标记合并到VNode的shapeFlag中（按位或，保留原有VNode类型，添加子节点类型）
   vnode.shapeFlag |= type
 }
 

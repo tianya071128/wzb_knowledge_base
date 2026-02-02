@@ -1,8 +1,8 @@
 export enum SlotFlags {
   /**
-   * Stable slots that only reference slot props or context state. The slot
-   * can fully capture its own dependencies so when passed down the parent won't
-   * need to force the child to update.
+   * Stable slots that only reference slot props or context state. The slot 仅引用插槽道具或上下文状态的稳定插槽。插槽
+   * can fully capture its own dependencies so when passed down the parent won't 可以完全捕获自身的依赖关系，这样在向下传递时，父级就不会受到影响
+   * need to force the child to update. 需要强制孩子进行更新
    */
   STABLE = 1,
   /**

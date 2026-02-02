@@ -525,7 +525,7 @@ export function createAppAPI<HostElement>(
 }
 
 /**
- * @internal Used to identify the current app when using `inject()` within
+ * @internal Used to identify the current app when using `inject()` within 用于在使用“inject()”时识别当前应用程序
  * `app.runWithContext()`.
  */
 export let currentApp: App<unknown> | null = null

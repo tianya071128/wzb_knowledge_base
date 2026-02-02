@@ -11,6 +11,8 @@ const demos = [
   '模板引用ref',
   'Props和Attrs',
   'emits',
+  'Slots',
+  '依赖注入',
 ];
 const active = ref('');
 
@@ -35,6 +37,12 @@ const PropsAndAttrsDemoAsync = defineAsyncComponent(
 );
 const EmitsDemoAsync = defineAsyncComponent(
   () => import('./components/组件相关概念/emits/EmitsDemo.vue')
+);
+const SlotsDemoAsync = defineAsyncComponent(
+  () => import('./components/组件相关概念/Slots/SlotsDemo.vue')
+);
+const ProvideDemoAsync = defineAsyncComponent(
+  () => import('./components/组件相关概念/依赖注入/ProvideDemo.vue')
 );
 </script>
 
@@ -71,6 +79,8 @@ const EmitsDemoAsync = defineAsyncComponent(
       <PropsAndAttrsDemoAsync
         v-if="active === 'Props和Attrs'"></PropsAndAttrsDemoAsync>
       <EmitsDemoAsync v-if="active === 'emits'"></EmitsDemoAsync>
+      <SlotsDemoAsync v-if="active === 'Slots'"></SlotsDemoAsync>
+      <ProvideDemoAsync v-if="active === '依赖注入'"></ProvideDemoAsync>
     </div>
   </div>
 </template>
