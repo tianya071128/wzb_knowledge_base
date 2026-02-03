@@ -13,7 +13,21 @@
  * @param {number[]} flips
  * @return {number}
  */
-var numTimesAllBlue = function (flips) {};
+var numTimesAllBlue = function (flips) {
+  let ans = 0,
+    max = 0;
+  for (let i = 0; i < flips.length; i++) {
+    const flip = flips[i];
+
+    max = Math.max(flip, max);
+
+    if (max === i + 1) {
+      ans++;
+    }
+  }
+
+  return ans;
+};
 // @lc code=end
 
 /*
