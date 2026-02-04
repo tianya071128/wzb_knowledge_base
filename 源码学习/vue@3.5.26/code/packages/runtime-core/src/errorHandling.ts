@@ -92,14 +92,28 @@ export function callWithErrorHandling(
   }
 }
 
+/**
+ * 异步错误处理函数调用器
+ * 处理函数执行过程中的异步错误，支持单个函数或函数数组
+ * 对于 Promise 类型的返回值会自动捕获其中的错误
+ *
+ * @param fn - 要执行的函数，可以是单个函数或函数数组
+ * @param instance - 组件内部实例，用于错误追踪，可以为空
+ * @param type - 错误类型，标识错误来源
+ * @param args - 可选参数数组，传递给函数的参数
+ * @returns 函数执行结果，如果是异步操作则返回 Promise，如果是函数数组则返回结果数组
+ */
 export function callWithAsyncErrorHandling(
   fn: Function | Function[],
   instance: ComponentInternalInstance | null,
   type: ErrorTypes,
   args?: unknown[],
 ): any {
+  // 处理单个函数的情况
   if (isFunction(fn)) {
     const res = callWithErrorHandling(fn, instance, type, args)
+
+    // 如果返回结果是 Promise，则捕获其中的错误
     if (res && isPromise(res)) {
       res.catch(err => {
         handleError(err, instance, type)
@@ -108,6 +122,7 @@ export function callWithAsyncErrorHandling(
     return res
   }
 
+  // 处理函数数组的情况，递归调用每个函数
   if (isArray(fn)) {
     const values = []
     for (let i = 0; i < fn.length; i++) {
@@ -116,7 +131,7 @@ export function callWithAsyncErrorHandling(
     return values
   } else if (__DEV__) {
     warn(
-      `Invalid value type passed to callWithAsyncErrorHandling(): ${typeof fn}`,
+      `Invalid value type passed to callWithAsyncErrorHandling(): ${typeof fn}`, // 传递给 callWithAsyncErrorHandling 的值类型无效
     )
   }
 }

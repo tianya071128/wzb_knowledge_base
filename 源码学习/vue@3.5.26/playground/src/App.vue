@@ -13,6 +13,8 @@ const demos = [
   'emits',
   'Slots',
   '依赖注入',
+  '自定义指令',
+  '内置指令',
 ];
 const active = ref('');
 
@@ -43,6 +45,12 @@ const SlotsDemoAsync = defineAsyncComponent(
 );
 const ProvideDemoAsync = defineAsyncComponent(
   () => import('./components/组件相关概念/依赖注入/ProvideDemo.vue')
+);
+const CustomDirectivesAsync = defineAsyncComponent(
+  () => import('./components/指令/自定义指令/CustomDirectives.vue')
+);
+const InternalDirectivesDemoAsync = defineAsyncComponent(
+  () => import('./components/指令/内置指令/InternalDirectivesDemo.vue')
 );
 </script>
 
@@ -81,6 +89,10 @@ const ProvideDemoAsync = defineAsyncComponent(
       <EmitsDemoAsync v-if="active === 'emits'"></EmitsDemoAsync>
       <SlotsDemoAsync v-if="active === 'Slots'"></SlotsDemoAsync>
       <ProvideDemoAsync v-if="active === '依赖注入'"></ProvideDemoAsync>
+      <CustomDirectivesAsync
+        v-if="active === '自定义指令'"></CustomDirectivesAsync>
+      <InternalDirectivesDemoAsync
+        v-if="active === '内置指令'"></InternalDirectivesDemoAsync>
     </div>
   </div>
 </template>

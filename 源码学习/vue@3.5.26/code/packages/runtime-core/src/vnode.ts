@@ -1200,34 +1200,62 @@ export function normalizeChildren(vnode: VNode, children: unknown): void {
   vnode.shapeFlag |= type
 }
 
+/**
+ * 合并多个属性对象（Data + VNodeProps），对class/style/事件做特殊处理，普通属性后项覆盖前项
+ *
+ *
+ * @param  {...(Data & VNodeProps)} args - 待合并的属性对象列表，支持传入1个或多个
+ * @returns {Data} 合并后的最终属性对象，可直接用于Vue组件/虚拟节点
+ */
 export function mergeProps(...args: (Data & VNodeProps)[]): Data {
+  // 初始化合并结果对象，作为最终返回值
   const ret: Data = {}
+
+  // 遍历所有待合并的属性对象（按传入顺序依次处理）
   for (let i = 0; i < args.length; i++) {
-    const toMerge = args[i]
+    const toMerge = args[i] // 取出当前待合并的单个属性对象
+
+    // 遍历当前属性对象的所有键值对，逐个处理合并
     for (const key in toMerge) {
+      // 分支1：处理class属性（特殊标准化合并）
       if (key === 'class') {
+        // 仅当新旧class不同时才合并，避免重复处理
         if (ret.class !== toMerge.class) {
+          // 传入数组[原有class, 新class]，自动标准化为统一的class字符串
           ret.class = normalizeClass([ret.class, toMerge.class])
         }
-      } else if (key === 'style') {
+      }
+      // 分支2：处理style属性（特殊标准化合并）
+      else if (key === 'style') {
+        // 传入数组[原有style, 新style]，自动合并为无冲突的style对象/字符串
         ret.style = normalizeStyle([ret.style, toMerge.style])
-      } else if (isOn(key)) {
+      }
+      // 分支3：处理事件处理器（如onClick、onChange，isOn判断是否为事件名）
+      else if (isOn(key)) {
+        // 获取结果对象中已存在的同名事件处理器
         const existing = ret[key]
+        // 获取当前待合并的事件处理器
         const incoming = toMerge[key]
+
         if (
-          incoming &&
-          existing !== incoming &&
-          !(isArray(existing) && existing.includes(incoming))
+          incoming && // 新事件处理器存在
+          existing !== incoming && // 新旧处理器不是同一个引用
+          !(isArray(existing) && existing.includes(incoming)) // 原有处理器不是数组，或数组中不包含新处理器（避免重复）
         ) {
+          // 合并规则：原有处理器存在则转为数组，拼接新处理器；不存在则直接赋值新处理器
           ret[key] = existing
             ? [].concat(existing as any, incoming as any)
             : incoming
         }
-      } else if (key !== '') {
+      }
+      // 分支4：处理普通属性（非class/style/事件，且非空键）
+      else if (key !== '') {
+        // 普通属性规则：后传入的属性直接覆盖先传入的同名属性
         ret[key] = toMerge[key]
       }
     }
   }
+  // 返回最终合并后的属性对象
   return ret
 }
 

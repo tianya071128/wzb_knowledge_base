@@ -388,16 +388,28 @@ export enum MoveType {
   REORDER,
 }
 
+/**
+ * Vue3 内部核心调度函数：将「渲染后副作用函数」加入对应执行队列
+ *
+ * 核心作用：保证传入的副作用函数在「DOM 渲染更新完成后」执行，避免操作未更新的 DOM；
+ *          同时根据编译时是否开启 Suspense 特性，自动切换底层队列实现，兼顾特性支持和包体积优化
+ *
+ * 核心设计：基于 Vue 编译时特性开关（__FEATURE_SUSPENSE__）做分支处理，未开启特性时会被树摇优化剔除无用代码
+ *
+ * @param fn 待执行的副作用函数/函数数组，类型为 SchedulerJobs（Vue 内部调度器任务类型，本质是 Function | Function[]）
+ * @param suspense Suspense 边界内部实例，可为 null；仅在开启 Suspense 特性时生效，用于关联副作用到指定 Suspense 边界
+ * @returns void 无返回值
+ */
 export const queuePostRenderEffect: (
   fn: SchedulerJobs,
   suspense: SuspenseBoundary | null,
-) => void = __FEATURE_SUSPENSE__
-  ? __TEST__
-    ? // vitest can't seem to handle eager circular dependency
+) => void = __FEATURE_SUSPENSE__ // 编译时Suspense特性开关：true=开启Suspense，false=关闭（默认部分构建版本关闭）
+  ? __TEST__ // 测试环境开关：true=当前为vitest测试环境，false=生产/开发环境
+    ? // vitest can't seem to handle eager circular dependency vitest 似乎无法处理急切的循环依赖
       (fn: Function | Function[], suspense: SuspenseBoundary | null) =>
-        queueEffectWithSuspense(fn, suspense)
-    : queueEffectWithSuspense
-  : queuePostFlushCb
+        queueEffectWithSuspense(fn, suspense) // 包装后仍调用Suspense版队列函数，仅解决循环依赖问题
+    : queueEffectWithSuspense // 生产/开发环境（开启Suspense）：直接指向Suspense专属队列函数
+  : queuePostFlushCb // 关闭Suspense特性：直接指向Vue核心的「后置刷新回调队列」函数
 
 /**
  * The createRenderer function accepts two generic arguments: createRenderer 函数接受两个通用参数

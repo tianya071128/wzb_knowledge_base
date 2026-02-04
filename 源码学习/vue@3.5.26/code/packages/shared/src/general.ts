@@ -229,7 +229,14 @@ export const def = (
 
 /**
  * "123-foo" will be parsed to 123
- * This is used for the .number modifier in v-model
+ * This is used for the .number modifier in v-model 这用于 v-model 中的 .number 修饰符
+ */
+/**
+ * 将输入值尝试转换为数字类型
+ * 如果转换后的值不是有效数字，则返回原始值
+ *
+ * @param val - 待转换的值，可以是任意类型
+ * @returns 如果能够成功转换为数字则返回数字值，否则返回原始值
  */
 export const looseToNumber = (val: any): any => {
   const n = parseFloat(val)
