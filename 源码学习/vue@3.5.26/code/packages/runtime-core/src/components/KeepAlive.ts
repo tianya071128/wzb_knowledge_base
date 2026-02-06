@@ -62,6 +62,7 @@ type Cache = Map<CacheKey, VNode>
 type Keys = Set<CacheKey>
 
 export interface KeepAliveContext extends ComponentRenderContext {
+  /** 会在 ../renderer.ts 的 mountComponent 方法创建中组件实例后, 会挂载 instance.ctx.renderer 中 */
   renderer: RendererInternals
   activate: (
     vnode: VNode,
@@ -79,9 +80,9 @@ export const isKeepAlive = (vnode: VNode): boolean =>
 const KeepAliveImpl: ComponentOptions = {
   name: `KeepAlive`,
 
-  // Marker for special handling inside the renderer. We are not using a ===
-  // check directly on KeepAlive in the renderer, because importing it directly
-  // would prevent it from being tree-shaken.
+  // Marker for special handling inside the renderer. We are not using a === 用于渲染器内部特殊处理的标记。我们没有使用 ===
+  // check directly on KeepAlive in the renderer, because importing it directly 直接在渲染器中检查KeepAlive，因为是直接导入的
+  // would prevent it from being tree-shaken. 可以防止它被摇树。
   __isKeepAlive: true,
 
   props: {
@@ -90,34 +91,60 @@ const KeepAliveImpl: ComponentOptions = {
     max: [String, Number],
   },
 
+  // KeepAlive的setup函数，接收专属Props和setup上下文
+  // KeepAliveProps：包含include/exclude/max三个核心属性，用于控制缓存规则
+  // SetupContext：解构出slots，因为KeepAlive是包裹子组件的容器，核心渲染默认插槽
+
   setup(props: KeepAliveProps, { slots }: SetupContext) {
+    // 获取当前KeepAlive组件的内部实例，非空断言：KeepAlive作为内置组件，实例一定存在
     const instance = getCurrentInstance()!
-    // KeepAlive communicates with the instantiated renderer via the
-    // ctx where the renderer passes in its internals,
-    // and the KeepAlive instance exposes activate/deactivate implementations.
-    // The whole point of this is to avoid importing KeepAlive directly in the
-    // renderer to facilitate tree-shaking.
+
+    // KeepAlive communicates with the instantiated renderer via the KeepAlive通过（某种方式）与实例化的渲染器进行通信
+    // ctx where the renderer passes in its internals, 在ctx中，渲染器传入其内部组件
+    // and the KeepAlive instance exposes activate/deactivate implementations. 而KeepAlive实例则公开了激活/停用实现
+    // The whole point of this is to avoid importing KeepAlive directly in the 这样做的全部目的就是为了避免直接导入KeepAlive
+    // renderer to facilitate tree-shaking. 渲染器以促进树状结构抖动
+
+    // 核心设计：KeepAlive 与 Vue渲染器通过**实例上下文ctx**通信，而非直接导入
+    // 目的：避免渲染器直接依赖KeepAlive，让Tree Shaking可以摇掉未使用的KeepAlive代码
+    // 将ctx类型断言为KeepAliveContext（渲染器与KeepAlive的共享上下文类型）
     const sharedContext = instance.ctx as KeepAliveContext
 
-    // if the internal renderer is not registered, it indicates that this is server-side rendering,
-    // for KeepAlive, we just need to render its children
+    // if the internal renderer is not registered, it indicates that this is server-side rendering, 如果内部渲染器未注册，则表明这是服务器端渲染
+    // for KeepAlive, we just need to render its children 对于KeepAlive组件，我们只需渲染其子组件
+
+    // 服务端渲染(SSR)兼容处理：若为SSR且渲染器未注册
+    // KeepAlive在服务端无需缓存（服务端无DOM，一次性渲染），仅直接渲染默认插槽的子节点即可
     if (__SSR__ && !sharedContext.renderer) {
       return () => {
+        // 获取默认插槽的子节点
         const children = slots.default && slots.default()
+        // 插槽规范：若只有一个子节点，直接返回该节点；否则返回整个子节点数组
         return children && children.length === 1 ? children[0] : children
       }
     }
 
+    // ********** 初始化缓存核心数据结构 **********
+    // cache：Map结构，缓存核心容器 → 键(CacheKey)：组件唯一标识；值(VNode)：缓存的组件VNode实例
     const cache: Cache = new Map()
+    // keys：Set结构，维护缓存key的**插入顺序**，用于实现LRU(最近最少使用)缓存淘汰策略
     const keys: Keys = new Set()
+    // current：记录当前**激活状态**的组件VNode，用于区分“当前组件”和“缓存组件”
     let current: VNode | null = null
 
+    // 开发环境/生产环境开发者工具兼容：将缓存容器暴露到实例上，方便devtools调试查看缓存内容
     if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
       ;(instance as any).__v_cache = cache
     }
 
+    // 获取父级Suspense边界实例，用于联动Suspense的挂起/恢复逻辑（缓存Suspense子组件时用）
     const parentSuspense = instance.suspense
 
+    // 从共享上下文解构渲染器的**核心内部方法**（渲染器注入到ctx中，与KeepAlive联动）
+    // p: patch → 核心更新方法，用于激活组件时更新props/属性
+    // m: move → 节点移动方法，用于将缓存组件在「页面容器」和「缓存容器」之间移动
+    // um: _unmount → 渲染器原生卸载方法，封装后用于真正卸载缓存组件
+    // o.createElement → 平台通用的创建DOM元素方法，用于创建缓存失活组件的隐藏容器
     const {
       renderer: {
         p: patch,
@@ -126,8 +153,13 @@ const KeepAliveImpl: ComponentOptions = {
         o: { createElement },
       },
     } = sharedContext
+    // 创建**缓存容器DOM**：一个隐藏的<div>，用于存放「失活状态」的组件DOM节点
+    // 失活组件并非销毁DOM，而是将DOM移动到该容器中暂存，激活时再移回页面容器
     const storageContainer = createElement('div')
 
+    // ********** 暴露activate方法给渲染器 → 核心：激活缓存的组件 **********
+    // 渲染器在检测到VNode有COMPONENT_KEPT_ALIVE标记时，会调用此方法
+    // 入参与渲染器核心方法一致，包含要激活的vnode、目标容器、锚点、命名空间、是否优化渲染等
     sharedContext.activate = (
       vnode,
       container,
@@ -166,6 +198,9 @@ const KeepAliveImpl: ComponentOptions = {
       }
     }
 
+    // ********** 暴露deactivate方法给渲染器 → 核心：失活当前组件（加入缓存） **********
+    // 渲染器在检测到VNode有COMPONENT_SHOULD_KEEP_ALIVE标记时，会调用此方法
+    // 入参：要失活的组件VNode
     sharedContext.deactivate = (vnode: VNode) => {
       const instance = vnode.component!
       invalidateMount(instance.m)
@@ -228,19 +263,23 @@ const KeepAliveImpl: ComponentOptions = {
       keys.delete(key)
     }
 
-    // prune cache on include/exclude prop change
+    // prune cache on include/exclude prop change 在包含/排除属性更改时修剪缓存
+    // ********** 监听include/exclude属性变化 → 动态修剪缓存 **********
+    // 当用户修改include/exclude时，自动过滤缓存，只保留符合新规则的组件
     watch(
-      () => [props.include, props.exclude],
+      () => [props.include, props.exclude], // 监听的依赖：include和exclude数组/正则/字符串
       ([include, exclude]) => {
         include && pruneCache(name => matches(include, name))
         exclude && pruneCache(name => !matches(exclude, name))
       },
-      // prune post-render after `current` has been updated
+      // prune post-render after `current` has been updated 更新“current”后修剪渲染后
       { flush: 'post', deep: true },
     )
 
-    // cache sub tree after render
-    let pendingCacheKey: CacheKey | null = null
+    // cache sub tree after render 渲染后缓存子树
+    // ********** 缓存子树核心逻辑 → 在mounted/updated时缓存组件VNode **********
+    // 为什么不直接在渲染函数中缓存？因为VNode可能因属性透传/scopeId被克隆，最终挂载的是instance.subTree（标准化后的VNode）
+    let pendingCacheKey: CacheKey | null = null // 待缓存的key，由渲染函数赋值
     const cacheSubtree = () => {
       // fix #1621, the pendingCacheKey could be 0
       if (pendingCacheKey != null) {
@@ -274,6 +313,8 @@ const KeepAliveImpl: ComponentOptions = {
       })
     })
 
+    // ********** KeepAlive的**核心渲染函数** → 所有缓存逻辑的入口 **********
+    // KeepAlive作为函数式组件，setup返回渲染函数，决定最终渲染的内容
     return () => {
       pendingCacheKey = null
 
@@ -378,7 +419,7 @@ const decorate = (t: typeof KeepAliveImpl) => {
   return t
 }
 
-// export the public type for h/tsx inference
+// export the public type for h/tsx inference 导出公共类型以进行h/tsx类型推断
 // also to avoid inline import() in generated d.ts files
 export const KeepAlive = (__COMPAT__
   ? /*@__PURE__*/ decorate(KeepAliveImpl)

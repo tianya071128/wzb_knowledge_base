@@ -287,6 +287,7 @@ export function createAppAPI<HostElement>(
 
     /** 创建一个应用上下文对象 */
     const context = createAppContext()
+    /** 插件注册Map */
     const installedPlugins = new WeakSet()
     const pluginCleanupFns: Array<() => any> = []
 
@@ -315,19 +316,33 @@ export function createAppAPI<HostElement>(
         }
       },
 
+      /**
+       * 注册并使用一个插件
+       *
+       * @param plugin - 要注册的插件，可以是一个函数或具有 install 方法的对象
+       * @param options - 传递给插件的额外选项参数
+       * @returns 返回当前应用实例，支持链式调用
+       */
       use(plugin: Plugin, ...options: any[]) {
+        // 检查插件是否已经被安装过
         if (installedPlugins.has(plugin)) {
-          __DEV__ && warn(`Plugin has already been applied to target app.`)
-        } else if (plugin && isFunction(plugin.install)) {
+          __DEV__ && warn(`Plugin has already been applied to target app.`) // 插件已经应用到目标应用程序
+        }
+        // 处理对象形式的插件（具有 install 方法）
+        else if (plugin && isFunction(plugin.install)) {
           installedPlugins.add(plugin)
           plugin.install(app, ...options)
-        } else if (isFunction(plugin)) {
+        }
+        // 处理函数形式的插件
+        else if (isFunction(plugin)) {
           installedPlugins.add(plugin)
           plugin(app, ...options)
-        } else if (__DEV__) {
+        }
+        // 开发环境下对不符合要求的插件进行警告
+        else if (__DEV__) {
           warn(
-            `A plugin must either be a function or an object with an "install" ` +
-              `function.`,
+            `A plugin must either be a function or an object with an "install" ` + // 件必须是一个函数或带有“install”的对象
+              `function.`, // 函数
           )
         }
         return app

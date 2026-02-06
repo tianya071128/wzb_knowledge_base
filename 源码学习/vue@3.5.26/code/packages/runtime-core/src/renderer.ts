@@ -3646,6 +3646,10 @@ function baseCreateRenderer(
     }
   }
 
+  /**
+   * 对象封装了渲染器的所有内部方法，用于协调各种渲染操作
+   * 包括补丁处理、组件挂载、节点移动等核心功能
+   */
   const internals: RendererInternals = {
     p: patch,
     um: unmount,
@@ -3735,14 +3739,14 @@ export function needTransition(
 
 /**
  * #1156
- * When a component is HMR-enabled, we need to make sure that all static nodes
- * inside a block also inherit the DOM element from the previous tree so that
- * HMR updates (which are full updates) can retrieve the element for patching.
+ * When a component is HMR-enabled, we need to make sure that all static nodes 当组件支持HMR（热模块替换）时，我们需要确保所有静态节点
+ * inside a block also inherit the DOM element from the previous tree so that 块内的元素也会继承前一个树中的DOM元素，以便
+ * HMR updates (which are full updates) can retrieve the element for patching. HMR（热模块刷新）更新（即完整更新）可以检索元素以进行补丁更新
  *
  * #2080
- * Inside keyed `template` fragment static children, if a fragment is moved,
- * the children will always be moved. Therefore, in order to ensure correct move
- * position, el should be inherited from previous nodes.
+ * Inside keyed `template` fragment static children, if a fragment is moved, 在带有键的`template`片段静态子节点中，如果片段被移动
+ * the children will always be moved. Therefore, in order to ensure correct move 孩子们总是会被感动。因此，为了确保动作正确
+ * position, el should be inherited from previous nodes. 位置，应继承自前一个节点。
  */
 export function traverseStaticChildren(
   n1: VNode,

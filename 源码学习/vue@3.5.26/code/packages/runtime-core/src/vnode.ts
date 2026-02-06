@@ -270,7 +270,10 @@ export interface VNode<
   el: HostNode | null
   /** 异步组件的占位节点（加载中显示的内容） */
   placeholder: HostNode | null // async component el placeholder 异步组件 el 占位符
-  /** 片段（Fragment）的锚点节点，用于定位 Fragment 的位置 */
+  /**
+   * 片段（Fragment）的锚点节点，用于定位 Fragment 的位置
+   *  - Teleport 也会使用这个锚点属性
+   */
   anchor: HostNode | null // fragment anchor fragment anchor
   /** Teleport（瞬移）的目标容器（对应 to 属性） */
   target: HostElement | null // teleport target 传送目标

@@ -15,6 +15,7 @@ const demos = [
   '依赖注入',
   '自定义指令',
   '内置指令',
+  'Teleport',
 ];
 const active = ref('');
 
@@ -51,6 +52,9 @@ const CustomDirectivesAsync = defineAsyncComponent(
 );
 const InternalDirectivesDemoAsync = defineAsyncComponent(
   () => import('./components/指令/内置指令/InternalDirectivesDemo.vue')
+);
+const TeleportDemoAsync = defineAsyncComponent(
+  () => import('./components/内置组件/Teleport/TeleportDemo.vue')
 );
 </script>
 
@@ -93,6 +97,7 @@ const InternalDirectivesDemoAsync = defineAsyncComponent(
         v-if="active === '自定义指令'"></CustomDirectivesAsync>
       <InternalDirectivesDemoAsync
         v-if="active === '内置指令'"></InternalDirectivesDemoAsync>
+      <TeleportDemoAsync v-if="active === 'Teleport'"></TeleportDemoAsync>
     </div>
   </div>
 </template>
