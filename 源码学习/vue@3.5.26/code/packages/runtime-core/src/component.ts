@@ -1595,6 +1595,15 @@ const classifyRE = /(?:^|[-_])\w/g
 const classify = (str: string): string =>
   str.replace(classifyRE, c => c.toUpperCase()).replace(/[-_]/g, '')
 
+/**
+ * 获取组件名称
+ *
+ * 根据传入的组件定义返回相应的组件名称，优先级顺序为：displayName > name > __name（当includeInferred为true时）
+ *
+ * @param Component - 组件定义，可以是函数式组件或对象形式的组件
+ * @param includeInferred - 是否包含推断出的组件名，默认为true
+ * @returns 返回组件名称字符串，如果无法获取则返回false或undefined
+ */
 export function getComponentName(
   Component: ConcreteComponent,
   includeInferred = true,

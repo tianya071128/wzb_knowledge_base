@@ -198,7 +198,7 @@ export interface ComponentOptionsBase<
    */
   __asyncLoader?: () => Promise<ConcreteComponent>
   /**
-   * the inner component resolved by the AsyncComponentWrapper
+   * the inner component resolved by the AsyncComponentWrapper 由 AsyncComponentWrapper 解析的内部组件
    * @internal
    */
   __asyncResolved?: ConcreteComponent
