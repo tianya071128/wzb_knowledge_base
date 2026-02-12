@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, render } from 'vue';
 import './组件的渲染';
 import ComponentParentUpdate from './ComponentParentUpdate.vue';
 

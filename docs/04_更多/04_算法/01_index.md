@@ -7,7 +7,6 @@
 摩尔投票法分为两个阶段：抵消阶段和计数阶段：
 
 - 抵消阶段：找到**最有可能**是多数的元素
-
   1. 设定候选元素 candidate 为数组的第一个元素
   2. 设定计数器 count = 0
   3. 遍历数组
@@ -32,19 +31,19 @@
 
 ```javascript
 function calculatePrefixSum(nums) {
-    const prefixSum = [];
-    let sum = 0;
-    for (let i = 0; i < nums.length; i++) {
-        sum += nums[i];
-        prefixSum.push(sum);
-    }
-    return prefixSum;
+  const prefixSum = [];
+  let sum = 0;
+  for (let i = 0; i < nums.length; i++) {
+    sum += nums[i];
+    prefixSum.push(sum);
+  }
+  return prefixSum;
 }
 ```
 
 #### 应用场景:
 
-* **区间求和问题**：这是一维前缀和最常见的应用，能快速计算数组中某个区间 `[i, j]`（`i <= j`）内元素的和。
+- **区间求和问题**：这是一维前缀和最常见的应用，能快速计算数组中某个区间 `[i, j]`（`i <= j`）内元素的和。
 
 ### 二维前缀和
 
@@ -67,16 +66,14 @@ function calculate2DPrefixSum(matrix) {
     }
   }
   return sum;
-};
+}
 ```
 
 #### 应用场景:
 
-* 利用二维前缀和矩阵，可以快速计算二维区域内元素的和。
+- 利用二维前缀和矩阵，可以快速计算二维区域内元素的和。
 
-
-
-参考:  [leetcode - 304.二维区域和检索](https://leetcode.cn/problems/range-sum-query-2d-immutable/description/)
+参考: [leetcode - 304.二维区域和检索](https://leetcode.cn/problems/range-sum-query-2d-immutable/description/)
 
 ## 蓄水池抽样
 
@@ -101,22 +98,22 @@ function calculate2DPrefixSum(matrix) {
  * @returns {Array} - 抽样结果
  */
 function reservoirSampling(dataSource, k) {
-    const reservoir = []; // 初始化蓄水池
-    
-    // 处理数组类型的数据源
-    if (Array.isArray(dataSource)) {
-        for (let i = 0; i < dataSource.length; i++) {
-            if (i < k) {
-                reservoir.push(dataSource[i]); // 前k个元素直接放入蓄水池
-            } else {
-                const j = Math.floor(Math.random() * (i + 1)); // 生成0到i之间的随机数
-                if (j < k) {
-                    reservoir[j] = dataSource[i]; // 以k/i的概率替换蓄水池中的元素
-                }
-            }
+  const reservoir = []; // 初始化蓄水池
+
+  // 处理数组类型的数据源
+  if (Array.isArray(dataSource)) {
+    for (let i = 0; i < dataSource.length; i++) {
+      if (i < k) {
+        reservoir.push(dataSource[i]); // 前k个元素直接放入蓄水池
+      } else {
+        const j = Math.floor(Math.random() * (i + 1)); // 生成0到i之间的随机数
+        if (j < k) {
+          reservoir[j] = dataSource[i]; // 以k/i的概率替换蓄水池中的元素
         }
-        return reservoir;
+      }
     }
+    return reservoir;
+  }
 }
 
 // 示例1：从数组中抽样
@@ -125,22 +122,13 @@ const sampleFromArray = reservoirSampling(arrayData, 3);
 console.log('从数组中抽样:', sampleFromArray);
 ```
 
-
-
 ### 特点与优势
 
 - **对数据规模无要求**：无论是处理大规模的数据文件（其大小甚至超过内存容量，只能逐行读取等情况），还是源源不断的数据流（如实时网络数据采集场景），都可以有效地进行随机抽样，不需要预先知道数据的总量。
 - **保证随机性和等概率性**：能严格确保数据集中的每一个元素都有相同的概率被选入最终的抽样样本中，这使得抽样结果能够很好地代表整体数据的分布特征，可用于数据分析、统计推断等诸多应用场景。
 
+## 辗转相除法
 
+快速求两个正整数的 **最大公约数**
 
-
-
-
-
-
-
-
-
-
-
+公式: `gcd(a,b)=gcd(b, a % b)`

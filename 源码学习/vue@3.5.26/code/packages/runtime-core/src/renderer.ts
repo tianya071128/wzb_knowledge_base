@@ -3726,13 +3726,38 @@ function toggleRecurse(
   }
 }
 
+/**
+ * Vue3 渲染器层面的过渡动画触发判断函数
+ *
+ * 核心作用：
+ *  1. 综合三个核心条件，判断当前 VNode 是否需要执行 enter/leave 过渡动画；
+ *  2. 过滤 Suspense 加载过程中、持久化过渡场景下的无效动画触发，保证动画执行的正确性；
+ *  3. 为渲染器提供明确的布尔判断结果，决定是否启动过渡动画流程。
+ *
+ * 设计背景：
+ *    - Suspense 组件加载过程中（pendingBranch=true），其子节点的过渡动画需延迟触发，避免加载中状态的无效动画；
+ *    - 持久化过渡（persisted=true，如 VShow 指令）无需执行常规的 enter/leave 动画（DOM 不销毁），需跳过；
+ *    - 只有同时满足“无 Suspense 挂起、有过渡钩子、非持久化”三个条件，才触发过渡动画。
+ *
+ *
+ * @param parentSuspense 当前 VNode 的父级 Suspense 边界实例（SuspenseBoundary），无则为 null
+ * @param transition 当前 VNode 绑定的过渡钩子（TransitionHooks），无则为 null
+ * @returns boolean | null - 满足条件返回 true（需要过渡），否则返回 false/null（不需要过渡）
+ */
 export function needTransition(
   parentSuspense: SuspenseBoundary | null,
   transition: TransitionHooks | null,
 ): boolean | null {
   return (
+    // 条件1：父级 Suspense 未处于“挂起分支”状态
+    // 拆解：
+    // - !parentSuspense：无父级 Suspense 组件（无需考虑 Suspense 加载状态）；
+    // - (parentSuspense && !parentSuspense.pendingBranch)：有父级 Suspense，但未处于加载挂起状态（pendingBranch=false）；
+    // 目的：避免 Suspense 加载过程中（pendingBranch=true）触发子节点的过渡动画，保证加载完成后再执行动画。
     (!parentSuspense || (parentSuspense && !parentSuspense.pendingBranch)) &&
     transition &&
+    // 条件3：非持久化过渡（persisted=false）
+    // 目的：持久化过渡（如 KeepAlive 组件，persisted=true）的 DOM 不会被销毁/重建，无需执行常规的 enter/leave 动画。
     !transition.persisted
   )
 }

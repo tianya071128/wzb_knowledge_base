@@ -17,6 +17,7 @@ const demos = [
   '内置指令',
   'Teleport',
   'KeepAlive',
+  'Transition',
 ];
 const active = ref('');
 
@@ -59,6 +60,9 @@ const TeleportDemoAsync = defineAsyncComponent(
 );
 const KeepAliveDemoAsync = defineAsyncComponent(
   () => import('./components/内置组件/KeepAlive/KeepAliveDemo.vue')
+);
+const TransitionDemoAsync = defineAsyncComponent(
+  () => import('./components/内置组件/Transition/TransitionDemo.vue')
 );
 </script>
 
@@ -103,6 +107,7 @@ const KeepAliveDemoAsync = defineAsyncComponent(
         v-if="active === '内置指令'"></InternalDirectivesDemoAsync>
       <TeleportDemoAsync v-if="active === 'Teleport'"></TeleportDemoAsync>
       <KeepAliveDemoAsync v-if="active === 'KeepAlive'"></KeepAliveDemoAsync>
+      <TransitionDemoAsync v-if="active === 'Transition'"></TransitionDemoAsync>
     </div>
   </div>
 </template>
