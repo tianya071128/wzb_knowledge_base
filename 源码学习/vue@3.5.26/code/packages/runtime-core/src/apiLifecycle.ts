@@ -107,17 +107,26 @@ export function injectHook(
   }
 }
 
+/**
+ * 创建一个生命周期钩子函数
+ * 这是一个高阶函数，接收一个生命周期类型作为参数并返回一个可以注册对应生命周期回调的函数
+ *
+ * @param lifecycle - 生命周期钩子类型，指定要注册的生命周期阶段
+ * @returns 返回一个函数，该函数用于注册具体的生命周期回调函数
+ */
 const createHook =
   <T extends Function = () => any>(lifecycle: LifecycleHooks) =>
+  // 返回封装后的注册钩子
   (
     hook: T,
     target: ComponentInternalInstance | null = currentInstance,
   ): void => {
-    // post-create lifecycle registrations are noops during SSR (except for serverPrefetch)
+    // post-create lifecycle registrations are noops during SSR (except for serverPrefetch) 创建后生命周期注册在 SSR 期间是无操作的（serverPrefetch 除外）
     if (
       !isInSSRComponentSetup ||
       lifecycle === LifecycleHooks.SERVER_PREFETCH
     ) {
+      // 注册对应的钩子
       injectHook(lifecycle, (...args: unknown[]) => hook(...args), target)
     }
   }

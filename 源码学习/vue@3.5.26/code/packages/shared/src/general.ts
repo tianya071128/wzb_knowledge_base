@@ -190,7 +190,15 @@ export const toHandlerKey: <T extends string>(
   },
 )
 
-// compare whether a value has changed, accounting for NaN.
+// compare whether a value has changed, accounting for NaN. 比较值是否已更改，考虑 NaN
+/**
+ * 检查两个值是否发生了变化
+ * 使用 Object.is() 方法比较新值和旧值是否相等，如果不相等则返回 true，表示值已发生变化
+ *
+ * @param value - 新值
+ * @param oldValue - 旧值
+ * @returns 如果两个值不相同则返回 true，否则返回 false
+ */
 export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue)
 

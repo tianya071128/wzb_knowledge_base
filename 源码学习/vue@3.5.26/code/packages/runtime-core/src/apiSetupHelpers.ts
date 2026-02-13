@@ -35,9 +35,9 @@ import type { Ref } from '@vue/reactivity'
 // dev only
 const warnRuntimeUsage = (method: string) =>
   warn(
-    `${method}() is a compiler-hint helper that is only usable inside ` +
-      `<script setup> of a single file component. Its arguments should be ` +
-      `compiled away and passing it at runtime has no effect.`,
+    `${method}() is a compiler-hint helper that is only usable inside ` + // `${method}() 是一个编译器提示助手代码，仅可在 `
+      `<script setup> of a single file component. Its arguments should be ` + // 单文件组件的 `<script setup>`。其参数应为
+      `compiled away and passing it at runtime has no effect.`, // 编译时移除并在运行时传递它没有任何效果。
   )
 
 /**
@@ -252,20 +252,20 @@ export type DefineModelOptions<T = any, G = T, S = T> = {
 }
 
 /**
- * Vue `<script setup>` compiler macro for declaring a
- * two-way binding prop that can be consumed via `v-model` from the parent
- * component. This will declare a prop with the same name and a corresponding
- * `update:propName` event.
+ * Vue `<script setup>` compiler macro for declaring a Vue `<script setup>` 编译器宏，用于声明一个
+ * two-way binding prop that can be consumed via `v-model` from the parent 可通过父组件中的`v-model`使用的双向绑定属性
+ * component. This will declare a prop with the same name and a corresponding 组件。这将声明一个同名属性（prop）和一个对应的
+ * `update:propName` event. `update:propName` 事件。
  *
- * If the first argument is a string, it will be used as the prop name;
- * Otherwise the prop name will default to "modelValue". In both cases, you
- * can also pass an additional object which will be used as the prop's options.
+ * If the first argument is a string, it will be used as the prop name; 如果第一个参数是字符串，则将其用作属性名
+ * Otherwise the prop name will default to "modelValue". In both cases, you 否则，道具名称将默认为“modelValue”。在这两种情况下，你
+ * can also pass an additional object which will be used as the prop's options. 还可以传入一个额外的对象，该对象将作为道具的选项使用。
  *
- * The returned ref behaves differently depending on whether the parent
- * provided the corresponding v-model props or not:
- * - If yes, the returned ref's value will always be in sync with the parent
+ * The returned ref behaves differently depending on whether the parent 返回的引用（ref）的行为会因父级的不同而有所差异
+ * provided the corresponding v-model props or not: 是否提供了相应的v-model道具
+ * - If yes, the returned ref's value will always be in sync with the parent 如果是，则返回的引用值将始终与父级同步
  *   prop.
- * - If not, the returned ref will behave like a normal local ref.
+ * - If not, the returned ref will behave like a normal local ref. 如果不是，返回的引用将表现得像一个普通的局部引用
  *
  * @example
  * ```ts
@@ -390,18 +390,37 @@ export function withDefaults<
   return null as any
 }
 
+/**
+ * 获取当前组件实例的插槽对象
+ * 在 setup 函数中使用，用于访问传递给组件的所有插槽
+ *
+ * @returns 返回当前组件上下文中的 slots 对象，包含了所有可用的插槽
+ */
 export function useSlots(): SetupContext['slots'] {
   return getContext('useSlots').slots
 }
 
+/**
+ * 获取当前组件实例的属性(attributes)，这些属性是父组件传递给子组件但未被声明为props的属性
+ * 这些属性通常包括class、style和其他DOM属性，可用于透传到内部元素上
+ *
+ * @returns 返回当前组件上下文中的attrs对象，包含了所有未被props声明接收的属性
+ */
 export function useAttrs(): SetupContext['attrs'] {
   return getContext('useAttrs').attrs
 }
 
+/**
+ * 获取当前实例的Setup上下文
+ * 在开发模式下，如果没有活动实例会发出警告
+ *
+ * @param calledFunctionName 调用此函数的函数名称，用于错误提示
+ * @returns SetupContext 当前实例的Setup上下文对象
+ */
 function getContext(calledFunctionName: string): SetupContext {
   const i = getCurrentInstance()!
   if (__DEV__ && !i) {
-    warn(`${calledFunctionName}() called without active instance.`)
+    warn(`${calledFunctionName}() called without active instance.`) // 在没有活动实例的情况下调用
   }
   return i.setupContext || (i.setupContext = createSetupContext(i))
 }

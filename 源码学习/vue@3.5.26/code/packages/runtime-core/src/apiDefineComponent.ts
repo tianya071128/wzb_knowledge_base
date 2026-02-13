@@ -300,15 +300,16 @@ export function defineComponent<
   TypeEl
 >
 
-// implementation, close to no-op
+// 最主要是提供 TS 类型
+// implementation, close to no-op 实现，接近无操作
 /*@__NO_SIDE_EFFECTS__*/
 export function defineComponent(
   options: unknown,
   extraOptions?: ComponentOptions,
 ) {
   return isFunction(options)
-    ? // #8236: extend call and options.name access are considered side-effects
-      // by Rollup, so we have to wrap it in a pure-annotated IIFE.
+    ? // #8236: extend call and options.name access are considered side-effects 扩展调用和 options.name 访问被视为副作用
+      // by Rollup, so we have to wrap it in a pure-annotated IIFE. 由 Rollup 提供，因此我们必须将其包装在纯注释的 IIFE 中
       /*@__PURE__*/ (() =>
         extend({ name: options.name }, extraOptions, { setup: options }))()
     : options

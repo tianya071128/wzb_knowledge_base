@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { defineAsyncComponent, ref } from 'vue';
-import AsyncComponentDemo from './components/基础/异步组件/AsyncComponentDemo.vue';
 
 const msg = ref('Hello World');
 
@@ -20,6 +19,7 @@ const demos = [
   'KeepAlive',
   'Transition',
   '异步组件',
+  'component特殊元素',
 ];
 const active = ref('');
 
@@ -37,7 +37,7 @@ const FragmentDemoAsync = defineAsyncComponent(
   () => import('./components/VNode的渲染/片段的渲染/FragmentDemo.vue')
 );
 const RefDemoAsync = defineAsyncComponent(
-  () => import('./components/基础/模板引用ref/RefDemo.vue')
+  () => import('./components/组件相关概念/模板引用ref/RefDemo.vue')
 );
 const PropsAndAttrsDemoAsync = defineAsyncComponent(
   () => import('./components/组件相关概念/propsAndAttrs/PropsAndAttrsDemo.vue')
@@ -67,7 +67,10 @@ const TransitionDemoAsync = defineAsyncComponent(
   () => import('./components/内置组件/Transition/TransitionDemo.vue')
 );
 const AsyncComponentDemoAsync = defineAsyncComponent(
-  () => import('./components/基础/异步组件/AsyncComponentDemo.vue')
+  () => import('./components/组件相关概念/异步组件/AsyncComponentDemo.vue')
+);
+const InternalComponentDemoAsync = defineAsyncComponent(
+  () => import('./components/组件相关概念/component特殊元素/ComponentDemo.vue')
 );
 </script>
 
@@ -113,9 +116,10 @@ const AsyncComponentDemoAsync = defineAsyncComponent(
       <TeleportDemoAsync v-if="active === 'Teleport'"></TeleportDemoAsync>
       <KeepAliveDemoAsync v-if="active === 'KeepAlive'"></KeepAliveDemoAsync>
       <TransitionDemoAsync v-if="active === 'Transition'"></TransitionDemoAsync>
-      <!-- <AsyncComponentDemoAsync
-        v-if="active === '异步组件'"></AsyncComponentDemoAsync> -->
-      <AsyncComponentDemo v-if="active === '异步组件'" />
+      <AsyncComponentDemoAsync
+        v-if="active === '异步组件'"></AsyncComponentDemoAsync>
+      <InternalComponentDemoAsync
+        v-if="active === 'component特殊元素'"></InternalComponentDemoAsync>
     </div>
   </div>
 </template>

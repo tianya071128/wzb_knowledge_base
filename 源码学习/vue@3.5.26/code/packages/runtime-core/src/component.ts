@@ -716,6 +716,7 @@ export interface ComponentInternalInstance {
   resolvedOptions?: MergedComponentOptions
 }
 
+// 用于提供一个空的应用程序上下文对象，作为默认值使用
 const emptyAppContext = createAppContext()
 
 let uid = 0
@@ -874,6 +875,11 @@ export function createComponentInstance(
 
 export let currentInstance: ComponentInternalInstance | null = null
 
+/**
+ * 获取当前活跃的组件实例
+ * 在组件渲染过程中或已设置当前实例时返回当前组件内部实例，否则返回当前渲染实例
+ * @returns {ComponentInternalInstance | null} 当前组件内部实例，如果不存在则返回null
+ */
 export const getCurrentInstance: () => ComponentInternalInstance | null = () =>
   currentInstance || currentRenderingInstance
 
@@ -952,8 +958,14 @@ export const setCurrentInstance = (instance: ComponentInternalInstance) => {
   }
 }
 
+/**
+ * 取消设置当前实例，关闭当前实例的副作用作用域并清空全局当前实例
+ * 这个函数用于清理当前活动的组件实例，在组件卸载或其他需要清除当前实例状态时调用
+ */
 export const unsetCurrentInstance = (): void => {
+  // 关闭当前实例的副作用作用域
   currentInstance && currentInstance.scope.off()
+  // 清空全局当前实例
   internalSetCurrentInstance(null)
 }
 
@@ -1483,16 +1495,44 @@ function getSlotsProxy(instance: ComponentInternalInstance): Slots {
   })
 }
 
+/**
+ * Vue3 创建组件 setup 上下文的核心函数（setup(props, ctx) 中 ctx 的底层实现）
+ * 核心作用：
+ *    1. 封装 setup 上下文的四大核心能力：attrs（属性）、slots（插槽）、emit（事件触发）、expose（暴露属性）；
+ *    2. 开发环境增强：
+ *       - expose 函数的参数校验（仅能调用一次、必须传纯对象）；
+ *       - 使用 getter + 缓存 Proxy 包装 attrs/slots（兼容测试工具覆盖实例属性的场景）；
+ *       - 冻结上下文对象，防止开发者手动修改；
+ *       - emit 函数包装（统一调用逻辑）；
+ *    3. 生产环境优化：
+ *       - 直接返回原始引用/Proxy，无额外校验和冻结，提升性能；
+ *
+ * @param instance 组件内部实例（ComponentInternalInstance），包含组件的 attrs、slots、emit 等核心状态；
+ *
+ * @returns SetupContext setup 函数的上下文对象，包含 attrs/slots/emit/expose 四个属性；
+ */
 export function createSetupContext(
   instance: ComponentInternalInstance,
 ): SetupContext {
+  /**
+   * SetupContext 的 expose 方法实现：控制组件对外暴露的属性（供父组件通过 ref 访问）
+   * 核心逻辑：
+   *    1. 开发环境校验：仅能调用一次、参数必须是纯对象；
+   *    2. 赋值实例的 exposed 属性：存储组件对外暴露的属性集合；
+   *
+   * @param exposed 要暴露的属性对象（如 { foo: 'bar', fn: () => {} }），不传则暴露空对象；
+   */
   const expose: SetupContext['expose'] = exposed => {
     if (__DEV__) {
+      // 校验1：expose 只能调用一次（多次调用会覆盖且不符合规范）
       if (instance.exposed) {
-        warn(`expose() should be called only once per setup().`)
+        warn(`expose() should be called only once per setup().`) // 每次 setup() 只应调用一次 expose()
       }
+
+      // 校验2：传入的参数必须是纯对象
       if (exposed != null) {
-        let exposedType: string = typeof exposed
+        let exposedType: string = typeof exposed // 先获取基础类型
+        // 细化类型判断：区分数组/Ref/普通对象
         if (exposedType === 'object') {
           if (isArray(exposed)) {
             exposedType = 'array'
@@ -1502,39 +1542,64 @@ export function createSetupContext(
         }
         if (exposedType !== 'object') {
           warn(
-            `expose() should be passed a plain object, received ${exposedType}.`,
+            `expose() should be passed a plain object, received ${exposedType}.`, // expose() 应该传递一个普通对象，接收
           )
         }
       }
     }
+
+    // 核心逻辑：将暴露的属性赋值给实例的 exposed 属性（不传则赋值空对象）
+    // 父组件通过 ref 访问子组件时，只能获取 exposed 中的属性（未暴露的属性不可访问）
     instance.exposed = exposed || {}
   }
 
   if (__DEV__) {
-    // We use getters in dev in case libs like test-utils overwrite instance
-    // properties (overwrites should not be done in prod)
-    let attrsProxy: Data
-    let slotsProxy: Slots
+    // We use getters in dev in case libs like test-utils overwrite instance 我们在开发中使用 getter 以防像 test-utils 这样的库覆盖实例
+    // properties (overwrites should not be done in prod) 属性（不应在产品中进行覆盖）
+    let attrsProxy: Data // 缓存 attrs 的 Proxy 实例（避免重复创建）
+    let slotsProxy: Slots // 缓存 slots 的 Proxy 实例（避免重复创建）
+
+    // 返回冻结的上下文对象（防止开发者手动修改 ctx 中的属性，保证上下文不可变）
     return Object.freeze({
+      /**
+       * attrs 响应式代理：
+       * 1. 懒创建 Proxy（首次访问时创建），缓存避免重复创建；
+       * 2. attrsProxyHandlers 是 Vue 内部的 attrs 代理处理器，实现：
+       *    - 响应式：attrs 变化时触发视图更新；
+       *    - 防修改：禁止直接赋值 attrs（如 ctx.attrs.foo = 'bar'）；
+       *    - 透传：访问 attrs.xxx 时指向 instance.attrs.xxx；
+       */
       get attrs() {
         return (
           attrsProxy ||
           (attrsProxy = new Proxy(instance.attrs, attrsProxyHandlers))
         )
       },
+      /**
+       * slots 代理：
+       * 1. 懒创建 slots 代理（首次访问时创建），缓存避免重复创建；
+       * 2. getSlotsProxy 是 Vue 内部函数，包装 instance.slots 为可响应的 Proxy；
+       *    核心作用：保证插槽的动态更新（如父组件修改插槽内容时，子组件能感知）；
+       */
       get slots() {
         return slotsProxy || (slotsProxy = getSlotsProxy(instance))
       },
+      /**
+       * emit 函数包装：
+       * 开发环境通过 getter 包装，确保每次访问都调用最新的 instance.emit
+       */
       get emit() {
         return (event: string, ...args: any[]) => instance.emit(event, ...args)
       },
+      // 暴露 expose 方法（已做开发环境校验）
       expose,
     })
   } else {
+    // 生产环境：无额外校验，直接返回核心属性
     return {
-      attrs: new Proxy(instance.attrs, attrsProxyHandlers),
-      slots: instance.slots,
-      emit: instance.emit,
+      attrs: new Proxy(instance.attrs, attrsProxyHandlers), // attrs：直接创建 Proxy（无缓存，生产环境无需兼容测试工具）
+      slots: instance.slots, // slots：直接使用实例的 slots（生产环境无需 Proxy 包装）
+      emit: instance.emit, // emit：直接复用实例的 emit 方法（无包装，减少函数调用开销）
       expose,
     }
   }

@@ -3,8 +3,8 @@ import { devtoolsComponentUpdated } from './devtools'
 import { setBlockTracking } from './vnode'
 
 /**
- * mark the current rendering instance for asset resolution (e.g.
- * resolveComponent, resolveDirective) during render
+ * mark the current rendering instance for asset resolution (e.g. 标记当前渲染实例以进行资源解析（例如。
+ * resolveComponent, resolveDirective) during render 在渲染过程中解析组件（resolveComponent）、解析指令（resolveDirective）
  */
 export let currentRenderingInstance: ComponentInternalInstance | null = null
 export let currentScopeId: string | null = null

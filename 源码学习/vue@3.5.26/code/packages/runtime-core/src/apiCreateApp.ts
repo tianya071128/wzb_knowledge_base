@@ -163,7 +163,7 @@ export interface AppConfig {
   throwUnhandledErrorInProduction?: boolean
 
   /**
-   * Prefix for all useId() calls within this app
+   * Prefix for all useId() calls within this app 此应用程序内所有 useId() 调用的前缀
    */
   idPrefix?: string
 }

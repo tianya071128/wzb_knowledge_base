@@ -388,19 +388,31 @@ export function normalizeEmitsOptions(
 // Check if an incoming prop key is a declared emit event listener. 检查传入的 prop 键是否为已声明的发射事件监听器
 // e.g. With `emits: { click: null }`, props named `onClick` and `onclick` are 例如，在`emits: { click: null }`的情况下，名为`onClick`和`onclick`的属性是
 // both considered matched listeners. 两者都被视为匹配的listeners
+/**
+ * 判断给定的key是否为emit事件监听器
+ *
+ * @param options - 对象类型的emits选项，可能为null
+ * @param key - 要检查的键名
+ * @returns 如果key是emit事件监听器则返回true，否则返回false
+ */
 export function isEmitListener(
   options: ObjectEmitsOptions | null,
   key: string,
 ): boolean {
+  // 检查options是否存在且key是否以'on'开头
   if (!options || !isOn(key)) {
     return false
   }
 
+  // 兼容模式下，如果key以兼容模型事件前缀开头，则返回true
   if (__COMPAT__ && key.startsWith(compatModelEventPrefix)) {
     return true
   }
 
+  // 移除'on'前缀并处理'Once'后缀
   key = key.slice(2).replace(/Once$/, '')
+
+  // 检查处理后的key（驼峰、短横线分隔或原始形式）是否在options中存在
   return (
     hasOwn(options, key[0].toLowerCase() + key.slice(1)) ||
     hasOwn(options, hyphenate(key)) ||
