@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defineAsyncComponent, ref } from 'vue';
+import AsyncComponentDemo from './components/基础/异步组件/AsyncComponentDemo.vue';
 
 const msg = ref('Hello World');
 
@@ -18,6 +19,7 @@ const demos = [
   'Teleport',
   'KeepAlive',
   'Transition',
+  '异步组件',
 ];
 const active = ref('');
 
@@ -64,6 +66,9 @@ const KeepAliveDemoAsync = defineAsyncComponent(
 const TransitionDemoAsync = defineAsyncComponent(
   () => import('./components/内置组件/Transition/TransitionDemo.vue')
 );
+const AsyncComponentDemoAsync = defineAsyncComponent(
+  () => import('./components/基础/异步组件/AsyncComponentDemo.vue')
+);
 </script>
 
 <template>
@@ -108,6 +113,9 @@ const TransitionDemoAsync = defineAsyncComponent(
       <TeleportDemoAsync v-if="active === 'Teleport'"></TeleportDemoAsync>
       <KeepAliveDemoAsync v-if="active === 'KeepAlive'"></KeepAliveDemoAsync>
       <TransitionDemoAsync v-if="active === 'Transition'"></TransitionDemoAsync>
+      <!-- <AsyncComponentDemoAsync
+        v-if="active === '异步组件'"></AsyncComponentDemoAsync> -->
+      <AsyncComponentDemo v-if="active === '异步组件'" />
     </div>
   </div>
 </template>

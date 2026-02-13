@@ -66,6 +66,7 @@ export const vShow: ObjectDirective<VShowElement> & { name: 'show' } = {
         // 子情况1-2：新值为false（隐藏）→ 执行离开过渡
         // 注意：leave钩子接收done回调，必须在过渡完成后执行setDisplay，否则过渡动画会被中断
         transition.leave(el, () => {
+          // 动画结束后设置样式
           setDisplay(el, false)
         })
       }

@@ -221,14 +221,36 @@ export function resolveTransitionProps(
     done && done()
   }
 
+  /**
+   * Vue3 Transition 组件离场动画的收尾函数
+   * 核心作用：
+   *    1. 重置 DOM 元素的离场状态标记（_isLeaving），避免后续动画逻辑误判；
+   *    2. 清理所有离场相关的 CSS 过渡类名（from/to/active），防止类名残留导致下次动画异常；
+   *    3. 执行动画完成的 done 回调（触发 afterLeave 钩子，最终执行 DOM 移除操作）；
+   *
+   *
+   * @param el 目标 DOM 元素（扩展 _isLeaving 属性，标记是否处于离场状态）
+   * @param done 可选的动画完成回调，执行后会触发 onAfterLeave 钩子，完成 DOM 移除
+   */
   const finishLeave = (
     el: Element & { _isLeaving?: boolean },
-    done?: () => void,
+    done?: () => void, // 动画完成回调（由leave钩子传入）
   ) => {
+    // 1. 重置离场状态标记：标记元素已退出离场状态
+    // 目的：避免后续逻辑（如快速切换动画）误判元素仍在离场中，导致动画冲突
     el._isLeaving = false
+
+    // 2. 清理所有离场相关的 CSS 过渡类名，按“from → to → active”顺序移除（顺序不影响，仅保证全覆盖）
+    // 移除 leave-from 类：离场动画初始状态类（如 v-leave-from）
     removeTransitionClass(el, leaveFromClass)
+    // 移除 leave-to 类：离场动画结束状态类（如 v-leave-to）
     removeTransitionClass(el, leaveToClass)
+    // 移除 leave-active 类：离场动画激活类（控制动画时长/曲线，如 v-leave-active）
     removeTransitionClass(el, leaveActiveClass)
+
+    // 3. 执行动画完成回调（若存在）
+    // 触发时机：所有类名清理完成后
+    // 后续联动：done 回调执行后会触发 onAfterLeave 钩子，最终由渲染器执行 DOM 移除操作
     done && done()
   }
 
@@ -273,7 +295,7 @@ export function resolveTransitionProps(
 
         // 若用户未显式声明 done 回调（钩子参数长度 ≤1），自动监听过渡结束事件
         if (!hasExplicitCallback(hook)) {
-          // 则自定义监听动画结束, 结束后触发
+          // 则自定义监听动画结束, 结束后触发 resolve 回调
           whenTransitionEnds(el, type, enterDuration, resolve)
         }
       })
@@ -326,50 +348,87 @@ export function resolveTransitionProps(
     onEnter: makeEnterHook(false),
     // 10.4 元素首次插入后钩子, 与 onEnter 类似
     onAppear: makeEnterHook(true),
+    /**
+     * 10.5 离场钩子：leave（DOM 移除前）
+     *   - 添加 `${name}-leave-from` 和 `${name}-leave-active` 类
+     *   - 执行用户自定义 leave 钩子
+     *   - 在下一帧(requestAnimationFrame API)
+     *      -- 移除 `${name}-leave-from` 类名
+     *      -- 添加 `${name}-leave-to` 类名
+     *      -- 监听动画结束, 移除相关类
+     */
     onLeave(
       el: Element & { _isLeaving?: boolean; _enterCancelled?: boolean },
       done,
     ) {
-      el._isLeaving = true
+      el._isLeaving = true // 标记进入离场状态
+      // 离场收尾回调
       const resolve = () => finishLeave(el, done)
+
+      // 添加 `${name}-leave-from` 类名（初始化离场动画状态）
       addTransitionClass(el, leaveFromClass)
+      // 兼容旧版类名
       if (__COMPAT__ && legacyClassEnabled && legacyLeaveFromClass) {
         addTransitionClass(el, legacyLeaveFromClass)
       }
-      // add *-leave-active class before reflow so in the case of a cancelled enter transition
-      // the css will not get the final state (#10677)
+
+      // add *-leave-active class before reflow so in the case of a cancelled enter transition  在重排版之前添加“*-leave-active”类，以防进入过渡被取消的情况
+      // the css will not get the final state (#10677) CSS 将无法获取最终状态 (#10677)
       if (!el._enterCancelled) {
-        // force reflow so *-leave-from classes immediately take effect (#2593)
+        // force reflow so *-leave-from classes immediately take effect (#2593) 强制重排，以便*离开类立即生效（#2593）
+        // 强制回流（forceReflow）：让 leave-from 类名立即生效（修复 #2593）
         forceReflow(el)
+        // 添加 `${name}-leave-active` 类名
         addTransitionClass(el, leaveActiveClass)
       } else {
+        // 入场动画被取消: 先添加 active 类名（再回流），保证 enterCancelled 场景下的样式正确性
         addTransitionClass(el, leaveActiveClass)
         forceReflow(el)
       }
+
+      // 下一帧执行类名切换（保证 from 类名已生效）
       nextFrame(() => {
+        // 若离场状态已取消（_isLeaving=false），直接返回
         if (!el._isLeaving) {
           // cancelled
           return
         }
+
+        // 移除 `${name}-leave-from` 类名（进入 to 阶段）
         removeTransitionClass(el, leaveFromClass)
+        // 兼容旧版类名
         if (__COMPAT__ && legacyClassEnabled && legacyLeaveFromClass) {
           removeTransitionClass(el, legacyLeaveFromClass)
         }
+
+        // 添加 `${name}-leave-to` 类名（触发 from → to 的过渡）
         addTransitionClass(el, leaveToClass)
+
+        // 若用户未显式声明 done 回调，自动监听过渡结束事件
         if (!hasExplicitCallback(onLeave)) {
+          // 则自定义监听动画结束, 结束后触发 resolve 回调
           whenTransitionEnds(el, type, leaveDuration, resolve)
         }
       })
+
+      // 执行用户自定义的 leave 钩子（传入 el 和 resolve 回调）
       callHook(onLeave, [el, resolve])
     },
+    /**
+     * 10.6 入场动画取消钩子: 在入场动画执行过程中, 又触发了离场动画
+     *       - 调用 finishEnter 方法触发入场动画完成的收尾工作
+     *       - 执行 onEnterCancelled 钩子
+     */
     onEnterCancelled(el) {
       finishEnter(el, false, undefined, true)
       callHook(onEnterCancelled, [el])
     },
+    // 10.7 与 onEnterCancelled 类似, 区别在于这是首次进入的动画
     onAppearCancelled(el) {
       finishEnter(el, true, undefined, true)
       callHook(onAppearCancelled, [el])
     },
+    // 10.8 离场动画取消钩子
     onLeaveCancelled(el) {
       finishLeave(el)
       callHook(onLeaveCancelled, [el])
@@ -690,7 +749,15 @@ function toMs(s: string): number {
   return Number(s.slice(0, -1).replace(',', '.')) * 1000
 }
 
-// synchronously force layout to put elements into a certain state
+// synchronously force layout to put elements into a certain state 同步强制布局将元素置于某种状态
+/**
+ * 强制重新计算页面布局以确保元素处于特定状态
+ * 此函数通过读取body的offsetHeight属性来同步触发浏览器重排(reflow)
+ * 在过渡动画中用于确保样式更改立即生效
+ *
+ * @param el - 可选的DOM节点，用于确定目标文档
+ * @returns 返回目标文档body的offsetHeight值
+ */
 export function forceReflow(el?: Node): number {
   const targetDocument = el ? el.ownerDocument! : document
   return targetDocument.body.offsetHeight

@@ -150,8 +150,8 @@ export interface AppConfig {
   isCustomElement?: (tag: string) => boolean
 
   /**
-   * TODO document for 3.5
-   * Enable warnings for computed getters that recursively trigger itself.
+   * TODO document for 3.5 3.5 的 TODO 文档
+   * Enable warnings for computed getters that recursively trigger itself. 为递归触发自身的计算 getter 启用警告。
    */
   warnRecursiveComputed?: boolean
 

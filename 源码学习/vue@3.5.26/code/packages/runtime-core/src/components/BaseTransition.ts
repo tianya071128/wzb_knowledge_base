@@ -44,6 +44,10 @@ export interface BaseTransitionProps<HostElement = RendererElement> {
   onBeforeEnter?: Hook<(el: HostElement) => void>
   onEnter?: Hook<(el: HostElement, done: () => void) => void>
   onAfterEnter?: Hook<(el: HostElement) => void>
+  /**
+   * 入场动画取消钩子
+   *  - 在入场动画执行过程中, 又触发了离场动画的话, 就会触发该钩子
+   */
   onEnterCancelled?: Hook<(el: HostElement) => void>
   // leave
   onBeforeLeave?: Hook<(el: HostElement) => void>
@@ -66,11 +70,20 @@ export interface TransitionHooks<HostElement = RendererElement> {
   clone(vnode: VNode): TransitionHooks<HostElement>
   // optional
   afterLeave?(): void
+  /**
+   * 离场动画延迟钩子
+   *  - 应用于 in-out 模式下, 离开动画需要等待进入动画完成
+   */
   delayLeave?(
     el: HostElement,
     earlyRemove: () => void,
     delayedLeave: () => void,
   ): void
+  /**
+   * 离场动画延迟完毕钩子
+   *  - 在 in-out 模式下, 入场动画已完成, 会执行该钩子通知离场动画开始执行
+   *  - 会在 enter 钩子的 done 回调中调用该钩子
+   */
   delayedLeave?(): void
 }
 
@@ -171,11 +184,21 @@ export const BaseTransitionPropsValidators: Record<string, any> = {
   onAppearCancelled: TransitionHookValidator,
 }
 
+/**
+ * 递归获取组件实例的子树节点
+ * 该函数会一直向下查找组件实例的子树，直到找到一个没有内部组件的VNode
+ *
+ * @param instance 组件内部实例对象
+ * @returns 返回最终的子树VNode节点
+ */
 const recursiveGetSubtree = (instance: ComponentInternalInstance): VNode => {
   const subTree = instance.subTree
   return subTree.component ? recursiveGetSubtree(subTree.component) : subTree
 }
 
+/**
+ * BaseTranstion 组件, 与平台解耦, 只关注 VNode 层的处理, 不实际参与动画的执行 --> 因为每个平台的动画方式有所不同
+ */
 const BaseTransitionImpl: ComponentOptions = {
   name: `BaseTransition`,
 
@@ -197,6 +220,67 @@ const BaseTransitionImpl: ComponentOptions = {
    *        3.1
    *
    *  hook 触发的时机: 在 resolveTransitionHooks 方法中 hook 对象中查看详情
+   *
+   *  核心设计:
+   *   - VNode 层面: 封装对应 hook, 挂载到 VNode.transition 中供渲染器在不同场景下处理
+   *   - 渲染(DOM) 层面:
+   *      -- 如果是通过 v-if 控制的
+   *          --- 入场动画: 直接在 mountElement 方法挂载 DOM 之前和之后触发对应的 hook 即可
+   *          --- 离场动画: 在 remove 方法销毁 DOM 之前触发对应的 hook
+   *                ---- 需要注意的是: 必须在离场动画结束后才能够卸载 DOM
+   *      -- 如果是通过 v-show 控制或者自定义(persisted 为true)
+   *          --- 则逻辑与上述大致相同, 只是触发时机的不同
+   *
+   *   - 注意:
+   *      -- 动画的作用对象是 DOM, 最终不管如何, hook 都会挂载到 元素VNode 上(组件会在合适的时机透传, keepAlive/Teleport 会额外处理一层)
+   *      -- 在离场动画时, 即使是组件卸载也不会阻止卸载的流程, **只要 DOM 不卸载掉, 动画就可以执行**, 其他的卸载流程照常执行即可
+   *      -- 重点: **如何监听入场和离场动画结束**
+   *          --- 若用户自定义钩子中, 使用了 done 回调(检测用户自定义钩子的入参个数), 那么由用户自定义结束时机
+   *          --- 否则自定义监听动画结束
+   *              ----- 优先使用用户显式指定的时长（explicitTimeout），替代自动事件监听 --> 直接定时器监听
+   *              ----- 否则从目标元素 getComputedStyle 中提取 transition/animation 相关的样式、时间等信息
+   *
+   *
+   * 常规入场动画:
+   *   - 渲染器 mountElement 方法挂载 DOM 之前或Vshow指令触发 hook
+   *   - 添加相关类
+   *   - 以及执行对应的用户自定义钩子
+   *   - 重点: **监听动画结束**之后移除相关类和执行相关钩子
+   *
+   * 常规离场动画:
+   *   - 渲染器 remove 方法卸载 DOM 之前或Vshow指令触发 hook
+   *   - 添加相关类
+   *   - 以及执行对应的用户自定义钩子
+   *   - 重点: **监听动画结束**之后移除相关类和执行相关钩子
+   *
+   * 入场取消动画:
+   *   - 在入场动画还没结束时就触发了离场动画, 此时需要先取消入场动画
+   *   - 在入场动画开始的时候会在 el[enterCbKey] 上挂载 done 回调, 可根据入参判断是正常结束动画还是取消动画
+   *      -- 正常结束动画时, 就会清除 el[enterCbKey] 属性
+   *   - 在离场动画开始时会判断 el[enterCbKey] 属性是否存在值, 如果存在的话则先调用这个回调执行入场动画取消的逻辑
+   *
+   * 离场取消动画:
+   *   - 与入场取消动画逻辑一致
+   *
+   * 过渡模式: out-in  --> 先离场后入场
+   *   - 创建新的 hook 的挂载到 旧VNode 中
+   *   - 此时不返回新的VNode, 返回 emptyVNode, 先触发离场动画的执行
+   *   - 注册 hook.afterLeave 钩子, 由渲染器的卸载 DOM 之后触发该钩子
+   *   - 在该钩子执行之后, 触发组件重渲染: instance.update()
+   *   - 之后重渲染时, 对比新旧VNode时, 这两个都是新的, 也就直接走入场动画
+   *   - 注意: 重点在于不立即渲染新的VNode, 而等待入场动画结束后再执行
+   *
+   * 过渡模式: in-out --> 先入场后离场
+   *   - 给 旧的VNode 注册一个 delayLeave 延迟离开动画钩子
+   *   - 渲染器先不执行离场动画钩子(leave hook), 而是调用该钩子 --> 见 ../renderer 的 remove 方法
+   *   - 在该钩子中给 新VNode 注册一个 delayedLeave 钩子, 新节点入场完成后触发该钩子
+   *      - 会在 新VNode 的 enter 钩子的 done 回调中调用该钩子, 表示入场动画已完成
+   *      - 在该钩子中启动 旧VNode 的 leave hook
+   *
+   * 过渡模式: defualt --> 同时进行
+   *   - 不做额外处理, 因为新旧VNode上都存在 vnode.transition 相关钩子
+   *   - 新旧VNode会走正常的渲染和卸载, 也就在对应的时机触发对应钩子, 从而入场和离场动画同时进行而不会存在冲突
+   *
    *
    * @param props Transition组件的基础props（BaseTransitionProps），包含name/mode/duration/enterFrom等配置
    * @param { slots } SetupContext 解构出slots，Transition仅处理默认插槽的子节点
@@ -286,62 +370,91 @@ const BaseTransitionImpl: ComponentOptions = {
       let oldInnerChild = instance.subTree && getInnerChild(instance.subTree)
 
       // 8. 核心逻辑：处理新旧节点切换的过渡模式（判断是否需要执行离场动画）
-      // 触发条件：存在旧节点 + 旧节点非注释 + 新旧节点类型不同 + 递归子树非注释
       // handle mode 处理方式
       if (
-        oldInnerChild &&
-        oldInnerChild.type !== Comment &&
-        !isSameVNodeType(oldInnerChild, innerChild) &&
-        recursiveGetSubtree(instance).type !== Comment
+        oldInnerChild && // 存在旧节点
+        oldInnerChild.type !== Comment && // 旧节点非注释节点
+        !isSameVNodeType(oldInnerChild, innerChild) && // 新旧节点类型不同（isSameVNodeType 判断：key/type 不同）
+        recursiveGetSubtree(instance).type !== Comment // 递归子树非注释节点
       ) {
+        // 9.1 解析旧节点的离场钩子（leavingHooks）
         let leavingHooks = resolveTransitionHooks(
-          oldInnerChild,
-          rawProps,
-          state,
-          instance,
+          oldInnerChild, // 要执行离场动画的旧 VNode
+          rawProps, // 原始过渡 props
+          state, // 过渡状态对象
+          instance, // 当前 Transition 组件实例
         )
-        // update old tree's hooks in case of dynamic transition
+
+        // 更新旧节点的钩子（兼容动态过渡配置：如 props 变化后，钩子需重新解析）
+        // update old tree's hooks in case of dynamic transition 在动态转换的情况下更新旧树的钩子
         setTransitionHooks(oldInnerChild, leavingHooks)
-        // switching between different views
+
+        // switching between different views 在不同视图之间切换
+        // 9.2 处理 out-in 模式：先离场，后入场
+        // 逻辑：标记 isLeaving=true → 渲染占位符 → 离场完成后更新组件，触发入场
         if (mode === 'out-in' && innerChild.type !== Comment) {
-          state.isLeaving = true
-          // return placeholder node and queue update when leave finishes
+          state.isLeaving = true // 标记离场中，渲染占位符
+
+          // 离场完成后回调：重置状态 + 触发组件更新，执行新节点入场
+          // 会在完成动画后, 由渲染器的卸载 DOM 之后执行
+          // return placeholder node and queue update when leave finishes 离开完成时返回占位符节点和队列更新
           leavingHooks.afterLeave = () => {
-            state.isLeaving = false
+            state.isLeaving = false // 重置离场状态
+
+            // 边界处理：组件未被销毁（避免更新已销毁的实例，修复 #6835）
             // #6835
-            // it also needs to be updated when active is undefined
+            // it also needs to be updated when active is undefined 当 active 未定义时也需要更新
             if (!(instance.job.flags! & SchedulerJobFlags.DISPOSED)) {
-              instance.update()
+              instance.update() // 触发组件更新，渲染新节点并执行入场动画
             }
-            delete leavingHooks.afterLeave
-            oldInnerChild = undefined
+            delete leavingHooks.afterLeave // 清理回调，避免内存泄漏
+            oldInnerChild = undefined // 重置旧节点，避免重复处理
           }
+
+          // 离场过程中 KeepAlive 返回占位符，保证 DOM 结构稳定
           return emptyPlaceholder(child)
-        } else if (mode === 'in-out' && innerChild.type !== Comment) {
+        }
+        // 9.3 处理 in-out 模式：先入场，后离场
+        // 逻辑：新节点先入场 → 入场完成后触发旧节点离场
+        else if (mode === 'in-out' && innerChild.type !== Comment) {
+          // 给旧的VNode注册一个延迟离开动画钩子
+          // 在渲染器启动离场动画钩子时, 先不执行, 而是调用该钩子
           leavingHooks.delayLeave = (
             el: TransitionElement,
-            earlyRemove,
-            delayedLeave,
+            earlyRemove, // 卸载DOM方法
+            delayedLeave, // 启动旧的离场动画钩子
           ) => {
+            // 获取旧节点的离场缓存容器，缓存当前旧节点（避免 GC 回收）
             const leavingVNodesCache = getLeavingNodesForType(
               state,
               oldInnerChild!,
             )
             leavingVNodesCache[String(oldInnerChild!.key)] = oldInnerChild!
-            // early removal callback
+
+            /**
+             * 当离场动画未执行完毕又执行入场动画时的取消离场动画钩子, 在这里拦截自定义处理
+             */
+            // early removal callback 提前移除回调
             el[leaveCbKey] = () => {
-              earlyRemove()
-              el[leaveCbKey] = undefined
-              delete enterHooks.delayedLeave
-              oldInnerChild = undefined
+              earlyRemove() // 执行 DOM 移除
+              el[leaveCbKey] = undefined // 清理回调
+              delete enterHooks.delayedLeave // 清理入场钩子的延迟离场回调
+              oldInnerChild = undefined // 重置旧节点
             }
+
+            /**
+             * 在新的VNode中绑定延迟离场回调到入场钩子：新节点入场完成后触发旧节点离场
+             *  - 会在 enter 钩子的 done 回调中调用该钩子, 表示入场动画已完成
+             */
             enterHooks.delayedLeave = () => {
-              delayedLeave()
-              delete enterHooks.delayedLeave
-              oldInnerChild = undefined
+              delayedLeave() // 执行旧节点离场动画
+              delete enterHooks.delayedLeave // 清理回调
+              oldInnerChild = undefined // 重置旧节点
             }
           }
-        } else {
+        }
+        // 9.4 default 模式：入场/离场同时执行（无时序控制）
+        else {
           oldInnerChild = undefined
         }
       }
@@ -625,6 +738,7 @@ export function resolveTransitionHooks(
       let called = false
       // 定义 done 回调：标记动画完成，执行 afterHook/cancelHook，清理缓存
       const done = (el[enterCbKey] = (cancelled?) => {
+        // 如果在入场动画还没结束就启用了离场动画, 则需取消入场动画
         if (called) return // 已调用则直接返回，避免重复执行
         called = true
 
@@ -651,32 +765,71 @@ export function resolveTransitionHooks(
         done()
       }
     },
-
+    /**
+     * 离场钩子: leval --> DOM 仍在 DOM树 中，即将被移除；
+     *  - 调用时机
+     *      -- 若 persisted 为 false（常规过渡）：在渲染器 remove 方法执行 DOM 移除前调用；
+     *      -- 若 persisted 为 true（如 v-show）：在 VShow 指令的 updated 钩子中调用；
+     *  - 此时 VNode 已经处理卸载完成, 如果组件需要卸载直接卸载即可
+     *    但是 DOM 还在 DOM 树中, 需要调用 remove 入参通知外部动画完成
+     *  - 核心逻辑：
+     *     -- 取消未完成的入场动画：若入场动画未结束，标记为取消并执行 enterCancelled；
+     *     -- 执行 beforeLeave 钩子：触发用户自定义的离场前逻辑；
+     *     -- 同理, 其他的操作由平台层的封装器中执行(/runtime-dom/src/components/Transition)
+     *        --- 添加 `${name}-leave-from` 和 `${name}-leave-active` 类
+     *        --- 执行用户自定义 leave 钩子
+     *        --- 在下一帧(requestAnimationFrame API)
+     *            ---- 移除 `${name}-leave-from` 类名
+     *            ---- 添加 `${name}-leave-to` 类名
+     *            ---- 监听动画结束, 移除相关类
+     */
     leave(el, remove) {
+      // 重新获取 key（避免闭包引用的 key 过期，兼容动态 key 场景）
       const key = String(vnode.key)
+
+      // 场景1：当前元素有未完成的入场动画 → 取消入场动画
+      // 会在入场动画时添加到 el[enterCbKey] 这里标识
       if (el[enterCbKey]) {
         el[enterCbKey](true /* cancelled */)
       }
+
+      // 场景2：Transition 组件正在卸载 → 直接移除 DOM，不执行离场动画（避免操作已销毁的实例）
       if (state.isUnmounting) {
         return remove()
       }
+
+      // 执行用户自定义的 beforeLeave 钩子（带错误处理）
       callHook(onBeforeLeave, [el])
+
+      // 防止 done 回调重复调用的标记
       let called = false
+      // 定义 done 回调：挂载到 DOM 元素的 leaveCbKey 属性（便于跨钩子调用取消）
       const done = (el[leaveCbKey] = (cancelled?) => {
-        if (called) return
+        if (called) return // 已调用则直接返回
         called = true
+
+        // 执行 DOM 移除操作（渲染器传入的核心回调）
         remove()
+
+        // 根据是否取消，执行对应的钩子
         if (cancelled) {
-          callHook(onLeaveCancelled, [el])
+          callHook(onLeaveCancelled, [el]) // 执行 leaveCancelled
         } else {
-          callHook(onAfterLeave, [el])
+          callHook(onAfterLeave, [el]) // 执行 afterLeave
         }
+
+        // 清理 DOM 上的 leave 回调，避免内存泄漏
         el[leaveCbKey] = undefined
+        // 清理离场 VNode 缓存（当前 VNode 已完成离场）
         if (leavingVNodesCache[key] === vnode) {
           delete leavingVNodesCache[key]
         }
       })
+
+      // 将当前 VNode 加入离场缓存，避免 GC 提前回收导致动画中断（如快速切换场景）
       leavingVNodesCache[key] = vnode
+
+      // 执行离场钩子：有自定义 onLeave 则调用（带异步处理），无则直接执行 done
       if (onLeave) {
         callAsyncHook(onLeave, [el, done])
       } else {
@@ -684,7 +837,23 @@ export function resolveTransitionHooks(
       }
     },
 
+    /**
+     * 克隆钩子方法：clone
+     * 调用时机：
+     *  - 当 VNode 被克隆时（如 Suspense 组件的 ssContent/ssFallback 节点）；
+     * 核心逻辑：
+     *  1. 递归调用 resolveTransitionHooks，重新解析克隆后的 VNode 钩子；
+     *  2. 执行 postClone 回调：更新钩子缓存，保证克隆后的钩子是最新的；
+     * 设计目的：
+     *  - 修复 #11061 问题：克隆后的 VNode 若共享同一个钩子实例，会导致动画时序冲突；
+     *  - 保证每个 VNode 都有独立的钩子实例，避免多节点共享状态的问题；
+     *
+     *
+     * @param vnode 克隆后的目标 VNode
+     * @returns TransitionHooks 新的钩子实例
+     */
     clone(vnode) {
+      // 递归解析克隆 VNode 的钩子（生成新实例）
       const hooks = resolveTransitionHooks(
         vnode,
         props,
@@ -693,7 +862,7 @@ export function resolveTransitionHooks(
         postClone,
       )
       if (postClone) postClone(hooks)
-      return hooks
+      return hooks // 6. 返回标准化的过渡钩子对象（供渲染器/指令执行）
     },
   }
 
@@ -712,6 +881,8 @@ export function resolveTransitionHooks(
  *    1. 当 KeepAlive 组件处于离场动画阶段时，生成「空内容的 KeepAlive 克隆节点」作为占位符；
  *    2. 避免 KeepAlive 实例因子节点为空被意外卸载，保证其内部缓存的组件实例不丢失；
  *    3. 非 KeepAlive 节点直接返回 undefined（无需占位符）。
+ *    4. 注意: 当 <Transition><KeepAlive></KeepAlive></Transition> 时, 不能直接返回空VNode, 否则 KeepAlive 会被销毁
+ *             所以返回一个无子节点的 VNode 的占位, 保证不被卸载
  *
  * @param vnode 待生成占位符的目标 VNode（通常是 Transition 包裹的 KeepAlive 组件 VNode）
  * @returns VNode | undefined - KeepAlive 节点返回空内容的克隆占位符，非 KeepAlive 节点返回 undefined

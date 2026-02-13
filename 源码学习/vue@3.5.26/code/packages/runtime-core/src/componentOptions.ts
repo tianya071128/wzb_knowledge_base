@@ -193,7 +193,7 @@ export interface ComponentOptionsBase<
   __ssrInlineRender?: boolean
 
   /**
-   * marker for AsyncComponentWrapper
+   * marker for AsyncComponentWrapper AsyncComponentWrapper 的标记
    * @internal
    */
   __asyncLoader?: () => Promise<ConcreteComponent>
@@ -203,7 +203,7 @@ export interface ComponentOptionsBase<
    */
   __asyncResolved?: ConcreteComponent
   /**
-   * Exposed for lazy hydration
+   * Exposed for lazy hydration 暴露于懒惰hydration
    * @internal
    */
   __asyncHydrate?: (

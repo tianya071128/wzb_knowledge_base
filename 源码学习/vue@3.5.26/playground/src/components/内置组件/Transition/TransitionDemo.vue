@@ -13,7 +13,7 @@ const show = ref(true);
       <p v-show="show" style="text-align: center">
         你好，这里有一些有弹性的文字!
       </p>
-      <!-- <TransitionSonDemo v-if="show"></TransitionSonDemo> -->
+      <!-- <p v-else style="text-align: center">你好，这里有一些有弹性222的文字!</p> -->
     </Transition>
   </div>
 </template>
@@ -39,7 +39,7 @@ const show = ref(true);
 
 .bounce-enter-active,
 .bounce-leave-active {
-  transition: opacity 0.5s ease;
+  transition: opacity 2s ease;
 }
 
 .bounce-enter-from,
