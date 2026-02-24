@@ -39,6 +39,12 @@ export const remove = <T>(arr: T[], el: T): void => {
 }
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
+/**
+ * 检查对象是否具有指定的自有属性（而不是继承的属性）
+ * @param val 要检查的对象
+ * @param key 要检查的属性键名（字符串或符号）
+ * @returns 如果对象具有指定的自有属性则返回true，否则返回false
+ */
 export const hasOwn = (
   val: object,
   key: string | symbol,
@@ -58,7 +64,20 @@ export const isRegExp = (val: unknown): val is RegExp =>
 export const isFunction = (val: unknown): val is Function =>
   typeof val === 'function'
 export const isString = (val: unknown): val is string => typeof val === 'string'
+
+/**
+ * 检查给定的值是否为symbol类型
+ *
+ * @param val - 要检查的值
+ * @returns 如果值是symbol类型则返回true，否则返回false
+ */
 export const isSymbol = (val: unknown): val is symbol => typeof val === 'symbol'
+/**
+ * 检查给定的值是否为对象类型
+ *
+ * @param val - 要检查的值，类型为 unknown
+ * @returns 如果值不为 null 且类型为 object 则返回 true，否则返回 false
+ */
 export const isObject = (val: unknown): val is Record<any, any> =>
   val !== null && typeof val === 'object'
 
@@ -82,14 +101,29 @@ export const objectToString: typeof Object.prototype.toString =
 export const toTypeString = (value: unknown): string =>
   objectToString.call(value)
 
+/**
+ * 获取值的原始类型字符串
+ * 从类似 "[object RawType]" 的字符串中提取 "RawType" 部分
+ *
+ * @param value - 要获取类型的值
+ * @returns 返回值的原始类型字符串（如 "String", "Number", "Object" 等）
+ */
 export const toRawType = (value: unknown): string => {
-  // extract "RawType" from strings like "[object RawType]"
+  // extract "RawType" from strings like "[object RawType]" 从“[object RawType]”等字符串中提取“RawType”
   return toTypeString(value).slice(8, -1)
 }
 
 export const isPlainObject = (val: unknown): val is object =>
   toTypeString(val) === '[object Object]'
 
+/**
+ * 检查给定的键是否为整数字符串形式的键
+ * 用于判断一个字符串是否代表一个有效的正整数键
+ *
+ * @param key - 待检查的键值，可以是任意类型
+ * @returns 如果键是一个有效的整数字符串则返回 true，否则返回 false
+ *          验证条件包括：必须是字符串、不能是 'NaN'、不能以负号开头、且字符串形式与解析后的整数相等
+ */
 export const isIntegerKey = (key: unknown): boolean =>
   isString(key) &&
   key !== 'NaN' &&

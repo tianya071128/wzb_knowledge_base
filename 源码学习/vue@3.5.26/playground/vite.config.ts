@@ -20,6 +20,10 @@ export default defineConfig({
         process.cwd(),
         '../code/packages/shared/src/index.ts'
       ), // 重定向 vue 到你的本地文件
+      '@vue/reactivity': resolve(
+        process.cwd(),
+        '../code/packages/reactivity/src/index.ts'
+      ), // 重定向 vue 到你的本地文件
     },
   },
   define: {

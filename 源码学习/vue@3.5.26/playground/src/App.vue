@@ -20,6 +20,7 @@ const demos = [
   'Transition',
   '异步组件',
   'component特殊元素',
+  '响应式数据',
 ];
 const active = ref('');
 
@@ -72,6 +73,9 @@ const AsyncComponentDemoAsync = defineAsyncComponent(
 const InternalComponentDemoAsync = defineAsyncComponent(
   () => import('./components/组件相关概念/component特殊元素/ComponentDemo.vue')
 );
+const ReactivityDemoAsync = defineAsyncComponent(
+  () => import('./components/响应式/响应式数据/ReactivityDemo.vue')
+);
 </script>
 
 <template>
@@ -120,6 +124,7 @@ const InternalComponentDemoAsync = defineAsyncComponent(
         v-if="active === '异步组件'"></AsyncComponentDemoAsync>
       <InternalComponentDemoAsync
         v-if="active === 'component特殊元素'"></InternalComponentDemoAsync>
+      <ReactivityDemoAsync v-if="active === '响应式数据'"></ReactivityDemoAsync>
     </div>
   </div>
 </template>
