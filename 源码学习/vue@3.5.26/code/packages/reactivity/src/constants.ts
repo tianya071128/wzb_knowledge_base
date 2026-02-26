@@ -1,16 +1,44 @@
-// using literal strings instead of numbers so that it's easier to inspect
-// debugger events
+// using literal strings instead of numbers so that it's easier to inspect 使用字面字符串而非数字，以便更容易检查
+// debugger events 调试器事件
 
+/**
+ * 追踪操作类型的枚举，用于标识在响应式系统中不同类型的依赖追踪操作
+ */
 export enum TrackOpTypes {
+  /**
+   * 表示获取对象属性的操作，例如 obj.key 或 obj['key']
+   */
   GET = 'get',
+  /**
+   * 表示检查对象是否具有特定属性的操作，例如 'key' in obj
+   */
   HAS = 'has',
+  /**
+   * 表示迭代对象的操作，例如 for...in 循环或 Object.keys()
+   */
   ITERATE = 'iterate',
 }
 
+/**
+ * 触发操作类型的枚举
+ * 定义了在响应式系统中可能触发更新的不同操作类型
+ */
 export enum TriggerOpTypes {
+  /**
+   * 设置操作 - 当修改已存在的属性值时触发
+   */
   SET = 'set',
+  /**
+   * 添加操作 - 当向对象或集合中添加新属性/元素时触发
+   */
   ADD = 'add',
+  /**
+   * 删除操作 - 当从对象或集合中删除属性/元素时触发
+   */
   DELETE = 'delete',
+  /**
+   * 清空操作 - 当清空集合中的所有元素时触发
+   */
   CLEAR = 'clear',
 }
 

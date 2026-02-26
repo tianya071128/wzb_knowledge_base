@@ -45,9 +45,10 @@ const builtInSymbols = new Set(
 )
 
 function hasOwnProperty(this: object, key: unknown) {
-  // #10455 hasOwnProperty may be called with non-string values
+  // #10455 hasOwnProperty may be called with non-string values 可以使用非字符串值调用 hasOwnProperty
   if (!isSymbol(key)) key = String(key)
   const obj = toRaw(this)
+  // 依赖收集
   track(obj, TrackOpTypes.HAS, key)
   return obj.hasOwnProperty(key as string)
 }

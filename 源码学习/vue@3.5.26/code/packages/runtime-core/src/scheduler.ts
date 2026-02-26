@@ -2,25 +2,70 @@ import { ErrorCodes, callWithErrorHandling, handleError } from './errorHandling'
 import { NOOP, isArray } from '@vue/shared'
 import { type ComponentInternalInstance, getComponentName } from './component'
 
+/**
+ * Vue3 调度器作业状态标记枚举（SchedulerJobFlags）
+ * 核心作用：
+ *    1. 状态标记：通过位掩码（bitmask）标记调度器作业（Job/副作用）的核心状态；
+ *    2. 逻辑控制：调度器根据这些标记决定作业的执行策略（如是否入队、是否允许递归、是否跳过已销毁作业）；
+ *    3. 位运算优化：使用按位左移定义标记，支持多状态组合/校验，内存占用少且操作高效；
+ *
+ * 位运算说明：
+ *    - 1 << n：将数字 1 左移 n 位，生成唯一的位掩码（如 1<<0=1，1<<1=2，1<<2=4，1<<3=8）；
+ *    - 组合标记：job.flags = QUEUED | ALLOW_RECURSE（表示作业已入队且允许递归）；
+ *    - 校验标记：if (job.flags & QUEUED)（判断作业是否已入队）；
+ */
 export enum SchedulerJobFlags {
-  QUEUED = 1 << 0,
-  PRE = 1 << 1,
   /**
-   * Indicates whether the effect is allowed to recursively trigger itself
-   * when managed by the scheduler.
+   * 作业已入队标记（QUEUED = 1 << 0 = 1）
+   * 核心作用：
+   * - 防止作业重复入队：调度器添加作业时，先校验该标记，若已标记则跳过，避免同一作业多次入队；
+   * - 典型场景：同步修改多个响应式数据时，同一组件渲染作业仅入队一次；
+   */
+  QUEUED = 1 << 0,
+
+  /**
+   * 预执行作业标记（PRE = 1 << 1 = 2）
+   * 核心作用：
+   * - 标记作业的执行时机为“组件更新前（pre）”；
+   * - 典型场景：watch 配置 flush: "pre" 时，其回调作业会被标记为 PRE，在组件渲染前执行；
+   */
+  PRE = 1 << 1,
+
+  /**
+   * Indicates whether the effect is allowed to recursively trigger itself 表示该效果是否允许递归触发自身
+   * when managed by the scheduler. 当由调度器管理时
    *
-   * By default, a job cannot trigger itself because some built-in method calls,
-   * e.g. Array.prototype.push actually performs reads as well (#1740) which
-   * can lead to confusing infinite loops.
-   * The allowed cases are component update functions and watch callbacks.
-   * Component update functions may update child component props, which in turn
-   * trigger flush: "pre" watch callbacks that mutates state that the parent
-   * relies on (#1801). Watch callbacks doesn't track its dependencies so if it
-   * triggers itself again, it's likely intentional and it is the user's
-   * responsibility to perform recursive state mutation that eventually
-   * stabilizes (#1727).
+   * By default, a job cannot trigger itself because some built-in method calls, 默认情况下，作业无法自行触发，因为某些内置方法调用
+   * e.g. Array.prototype.push actually performs reads as well (#1740) which 例如，Array.prototype.push 实际上也会执行读取操作 (#1740)
+   * can lead to confusing infinite loops. 可能会导致令人困惑的无限循环
+   * The allowed cases are component update functions and watch callbacks. 允许的情况是组件更新函数和watch回调函数
+   * Component update functions may update child component props, which in turn 组件更新函数可能会更新子组件的 prop，而这些 prop 反过来又会
+   * trigger flush: "pre" watch callbacks that mutates state that the parent 触发刷新：“pre”观察回调，该回调会改变父组件的状态
+   * relies on (#1801). Watch callbacks doesn't track its dependencies so if it 依赖于 (#1801)。Watch callbacks 不会追踪其依赖项，因此如果它
+   * triggers itself again, it's likely intentional and it is the user's 如果它再次触发，那么很可能是故意的，是用户的行为
+   * responsibility to perform recursive state mutation that eventually 负责执行递归状态变更，最终
+   * stabilizes (#1727). 稳定 (#1727)
+   */
+  /**
+   * 允许递归触发标记（ALLOW_RECURSE = 1 << 2 = 4）
+   * 核心作用：
+   * - 标记作业是否允许递归触发自身（默认禁止）；
+   * - 设计背景：
+   *   1. 默认禁止递归：部分内置方法（如 Array.prototype.push）会同时触发“读+写”操作，易导致无限循环；
+   *   2. 允许的场景：
+   *      - 组件更新函数：父组件更新可能修改子组件 props，触发子组件 pre 阶段的 watch 回调，进而修改父组件依赖的状态；
+   *      - watch 回调：watch 不追踪自身依赖，若递归触发通常是开发者有意为之（需开发者保证最终状态稳定）；
    */
   ALLOW_RECURSE = 1 << 2,
+
+  /**
+   * 作业已销毁标记（DISPOSED = 1 << 3 = 8）
+   * 核心作用：
+   * - 标记作业已被销毁/停止，调度器执行前校验该标记，若已销毁则跳过执行；
+   * - 典型场景：
+   *   - 组件卸载后，其渲染作业被标记为 DISPOSED，避免无效执行；
+   *   - watch 调用 stop() 后，其回调作业被标记为 DISPOSED；
+   */
   DISPOSED = 1 << 3,
 }
 

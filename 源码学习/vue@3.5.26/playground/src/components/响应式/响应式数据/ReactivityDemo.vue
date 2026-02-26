@@ -52,13 +52,25 @@ const state2 = shallowReadonly({
 });
 
 // 更改状态自身的属性会失败
-state2.foo++;
+// state2.foo++;
 
 // ...但可以更改下层嵌套对象
 isReadonly(state2.nested); // false
 
 // 这是可以通过的
 state2.nested.bar++;
+// #endregion
+
+// #region ------------ isReactive(): 检查一个对象是否是由 reactive() 或 shallowReactive() 创建的代理。 ------------
+isReactive(reactive({})); // => true
+isReactive(ref(true)); // => false
+isReactive(shallowReactive({})); // => true
+isReactive(ref({}).value); // => true
+isReactive(readonly(ref({})).value); // => true
+// #endregion
+
+// #region ------------ isReadonly(): 检查传入的值是否为只读对象。 ------------
+isReadonly(reactive({ count: 0 }));
 // #endregion
 </script>
 

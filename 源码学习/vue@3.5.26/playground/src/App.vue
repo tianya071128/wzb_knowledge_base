@@ -21,6 +21,9 @@ const demos = [
   '异步组件',
   'component特殊元素',
   '响应式数据',
+  '响应式数据Ref',
+  '计算属性computed',
+  '依赖管理',
 ];
 const active = ref('');
 
@@ -76,6 +79,15 @@ const InternalComponentDemoAsync = defineAsyncComponent(
 const ReactivityDemoAsync = defineAsyncComponent(
   () => import('./components/响应式/响应式数据/ReactivityDemo.vue')
 );
+const RefDemoAsync2 = defineAsyncComponent(
+  () => import('./components/响应式/Ref响应式数据/RefDemo.vue')
+);
+const ComputedDemoAsync = defineAsyncComponent(
+  () => import('./components/响应式/计算属性/ComputedDemo.vue')
+);
+const DepManagDemoAsync = defineAsyncComponent(
+  () => import('./components/响应式/依赖管理/DepManagDemo.vue')
+);
 </script>
 
 <template>
@@ -125,6 +137,10 @@ const ReactivityDemoAsync = defineAsyncComponent(
       <InternalComponentDemoAsync
         v-if="active === 'component特殊元素'"></InternalComponentDemoAsync>
       <ReactivityDemoAsync v-if="active === '响应式数据'"></ReactivityDemoAsync>
+      <RefDemoAsync2 v-if="active === '响应式数据Ref'"></RefDemoAsync2>
+      <ComputedDemoAsync
+        v-if="active === '计算属性computed'"></ComputedDemoAsync>
+      <DepManagDemoAsync v-if="active === '依赖管理'"></DepManagDemoAsync>
     </div>
   </div>
 </template>

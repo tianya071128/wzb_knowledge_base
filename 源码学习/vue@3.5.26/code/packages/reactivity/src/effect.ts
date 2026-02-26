@@ -35,7 +35,11 @@ export interface ReactiveEffectRunner<T = any> {
   (): T
   effect: ReactiveEffect
 }
-
+/**
+ * 当前活跃的订阅者（副作用函数），用于追踪依赖关系
+ * 在执行响应式副作用函数时，此变量会被设置为当前正在运行的副作用函数
+ * 以便在访问响应式数据时能够正确地建立依赖关系
+ */
 export let activeSub: Subscriber | undefined
 
 export enum EffectFlags {
@@ -233,6 +237,11 @@ export class ReactiveEffect<T = any>
 //   }))
 // }
 
+/**
+ * - batchDepth：全局数字变量，批量更新深度计数器，初始值为 0；
+ *    -- batchDepth > 0：处于批量更新模式，副作用延迟执行；
+ *    -- batchDepth = 0：批量更新模式处理完成，副作用启动执行；
+ */
 let batchDepth = 0
 let batchedSub: Subscriber | undefined
 let batchedComputed: Subscriber | undefined
@@ -251,7 +260,27 @@ export function batch(sub: Subscriber, isComputed = false): void {
 /**
  * @internal
  */
+/**
+ * Vue3 响应式系统的批量更新开启函数（startBatch）
+ *
+ * 核心作用：
+ *    1. 标记批量更新状态：递增全局批量更新深度计数器（batchDepth），表示进入“批量更新模式”；
+ *    2. 延迟副作用执行：在批量更新模式下，响应式数据修改触发的副作用（如组件渲染、watch 回调）
+ *       不会立即执行，而是被缓存到队列中，直到 endBatch 调用时统一执行；
+ *    3. 嵌套兼容：支持嵌套调用（如组件渲染中修改数据触发另一个 startBatch），仅当 batchDepth 归 0 时才执行队列；
+ *
+ * 核心依赖说明：
+ * - batchDepth：全局数字变量，批量更新深度计数器，初始值为 0；
+ *   - batchDepth > 0：处于批量更新模式，副作用延迟执行；
+ *   - batchDepth = 0：批量更新模式处理完成，副作用启动执行；
+ */
 export function startBatch(): void {
+  // 递增全局批量更新深度计数器
+  // 嵌套调用示例：
+  // startBatch() → batchDepth = 1
+  //   startBatch() → batchDepth = 2
+  //   endBatch() → batchDepth = 1
+  // endBatch() → batchDepth = 0 → 执行副作用队列
   batchDepth++
 }
 
@@ -311,7 +340,7 @@ function prepareDeps(sub: Subscriber) {
 }
 
 function cleanupDeps(sub: Subscriber) {
-  // Cleanup unused deps
+  // Cleanup unused deps 清理未使用的 deps
   let head
   let tail = sub.depsTail
   let link = tail
@@ -503,7 +532,8 @@ export function stop(runner: ReactiveEffectRunner): void {
 }
 
 /**
- * @internal
+ * @internal 标志当前是否应该进行依赖追踪，默认为 true
+ * 当设置为 false 时，将会暂停响应式系统的依赖收集
  */
 export let shouldTrack = true
 const trackStack: boolean[] = []

@@ -402,8 +402,10 @@ function createReactiveObject(
 }
 
 /**
- * Checks if an object is a proxy created by {@link reactive} or
- * {@link shallowReactive} (or {@link ref} in some cases).
+ * 检查一个对象是否是由 reactive() 或 shallowReactive() 创建的代理。
+ *
+ * Checks if an object is a proxy created by {@link reactive} or 检查对象是否是由 {@linkreactive} 创建的代理或
+ * {@link shallowReactive} (or {@link ref} in some cases). {@linkshallowReactive}（或在某些情况下为{@linkref}）。
  *
  * @example
  * ```js
@@ -421,8 +423,11 @@ function createReactiveObject(
  */
 export function isReactive(value: unknown): boolean {
   if (isReadonly(value)) {
+    // 如果值是只读的，则检查其原始对象是否为响应式
     return isReactive((value as Target)[ReactiveFlags.RAW])
   }
+
+  // 检查值是否存在以及是否具有响应式标志
   return !!(value && (value as Target)[ReactiveFlags.IS_REACTIVE])
 }
 
@@ -465,16 +470,16 @@ export function isProxy(value: any): boolean {
 }
 
 /**
- * Returns the raw, original object of a Vue-created proxy.
+ * Returns the raw, original object of a Vue-created proxy. 返回由Vue创建的代理的原始对象。
  *
- * `toRaw()` can return the original object from proxies created by
- * {@link reactive}, {@link readonly}, {@link shallowReactive} or
+ * `toRaw()` can return the original object from proxies created by `toRaw()` 可以从由代理创建的代理对象中返回原始对象
+ * {@link reactive}, {@link readonly}, {@link shallowReactive} or {@link reactive}、{@link readonly}、{@link shallowReactive} 或
  * {@link shallowReadonly}.
  *
- * This is an escape hatch that can be used to temporarily read without
- * incurring proxy access / tracking overhead or write without triggering
- * changes. It is **not** recommended to hold a persistent reference to the
- * original object. Use with caution.
+ * This is an escape hatch that can be used to temporarily read without 这是一个应急出口，可用于暂时阅读，而无需
+ * incurring proxy access / tracking overhead or write without triggering 产生代理访问/跟踪开销或写入操作而不触发
+ * changes. It is **not** recommended to hold a persistent reference to the 更改。**不建议**持有对该对象的持久引用
+ * original object. Use with caution. 原始对象。请谨慎使用
  *
  * @example
  * ```js
@@ -484,7 +489,7 @@ export function isProxy(value: any): boolean {
  * console.log(toRaw(reactiveFoo) === foo) // true
  * ```
  *
- * @param observed - The object for which the "raw" value is requested.
+ * @param observed - The object for which the "raw" value is requested. 请求获取其“原始”值的对象。
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#toraw}
  */
 export function toRaw<T>(observed: T): T {
@@ -495,8 +500,8 @@ export function toRaw<T>(observed: T): T {
 export type Raw<T> = T & { [RawSymbol]?: true }
 
 /**
- * Marks an object so that it will never be converted to a proxy. Returns the
- * object itself.
+ * Marks an object so that it will never be converted to a proxy. Returns the 标记一个对象，使其永远不会被转换为代理。返回
+ * object itself. 物体本身
  *
  * @example
  * ```js
@@ -508,37 +513,40 @@ export type Raw<T> = T & { [RawSymbol]?: true }
  * console.log(isReactive(bar.foo)) // false
  * ```
  *
- * **Warning:** `markRaw()` together with the shallow APIs such as
- * {@link shallowReactive} allow you to selectively opt-out of the default
- * deep reactive/readonly conversion and embed raw, non-proxied objects in your
- * state graph.
+ * **Warning:** `markRaw()` together with the shallow APIs such as **警告：**`markRaw()` 与浅层 API（如
+ * {@link shallowReactive} allow you to selectively opt-out of the default {@link shallowReactive} 允许您有选择地退出默认设置
+ * deep reactive/readonly conversion and embed raw, non-proxied objects in your 深度响应式/只读转换，并将原始、非代理对象嵌入到你的
+ * state graph. 状态图。
  *
- * @param value - The object to be marked as "raw".
+ * @param value - The object to be marked as "raw". 要标记为“原始”的对象。
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#markraw}
  */
 export function markRaw<T extends object>(value: T): Raw<T> {
+  // 检查对象是否已经标记为跳过响应式处理并且对象是可扩展的
   if (!hasOwn(value, ReactiveFlags.SKIP) && Object.isExtensible(value)) {
+    // 为对象定义一个不可枚举、不可配置、不可写的SKIP属性
     def(value, ReactiveFlags.SKIP, true)
   }
+  // 直接返回原始对象，但现在它已经被标记为raw类型
   return value
 }
 
 /**
- * Returns a reactive proxy of the given value (if possible).
+ * Returns a reactive proxy of the given value (if possible). 返回给定值的响应式代理（如果可能的话）。
  *
- * If the given value is not an object, the original value itself is returned.
+ * If the given value is not an object, the original value itself is returned. 如果给定的值不是对象，则返回原始值本身
  *
- * @param value - The value for which a reactive proxy shall be created.
+ * @param value - The value for which a reactive proxy shall be created. 创建响应式代理所依据的值
  */
 export const toReactive = <T extends unknown>(value: T): T =>
   isObject(value) ? reactive(value) : value
 
 /**
- * Returns a readonly proxy of the given value (if possible).
+ * Returns a readonly proxy of the given value (if possible).  返回给定值的只读代理（如果可能）
  *
- * If the given value is not an object, the original value itself is returned.
+ * If the given value is not an object, the original value itself is returned. 如果给定的值不是对象，则返回原始值本身
  *
- * @param value - The value for which a readonly proxy shall be created.
+ * @param value - The value for which a readonly proxy shall be created. 用于创建只读代理的值
  */
 export const toReadonly = <T extends unknown>(value: T): DeepReadonly<T> =>
   isObject(value) ? readonly(value) : (value as DeepReadonly<T>)
