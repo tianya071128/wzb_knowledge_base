@@ -29,6 +29,29 @@ export let globalVersion = 0
  *
  * @internal
  */
+
+/**
+ * Vue3 响应式系统的核心双向链表节点（Link 类）
+ *
+ * 核心作用：
+ *    1. 关联关系：作为「副作用（Subscriber）」和「依赖管理器（Dep）」的桥梁，存储两者的引用；
+ *    2. 版本追踪：通过 version 字段同步 Dep 版本号，实现“无效依赖自动清理”（核心优化逻辑）；
+ *    3. 链表管理：通过多组双向链表指针，分别维护：
+ *       - 副作用的依赖链（nextDep/prevDep）：单个副作用关联的所有 Dep 节点；
+ *       - Dep 的订阅者链（nextSub/prevSub）：单个 Dep 关联的所有副作用节点；
+ *       - 活跃链接链（prevActiveLink）：Dep 中当前活跃副作用的链接缓存链；
+ *
+ * 核心设计思想（版本号机制）：
+ *    - 副作用执行前：所有关联 Link 的 version 重置为 -1；
+ *    - 副作用执行中：访问响应式数据时，Link 的 version 同步为对应 Dep 的最新版本号；
+ *    - 副作用执行后：清理 version = -1 的 Link（表示该依赖在本次执行中未被使用，属于无效依赖）；
+ *
+ * 该机制可精准清理“不再使用的依赖”，避免内存泄漏，同时保证依赖追踪的精准性。
+ *
+ * 核心依赖说明：
+ *    - Subscriber：订阅者接口（副作用/计算属性的统一抽象），如 ReactiveEffect、ComputedRefImpl；
+ *    - Dep：依赖管理器类，存储订阅者并负责依赖收集/触发更新；
+ */
 export class Link {
   /**
    * - Before each effect run, all previous dep links' version are reset to -1 在每次效果运行之前，所有之前的依赖链接的版本都会重置为-1
@@ -36,22 +59,55 @@ export class Link {
    * - After the run, links with version -1 (that were never used) are cleaned 运行后，将清除版本为-1（从未使用过）的链接
    *   up
    */
+  /**
+   * 版本号：核心状态字段，用于追踪依赖是否被使用，遵循以下生命周期：
+   * 1. 初始化：同步为关联 Dep 的当前版本号；
+   * 2. 副作用执行前：被重置为 -1（标记为“待校验”）；
+   * 3. 副作用执行中：访问响应式数据时，同步为对应 Dep 的最新版本号（标记为“已使用”）；
+   * 4. 副作用执行后：version = -1 的 Link 会被清理（标记为“未使用的无效依赖”）；
+   */
   version: number
 
   /**
    * Pointers for doubly-linked lists 双向链表的指针
    */
+  /**
+   * 双向链表指针：副作用的依赖链（Effect's Dep List）
+   * - nextDep：当前 Link 在「副作用依赖链」中的下一个节点；
+   * - prevDep：当前 Link 在「副作用依赖链」中的上一个节点；
+   * 作用：维护单个副作用关联的所有 Dep 节点，便于遍历/清理副作用的所有依赖；
+   */
   nextDep?: Link
   prevDep?: Link
+
+  /**
+   * 双向链表指针：Dep 的订阅者链（Dep's Subscriber List）
+   * - nextSub：当前 Link 在「Dep 订阅者链」中的下一个节点；
+   * - prevSub：当前 Link 在「Dep 订阅者链」中的上一个节点；
+   * 作用：维护单个 Dep 关联的所有副作用节点，便于触发更新时遍历所有订阅者；
+   */
   nextSub?: Link
   prevSub?: Link
+
+  /**
+   * 双向链表指针：Dep 的活跃链接链（Dep's Active Link List）
+   * - prevActiveLink：当前 Link 在「Dep 活跃链接链」中的上一个节点；
+   * 作用：缓存 Dep 与当前活跃副作用的关联 Link，避免重复创建，提升依赖收集性能；
+   */
   prevActiveLink?: Link
 
+  /**
+   * 构造函数：初始化 Link 节点，建立「副作用 ↔ Dep」的关联，并初始化版本号和链表指针
+   * @param sub 关联的订阅者（副作用/计算属性），如 ReactiveEffect、ComputedRefImpl；
+   * @param dep 关联的依赖管理器，对应响应式数据的 Dep 实例；
+   */
   constructor(
     public sub: Subscriber,
     public dep: Dep,
   ) {
+    // 初始化版本号：同步为关联 Dep 的当前版本号（Dep.version 每次 trigger 时递增）
     this.version = dep.version
+
     this.nextDep =
       this.prevDep =
       this.nextSub =
@@ -181,7 +237,24 @@ export class Dep {
       return
     }
 
-    // 1. 获取当前 Dep 与 activeSub 的关联节点（优先复用缓存的 activeLink）
+    /**
+     * 1. 获取当前 Dep 与 activeSub 的关联节点（优先复用缓存的 activeLink）
+     *
+     *     - 如果 watchEffect 中嵌套 watchEffect，那么外层 watchEffect 的订阅者可能会收集多次同一 dep
+     *        watchEffect(
+     *          () => {
+     *            console.log(state.foo);
+     *
+     *            watchEffect(() => state.foo);
+     *
+     *            console.log(state.foo);
+     *          },
+     *          {
+     *            flush: 'sync',
+     *          }
+     *        );
+     *     - 因为在内层 watchEffect 中也使用了 state.foo(同一 dep), 那么此时 this.activeLink 就会被置为内层的 Dep <-> Sub 的 Link
+     */
     let link = this.activeLink
     // 无缓存节点 或 缓存节点的订阅者不是当前 activeSub → 创建新 Link 节点
     if (link === undefined || link.sub !== activeSub) {
@@ -269,15 +342,16 @@ export class Dep {
   /**
    * 批量通知订阅者执行更新
    * 核心逻辑：
-   *  1. 遍历 subs 链表（从尾向前），执行订阅者的 notify 方法；
-   *      - 在一个周期中, 将其推入到 batchedSub 链表中,
-   *      - 在 endBatch 中, 通过 batchedSub 链表来执行订阅者 sub.trigger() 方法, 根据时机不同, 在适当的时机中执行
+   *  1. 遍历 dep.subs 链表（从尾向前），执行订阅者的 sub.notify 方法；
+   *      - 在一个周期中, 将其推入到 batchedSub 链表中
+   *  2. 识别计算属性订阅者，递归触发其 dep 的 notify
+   *  3. 在 endBatch 方法中处理 sub 的批量更新逻辑
+   *      - 通过 batchedSub.next 链表来处理该周期中的 sub(订阅者)
+   *      - 执行 sub.trigger(), , 根据时机不同, 在适当的时机中执行
    *          -- 同步: sync --> 立即执行
    *          -- 其他: 推入到队列中, 在合适的时机中执行
    *              --- 通过 sub.flags 来判定是否推入到队列中, 防止重复推入
    *              --- 在执行 sub.run() 后会重置标记
-   *  2. 识别计算属性订阅者，递归触发其 dep 的 notify；
-   *
    *
    * @param debugInfo 可选，调试扩展信息（传递给 onTrigger）
    */
@@ -625,10 +699,19 @@ export function trigger(
   endBatch()
 }
 
+/**
+ * 从响应式对象中获取指定键的依赖项
+ *
+ * @param object - 响应式对象
+ * @param key - 对象中的键，可以是字符串、数字或symbol类型
+ * @returns 返回与指定键关联的依赖项，如果不存在则返回undefined
+ */
 export function getDepFromReactive(
   object: any,
   key: string | number | symbol,
 ): Dep | undefined {
+  // 获取对象对应的依赖图映射
   const depMap = targetMap.get(object)
+  // 返回指定键的依赖项
   return depMap && depMap.get(key)
 }

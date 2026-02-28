@@ -24,6 +24,7 @@ const demos = [
   '响应式数据Ref',
   '计算属性computed',
   '依赖管理',
+  '监听器',
 ];
 const active = ref('');
 
@@ -88,6 +89,9 @@ const ComputedDemoAsync = defineAsyncComponent(
 const DepManagDemoAsync = defineAsyncComponent(
   () => import('./components/响应式/依赖管理/DepManagDemo.vue')
 );
+const WatchDemoAsync = defineAsyncComponent(
+  () => import('./components/响应式/监听器/WatchDemo.vue')
+);
 </script>
 
 <template>
@@ -141,6 +145,7 @@ const DepManagDemoAsync = defineAsyncComponent(
       <ComputedDemoAsync
         v-if="active === '计算属性computed'"></ComputedDemoAsync>
       <DepManagDemoAsync v-if="active === '依赖管理'"></DepManagDemoAsync>
+      <WatchDemoAsync v-if="active === '监听器'"></WatchDemoAsync>
     </div>
   </div>
 </template>
