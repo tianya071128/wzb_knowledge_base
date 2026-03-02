@@ -88,7 +88,13 @@ const INITIAL_WATCHER_VALUE = {}
 
 export type WatchScheduler = (job: () => void, isFirstRun: boolean) => void
 
+/**
+ * 存储与每个响应式 effect 关联的清理函数数组
+ * 用于在 effect 重新运行或停止时清理之前的副作用
+ */
+
 const cleanupMap: WeakMap<ReactiveEffect, (() => void)[]> = new WeakMap()
+/** 当前活跃的监听器（Watcher） */
 let activeWatcher: ReactiveEffect | undefined = undefined
 
 /**
@@ -99,28 +105,57 @@ export function getCurrentWatcher(): ReactiveEffect<any> | undefined {
 }
 
 /**
- * Registers a cleanup callback on the current active effect. This
- * registered cleanup callback will be invoked right before the
- * associated effect re-runs.
+ * Registers a cleanup callback on the current active effect. This 在当前活动效果上注册一个清理回调函数。这
+ * registered cleanup callback will be invoked right before the 注册的清理回调函数将在...之前被调用
+ * associated effect re-runs. 相关效应的重现
  *
- * @param cleanupFn - The callback function to attach to the effect's cleanup.
- * @param failSilently - if `true`, will not throw warning when called without
- * an active effect.
- * @param owner - The effect that this cleanup function should be attached to.
- * By default, the current active effect.
+ * @param cleanupFn - The callback function to attach to the effect's cleanup. 附加到效果清理的回调函数
+ * @param failSilently - if `true`, will not throw warning when called without 如果为`true`，则在没有参数的情况下调用时不会抛出警告
+ * an active effect. 积极影响
+ * @param owner - The effect that this cleanup function should be attached to. 此清理函数应附加到的效果
+ * By default, the current active effect. 默认情况下，指当前生效的效果
+ */
+/**
+ * Vue3 响应式系统核心工具函数：为监听器注册清理函数（onWatcherCleanup） --> https://cn.vuejs.org/api/reactivity-core#onwatchercleanup
+ *
+ * 核心作用：
+ * 1. 多清理函数管理：为指定监听器（Watcher）注册多个清理函数（存入数组），支持批量执行；
+ * 2. 上下文关联：默认关联当前活跃监听器（activeWatcher），也可手动指定目标监听器；
+ * 3. 开发环境校验：无关联监听器且未开启静默模式时抛出警告，提示错误使用场景；
+ * 4. 内存安全保障：注册的清理函数会在监听器更新/停止时批量执行，释放临时资源；
+ *
+ * 核心区别（与 onEffectCleanup 对比）：
+ * - onEffectCleanup：为普通副作用（ReactiveEffect）注册**单个**清理函数；
+ * - onWatcherCleanup：为监听器（Watcher）注册**多个**清理函数（数组存储）；
+ *
+ * 典型使用场景：
+ * - watch 回调中注册多个异步操作的取消逻辑（如同时取消多个 fetch 请求）；
+ * - 监听器依赖多个临时资源时，批量注册清理逻辑；
+ * - 自定义监听器实现中，管理多组清理函数；
+ *
+ * @param cleanupFn 清理函数（用户定义的逻辑，如取消定时器、abort 请求、移除事件监听）；
+ * @param failSilently 静默失败标记（默认 false）：
+ *                     - false：开发环境无关联监听器时抛出警告；
+ *                     - true：无关联监听器时静默失败，不抛警告；
+ * @param owner 目标监听器（ReactiveEffect 实例，默认关联当前活跃监听器 activeWatcher）；
  */
 export function onWatcherCleanup(
   cleanupFn: () => void,
   failSilently = false,
   owner: ReactiveEffect | undefined = activeWatcher,
 ): void {
+  // 1. 核心逻辑：若存在关联的监听器（owner）→ 注册清理函数
   if (owner) {
+    // 1.1 从 cleanupMap 中获取该监听器已注册的清理函数数组
+    // cleanupMap 是全局 Map：key = ReactiveEffect（监听器），value = 清理函数数组
     let cleanups = cleanupMap.get(owner)
+    // 1.2 若数组不存在 → 初始化并存入 cleanupMap
     if (!cleanups) cleanupMap.set(owner, (cleanups = []))
+    // 1.3 将新的清理函数添加到数组末尾（支持注册多个）
     cleanups.push(cleanupFn)
   } else if (__DEV__ && !failSilently) {
     warn(
-      `onWatcherCleanup() was called when there was no active watcher` +
+      `onWatcherCleanup() was called when there was no active watcher` + // 调用 onWatcherCleanup() 时，没有可关联的活跃监听器
         ` to associate with.`,
     )
   }
@@ -175,12 +210,15 @@ export function watch(
 
   // 3. 响应式对象的 getter 构建函数：处理 deep 配置的差异化遍历逻辑
   const reactiveGetter = (source: object) => {
-    // traverse will happen in wrapped getter below
+    // traverse will happen in wrapped getter below 遍历将发生在下面的包装吸气剂中
+    // deep: true → 直接返回源对象（后续 traverse 会深度遍历）
     if (deep) return source
-    // for `deep: false | 0` or shallow reactive, only traverse root-level properties
+
+    // for `deep: false | 0` or shallow reactive, only traverse root-level properties 对于`deep: false | 0`或浅层响应式，仅遍历根级属性
     if (isShallow(source) || deep === false || deep === 0)
       return traverse(source, 1)
-    // for `deep: undefined` on a reactive object, deeply traverse all properties
+
+    // for `deep: undefined` on a reactive object, deeply traverse all properties 对于响应式对象上的“deep: undefined”，深度遍历所有属性
     return traverse(source)
   }
 
@@ -292,6 +330,7 @@ export function watch(
   // 8. 构建监听停止句柄：停止副作用 + 从作用域中移除
   const watchHandle: WatchHandle = () => {
     effect.stop() // 停止副作用，清理所有依赖
+    // 存在作用域的, 清除掉
     if (scope && scope.active) {
       remove(scope.effects, effect) // 从当前作用域移除副作用
     }
@@ -392,8 +431,12 @@ export function watch(
    */
   boundCleanup = fn => onWatcherCleanup(fn, false, effect)
 
-  // 16. 配置副作用的停止钩子：执行所有注册的清理函数
+  /**
+   * 16. 配置副作用的停止钩子：执行所有注册的清理函数
+   *      - 当停止 watch 时, 会调用这个函数
+   */
   cleanup = effect.onStop = () => {
+    // 从 cleanupMap 中提取对应的副作用清理函数
     const cleanups = cleanupMap.get(effect)
     if (cleanups) {
       // 执行所有清理函数（封装错误处理）
@@ -445,40 +488,86 @@ export function watch(
   return watchHandle
 }
 
+/**
+ * Vue3 响应式系统核心工具函数：深度遍历任意值（traverse）
+ *
+ * 核心作用：
+ *    1. 深度遍历：递归遍历对象/数组/Set/Map/Ref 等数据结构的所有嵌套属性；
+ *    2. 深度限制：支持指定遍历深度（depth），避免无限递归遍历深层嵌套数据；
+ *    3. 循环引用防护：通过 seen Map 记录已遍历对象和当前深度，避免循环引用导致的栈溢出；
+ *    4. 跳过机制：跳过标记为 ReactiveFlags.SKIP 的对象（无需追踪的响应式对象）；
+ *    5. 全类型适配：兼容 Ref/数组/Set/Map/普通对象/符号属性等所有常见数据类型；
+ *
+ * 典型使用场景：
+ *    - watch 配置 deep: true 时，遍历监听对象的所有嵌套属性，触发依赖收集；
+ *    - watchEffect 中需要深度追踪复杂对象变化时，手动调用 traverse 触发全量收集；
+ *    - 响应式系统内部需要遍历数据结构的通用场景；
+ *
+ * @param value 待遍历的值（任意类型：基本类型/对象/数组/Ref/Set/Map 等）；
+ * @param depth 遍历深度限制（默认 Infinity，即无限深度）；
+ * @param seen 记录已遍历对象的 Map（内部递归使用，外部调用无需传参）：
+ *             - key：已遍历的对象引用；
+ *             - value：该对象对应的遍历深度；
+ * @returns 原输入值（遍历过程无返回值，仅触发依赖收集，返回值为兼容链式调用）；
+ */
 export function traverse(
   value: unknown,
   depth: number = Infinity,
   seen?: Map<unknown, number>,
 ): unknown {
-  if (depth <= 0 || !isObject(value) || (value as any)[ReactiveFlags.SKIP]) {
+  // 1. 遍历终止条件（满足任一则直接返回，不继续遍历）：
+  if (
+    depth <= 0 || // depth <= 0：已达到指定遍历深度；
+    !isObject(value) || // 非对象/数组（基本类型，无需遍历）；
+    (value as any)[ReactiveFlags.SKIP] // 对象标记为 SKIP（跳过追踪）；
+  ) {
     return value
   }
 
+  // 2. 初始化 seen Map（首次调用时创建，递归调用时复用）
   seen = seen || new Map()
+
+  // 3. 循环引用防护：若对象已遍历过且记录的深度 ≥ 当前深度 → 跳过，避免循环递归
   if ((seen.get(value) || 0) >= depth) {
     return value
   }
+
+  // 4. 记录当前对象的遍历深度 → 标记已遍历，防止循环引用
   seen.set(value, depth)
+  // 5. 遍历深度递减 → 嵌套层级每深入一层，深度减 1
   depth--
+
+  // 6. 按数据类型分支处理，递归遍历内部值
+  // 6.1 处理 Ref 类型：遍历 Ref 的 value 属性（自动解包）
   if (isRef(value)) {
     traverse(value.value, depth, seen)
-  } else if (isArray(value)) {
+  }
+  // 6.2 处理数组类型：遍历数组的每一个元素
+  else if (isArray(value)) {
     for (let i = 0; i < value.length; i++) {
       traverse(value[i], depth, seen)
     }
-  } else if (isSet(value) || isMap(value)) {
+  }
+  // 6.3 处理 Set/Map 类型：遍历其所有值（forEach 兼容 Set/Map 的遍历）
+  else if (isSet(value) || isMap(value)) {
     value.forEach((v: any) => {
       traverse(v, depth, seen)
     })
-  } else if (isPlainObject(value)) {
+  }
+  // 6.4 处理普通对象（纯对象，非数组/Set/Map/Ref）
+  else if (isPlainObject(value)) {
     for (const key in value) {
       traverse(value[key], depth, seen)
     }
+
+    // 6.4.2 遍历对象的 Symbol 键属性（保证 Symbol 属性也被追踪）
     for (const key of Object.getOwnPropertySymbols(value)) {
       if (Object.prototype.propertyIsEnumerable.call(value, key)) {
         traverse(value[key as any], depth, seen)
       }
     }
   }
+
+  // 7. 返回原输入值 → 兼容链式调用（如 traverse(obj).xxx）
   return value
 }

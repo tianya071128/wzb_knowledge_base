@@ -1,11 +1,11 @@
-// Note: this file is auto concatenated to the end of the bundled d.ts during
-// build.
+// Note: this file is auto concatenated to the end of the bundled d.ts during 注意：此文件会在打包时自动合并到已打包的 d.ts 文件的末尾
+// build. 构建
 
-// This code is based on react definition in DefinitelyTyped published under the MIT license.
-//      Repository: https://github.com/DefinitelyTyped/DefinitelyTyped
-//      Path in the repository: types/react/index.d.ts
+// This code is based on react definition in DefinitelyTyped published under the MIT license. 此代码基于在 MIT 许可证下发布的 DefinitelyTyped 中的 React 定义
+//      Repository: https://github.com/DefinitelyTyped/DefinitelyTyped 仓库：https://github.com/DefinitelyTyped/DefinitelyTyped
+//      Path in the repository: types/react/index.d.ts  存储库中的路径：types/react/index.d.ts
 //
-// Copyrights of original definition are:
+// Copyrights of original definition are: 原始定义的版权信息如下：
 //      AssureSign <http://www.assuresign.com>
 //      Microsoft <https://microsoft.com>
 //                 John Reilly <https://github.com/johnnyreilly>

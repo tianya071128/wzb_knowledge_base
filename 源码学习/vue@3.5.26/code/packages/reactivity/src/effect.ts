@@ -638,7 +638,13 @@ export function endBatch(): void {
     return
   }
 
-  // 2. 处理批量收集的计算属性订阅者（batchedComputed）
+  /**
+   * 2. 处理批量收集的计算属性订阅者（batchedComputed）
+   *      - 在这里只需要将计算属性的标记做一些处理
+   *      - 计算属性的依赖变更会在 dep.notify() 方法中也通知依赖了计算属性的订阅者
+   *          -- 这样计算属性的订阅者就会重新计算
+   *          -- 就会重新触发计算属性的 get value 拦截器, 从而重新计算值以及触发依赖收集等操作
+   */
   if (batchedComputed) {
     // 2.1 暂存计算属性链表头节点，重置 batchedComputed 为空（避免重复处理）
     let e: Subscriber | undefined = batchedComputed
@@ -856,59 +862,98 @@ function isDirty(sub: Subscriber): boolean {
  * Returning false indicates the refresh failed 返回 false 表示刷新失败
  * @internal
  */
+
+/**
+ * Vue3 计算属性核心刷新函数：检查并更新计算属性的值（refreshComputed）
+ *
+ * 核心作用：
+ *    1. 快速跳过：通过状态标记/全局版本号/依赖脏值检查，避免不必要的重新计算；
+ *    2. 状态管理：更新计算属性的 EffectFlags 标记（DIRTY/RUNNING/EVALUATED）；
+ *    3. 依赖重置：执行 getter 前重置旧依赖，执行后清理无效依赖；
+ *    4. 值更新：仅当新值与旧值变化时，更新缓存 _value 并递增 dep 版本号；
+ *    5. 异常处理：保证执行过程中状态正确恢复，避免响应式系统异常；
+ *
+ * @param computed 计算属性实例（ComputedRefImpl）
+ * @returns undefined 无返回值，仅执行状态更新和值计算
+ */
 export function refreshComputed(computed: ComputedRefImpl): undefined {
+  // ====================== 快速跳过条件 1：非脏值且正在追踪 → 直接返回 ======================
   if (
-    computed.flags & EffectFlags.TRACKING &&
-    !(computed.flags & EffectFlags.DIRTY)
+    computed.flags & EffectFlags.TRACKING && //  计算属性正在追踪依赖（已执行过 getter）；
+    !(computed.flags & EffectFlags.DIRTY) // 未被标记为脏值（依赖未变化）；
   ) {
     return
   }
+  // 清除 DIRTY 标记（按位与取反）：表示开始处理脏值，避免重复触发计算
   computed.flags &= ~EffectFlags.DIRTY
 
-  // Global version fast path when no reactive changes has happened since
-  // last refresh.
+  // ====================== 快速跳过条件 2：全局版本号未变化 → 直接返回 ======================
+  // Global version fast path when no reactive changes has happened since 此后没有发生反应性更改时的全局版本快速路径
+  // last refresh. 最后一次刷新。
+  // 核心逻辑：
+  // - globalVersion 是全局响应式更新版本号，每次响应式值变化时自增；
+  // - 若 computed.globalVersion === globalVersion → 自上次计算后无任何响应式变化；
   if (computed.globalVersion === globalVersion) {
     return
   }
+  // 同步全局版本号：标记当前计算属性已同步到最新全局版本
   computed.globalVersion = globalVersion
 
-  // In SSR there will be no render effect, so the computed has no subscriber
-  // and therefore tracks no deps, thus we cannot rely on the dirty check.
-  // Instead, computed always re-evaluate and relies on the globalVersion
-  // fast path above for caching.
-  // #12337 if computed has no deps (does not rely on any reactive data) and evaluated,
-  // there is no need to re-evaluate.
+  // ====================== 快速跳过条件 3：非SSR + 已计算 + 依赖未脏 → 直接返回 ======================
+  // In SSR there will be no render effect, so the computed has no subscriber 在服务器端渲染（SSR）中，不会有渲染效果，因此计算结果没有订阅者
+  // and therefore tracks no deps, thus we cannot rely on the dirty check. 因此，它不会跟踪任何依赖项，所以我们不能依赖脏检查
+  // Instead, computed always re-evaluate and relies on the globalVersion 相反，computed总是重新计算，并依赖于globalVersion
+  // fast path above for caching. 上面的快速路径用于缓存
+  // #12337 if computed has no deps (does not rely on any reactive data) and evaluated, 如果computed没有依赖（即不依赖于任何响应式数据）并且被求值
+  // there is no need to re-evaluate. 无需重新评估
   if (
-    !computed.isSSR &&
-    computed.flags & EffectFlags.EVALUATED &&
-    ((!computed.deps && !(computed as any)._dirty) || !isDirty(computed))
+    !computed.isSSR && // 客户端场景（SSR 需每次重新计算）；
+    computed.flags & EffectFlags.EVALUATED && // 已执行过 getter 计算；
+    ((!computed.deps && // 计算属性不依赖任何响应式值；
+      !(computed as any)._dirty) || // 兼容旧版脏值标记；
+      !isDirty(computed)) // 依赖链表未脏（所有依赖的版本号未变化）；
   ) {
     return
   }
+  // 标记为 RUNNING 状态：表示正在执行 getter，避免递归执行或重复计算
   computed.flags |= EffectFlags.RUNNING
 
-  const dep = computed.dep
-  const prevSub = activeSub
-  const prevShouldTrack = shouldTrack
-  activeSub = computed
-  shouldTrack = true
+  // 缓存当前状态：用于执行完成后恢复，避免污染全局响应式状态
+  const dep = computed.dep // 计算属性的依赖管理器
+  const prevSub = activeSub // 缓存当前活跃订阅者（activeSub）
+  const prevShouldTrack = shouldTrack // 缓存当前依赖收集开关（shouldTrack）
+  activeSub = computed // 将活跃订阅者设为当前计算属性（收集 getter 中的依赖）
+  shouldTrack = true // 开启依赖收集（保证 getter 中的响应式值能追踪到当前计算属性）
 
   try {
+    // 1. 准备依赖：重置旧依赖链表，标记新依赖的收集开始
     prepareDeps(computed)
+
+    // 2. 执行 getter 函数，计算新值
+    //    参数 computed._value：传递旧值，支持 getter 中访问自身旧值
     const value = computed.fn(computed._value)
+
+    // 3. 更新缓存值的条件：
+    //    - dep.version === 0 → 首次计算（版本号初始为 0）；
+    //    - hasChanged(value, computed._value) → 新值与旧值不同（兼容 NaN 等特殊值）；
     if (dep.version === 0 || hasChanged(value, computed._value)) {
+      // 标记为已计算：表示已执行过 getter 并得到有效值
       computed.flags |= EffectFlags.EVALUATED
+      // 更新缓存值：将新值存入 _value
       computed._value = value
+      // 递增 dep 版本号：标记计算属性值已更新，通知依赖该计算属性的副作用
       dep.version++
     }
   } catch (err) {
+    // 异常处理：即使 getter 执行出错，也递增版本号（保证后续更新能正常触发）
     dep.version++
     throw err
   } finally {
-    activeSub = prevSub
-    shouldTrack = prevShouldTrack
-    cleanupDeps(computed)
-    computed.flags &= ~EffectFlags.RUNNING
+    // ====================== 执行完成后的状态恢复 ======================
+    activeSub = prevSub // 恢复活跃订阅者
+    shouldTrack = prevShouldTrack // 恢复依赖收集开关
+    cleanupDeps(computed) // 清理无效依赖：移除本次 getter 中未使用的依赖
+    computed.flags &= ~EffectFlags.RUNNING // 清除 RUNNING 标记：表示计算完成
   }
 }
 

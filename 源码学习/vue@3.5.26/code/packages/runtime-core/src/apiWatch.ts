@@ -68,6 +68,14 @@ export function watchEffect(
   return doWatch(effect, null, options)
 }
 
+/**
+ * 创建一个在组件更新后执行的侦听副作用函数
+ * 此函数确保副作用在DOM更新完成后运行
+ *
+ * @param effect - 副作用函数，当依赖项变化时执行
+ * @param options - 可选的调试选项，用于调试目的
+ * @returns 返回一个WatchHandle对象，可用于停止侦听器
+ */
 export function watchPostEffect(
   effect: WatchEffect,
   options?: DebuggerOptions,
@@ -81,6 +89,14 @@ export function watchPostEffect(
   )
 }
 
+/**
+ * 创建一个同步执行的监听副作用函数
+ * 该函数创建一个在数据变化时立即同步执行的watcher，而不是在下一个tick或微任务中执行
+ *
+ * @param effect - 监听的副作用函数，当依赖的数据发生变化时会执行此函数
+ * @param options - 调试选项，可选参数，用于配置调试相关的行为
+ * @returns WatchHandle - 返回一个watch处理器，可用于停止监听或进行其他操作
+ */
 export function watchSyncEffect(
   effect: WatchEffect,
   options?: DebuggerOptions,
@@ -96,14 +112,14 @@ export function watchSyncEffect(
 
 export type MultiWatchSources = (WatchSource<unknown> | object)[]
 
-// overload: single source + cb
+// overload: single source + cb 过载：单源+cb
 export function watch<T, Immediate extends Readonly<boolean> = false>(
   source: WatchSource<T>,
   cb: WatchCallback<T, MaybeUndefined<T, Immediate>>,
   options?: WatchOptions<Immediate>,
 ): WatchHandle
 
-// overload: reactive array or tuple of multiple sources + cb
+// overload: reactive array or tuple of multiple sources + cb 重载：多个源的反应数组或元组 + cb
 export function watch<
   T extends Readonly<MultiWatchSources>,
   Immediate extends Readonly<boolean> = false,
@@ -115,7 +131,7 @@ export function watch<
   options?: WatchOptions<Immediate>,
 ): WatchHandle
 
-// overload: array of multiple sources + cb
+// overload: array of multiple sources + cb 重载：多个源数组 + cb
 export function watch<
   T extends MultiWatchSources,
   Immediate extends Readonly<boolean> = false,
@@ -125,7 +141,7 @@ export function watch<
   options?: WatchOptions<Immediate>,
 ): WatchHandle
 
-// overload: watching reactive object w/ cb
+// overload: watching reactive object w/ cb 重载：用 cb 观察反应对象
 export function watch<
   T extends object,
   Immediate extends Readonly<boolean> = false,
@@ -135,7 +151,7 @@ export function watch<
   options?: WatchOptions<Immediate>,
 ): WatchHandle
 
-// implementation
+// implementation 实现
 export function watch<T = any, Immediate extends Readonly<boolean> = false>(
   source: T | WatchSource<T>,
   cb: any,
@@ -143,9 +159,9 @@ export function watch<T = any, Immediate extends Readonly<boolean> = false>(
 ): WatchHandle {
   if (__DEV__ && !isFunction(cb)) {
     warn(
-      `\`watch(fn, options?)\` signature has been moved to a separate API. ` +
-        `Use \`watchEffect(fn, options?)\` instead. \`watch\` now only ` +
-        `supports \`watch(source, cb, options?) signature.`,
+      `\`watch(fn, options?)\` signature has been moved to a separate API. ` + // `\`watch(fn, options?)\` 签名已移至单独的 API。 `
+        `Use \`watchEffect(fn, options?)\` instead. \`watch\` now only ` + // 请使用`watchEffect(fn, options?)`替代。`watch`现在仅支持`
+        `supports \`watch(source, cb, options?) signature.`, //  `supports \`watch(source, cb, options?) 签名。
     )
   }
   return doWatch(source as any, cb, options)
@@ -251,6 +267,7 @@ function doWatch(
 
   // 8.1 flush: post → 组件渲染后执行（放入 postRender 队列）
   if (flush === 'post') {
+    // post --> 在组件渲染后执行, 使用 queuePostRenderEffect 调度器
     baseWatchOptions.scheduler = job => {
       queuePostRenderEffect(job, instance && instance.suspense)
     }
@@ -261,7 +278,10 @@ function doWatch(
     isPre = true
     baseWatchOptions.scheduler = (job, isFirstRun) => {
       if (isFirstRun) {
-        // 首次执行（immediate）→ 直接执行，不加入队列
+        /**
+         * 首次执行 → 直接执行，不加入队列
+         *  - 当 watchEffect(() => {xxx}) --> 该函数会同步执行一次, 当依赖变更时, 就使用 queueJob 队列调度
+         */
         job()
       } else {
         // 非首次 → 加入预渲染队列，组件渲染前执行

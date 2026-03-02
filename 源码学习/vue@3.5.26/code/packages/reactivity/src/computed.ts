@@ -69,12 +69,17 @@ export interface WritableComputedOptions<T, S = T> {
 export class ComputedRefImpl<T = any> implements Subscriber {
   /**
    * @internal 内部属性：缓存计算属性的最新值，仅当依赖变化且被访问时更新
+   * 核心逻辑：仅当依赖变化且被访问（get value）时更新，未变化时直接返回缓存值
    */
   _value: any = undefined
 
   /**
-   * @internal 内部属性：管理“使用当前计算属性的副作用”的依赖管理器
-   * 作用：收集所有依赖该计算属性的副作用（如组件渲染函数），计算属性更新时触发这些副作用
+   * @internal 内部属性：依赖管理器（Dep 实例）
+   *
+   * 核心作用：
+   *    1. 收集所有**使用当前计算属性**的副作用（如组件渲染函数、watch 回调）；
+   *    2. 计算属性值更新时，通过 dep.notify() 触发这些副作用重新执行；
+   *    3. 绑定当前 ComputedRefImpl 实例作为 dep 的 owner，关联依赖关系；
    */
   readonly dep: Dep = new Dep(this)
 
@@ -92,14 +97,20 @@ export class ComputedRefImpl<T = any> implements Subscriber {
 
   // TODO isolatedDeclarations ReactiveFlags.IS_READONLY
   // A computed is also a subscriber that tracks other deps 一个计算属性（computed）也是一个订阅者，用于跟踪其他依赖项
+
   /**
-   * @internal 内部属性：追踪“当前计算属性依赖的响应式值”的链表头节点
-   * 作用：记录计算属性依赖了哪些响应式值（如 ref/reactive 对象），依赖变化时会触发 notify()
+   * @internal 内部属性：依赖链表头节点
+   *
+   * 核心作用：
+   *    1. 追踪当前计算属性**依赖的响应式值**（如 ref/reactive 对象/其他 computed）；
+   *    2. 依赖的响应式值变化时，会调用当前实例的 notify() 方法；
+   *    3. 链表结构优化批量更新时的依赖遍历性能；
    */
   deps?: Link = undefined
 
   /**
-   * @internal 内部属性：追踪依赖的链表尾节点，优化链表操作性能
+   * @internal 内部属性：依赖链表尾节点
+   * 作用：优化链表操作（新增依赖时直接追加到尾部，无需遍历链表），提升依赖收集性能
    */
   depsTail?: Link = undefined
 
@@ -170,15 +181,32 @@ export class ComputedRefImpl<T = any> implements Subscriber {
   }
 
   /**
-   * @internal 订阅者接口实现：依赖变化时被调用，标记计算属性为脏值并触发批量更新
+   * @internal 订阅者接口（Subscriber）核心实现：依赖变化时的通知处理
+   *
+   * 触发时机：计算属性依赖的响应式值（如 ref/reactive）发生变化时，被依赖的 Dep 调用
+   *
+   * 核心逻辑：
+   *    1. 标记计算属性为脏值（DIRTY），表示需要重新计算；
+   *    2. 未被标记为已通知（NOTIFIED）且非自递归时，加入批量更新队列；
+   *    3. 避免重复入队和无限递归；
+   *
+   * @returns true 表示成功加入批量更新队列，void 表示跳过
    */
   notify(): true | void {
+    // 1. 标记为脏值（按位或操作，保留原有标记）
     this.flags |= EffectFlags.DIRTY
+
+    // 2. 入队条件：
+    //    - 未被标记为已通知（避免重复入队）；
+    //    - 当前活跃订阅者（activeSub）不是自身（避免自递归）；
     if (
       !(this.flags & EffectFlags.NOTIFIED) &&
-      // avoid infinite self recursion
+      // avoid infinite self recursion 防止无限自递归
       activeSub !== this
     ) {
+      // 3. 加入批量更新队列：
+      //    - 第一个参数：当前计算属性实例；
+      //    - 第二个参数：标记为 computed 类型更新（优先处理）；
       batch(this, true)
       return true
     } else if (__DEV__) {
@@ -186,7 +214,20 @@ export class ComputedRefImpl<T = any> implements Subscriber {
     }
   }
 
+  /**
+   * 计算属性值的 getter 访问器（核心入口）
+   *
+   * 核心逻辑：
+   *    1. 依赖收集：收集使用该计算属性的副作用（如组件渲染）；
+   *    2. 刷新计算：调用 refreshComputed 检查是否需要重新计算值并重新计算值
+   *    3. 版本同步：更新依赖链表的版本号，保证依赖追踪的准确性；
+   *    4. 返回缓存值：返回缓存的最新值
+   *
+   * @returns 计算属性的最新值（缓存值/重新计算后的值）
+   */
   get value(): T {
+    // 1. 依赖收集：
+    //    作用：将当前访问的副作用（如渲染函数）加入 dep 的订阅列表
     const link = __DEV__
       ? this.dep.track({
           target: this,
@@ -194,16 +235,38 @@ export class ComputedRefImpl<T = any> implements Subscriber {
           key: 'value',
         })
       : this.dep.track()
+
+    // 2. 刷新计算值：
+    //    - 检查 flags 是否为 DIRTY 且非 SSR；
+    //    - 若是：执行 getter 重新计算值，更新 _value，清除 DIRTY 标记；
+    //    - 若否：直接返回缓存的 _value；
     refreshComputed(this)
+
     // sync version after evaluation 评估后同步版本
+    // 3. 版本同步：评估后同步依赖链表的版本号
+    //    作用：标记该副作用已获取最新的计算属性值，避免重复更新
     if (link) {
       link.version = this.dep.version
     }
+
+    // 4. 返回缓存的最新值
     return this._value
   }
 
+  /**
+   * 计算属性值的 setter 访问器（仅可写计算属性生效）
+   *
+   * 核心逻辑：
+   *    1. 有 setter 时：执行 setter 函数，触发自定义写入逻辑；
+   *        -- 直接通过函数写入, 是否触发响应式变更由用户定义的写入函数决定
+   *        -- 如果在函数中改变了其他的响应式属性, 那么就会触发响应式属性的变更操作
+   *    2. 无 setter 时（只读）：开发环境抛出警告，生产环境无操作；
+   *
+   * @param newValue 要设置的新值
+   */
   set value(newValue) {
     if (this.setter) {
+      // 1. 可写计算属性：执行自定义 setter 逻辑
       this.setter(newValue)
     } else if (__DEV__) {
       warn('Write operation failed: computed value is readonly') // 写入操作失败：计算值是只读的

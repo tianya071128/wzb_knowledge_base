@@ -107,9 +107,9 @@ export const nodeOps: Omit<RendererOptions<Node, Element>, 'patchProp'> = {
   },
 
   // __UNSAFE__
-  // Reason: innerHTML.
-  // Static content here can only come from compiled templates.
-  // As long as the user only uses trusted templates, this is safe.
+  // Reason: innerHTML. 合理：innerHTML。
+  // Static content here can only come from compiled templates. 此处的静态内容只能来自已编译的模板。
+  // As long as the user only uses trusted templates, this is safe. 只要用户只使用受信任的模板，这样做就是安全的。
   insertStaticContent(content, parent, anchor, namespace, start, end) {
     // <parent> before | first ... last | anchor </parent>
     const before = anchor ? anchor.previousSibling : parent.lastChild
