@@ -1227,6 +1227,19 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '还原: git revert',
               link: 'git-revert',
             },
+            {
+              text: '变基: git rebase',
+              link: 'git-rebase',
+            },
+          ],
+        },
+        {
+          text: '检查与比较',
+          items: [
+            {
+              text: '查看详细信息: git show',
+              link: 'git-show',
+            },
           ],
         },
       ],

@@ -232,5 +232,7 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/24_命令_push_推送.md': 'git/git-push.md',
   '04_更多/06_git/25_命令_cherry-pick_挑拣提交.md': 'git/git-cherry-pick.md',
   '04_更多/06_git/26_命令_revert_还原.md': 'git/git-revert.md',
+  '04_更多/06_git/27_命令_rebase_变基.md': 'git/git-rebase.md',
+  '04_更多/06_git/28_命令_show_查看详细信息.md': 'git/git-show.md',
 };
 export default rewrites;
