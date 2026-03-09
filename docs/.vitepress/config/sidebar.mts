@@ -1052,6 +1052,10 @@ const sidebar: DefaultTheme.Sidebar = {
           items: [{ text: '拓扑排序', link: 'topological-sort' }],
         },
         {
+          text: '链表',
+          link: 'linked',
+        },
+        {
           text: '更多',
           link: 'home',
         },
@@ -1239,6 +1243,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: '查看详细信息: git show',
               link: 'git-show',
+            },
+            {
+              text: '查看提交日志: git log',
+              link: 'git-log',
             },
           ],
         },

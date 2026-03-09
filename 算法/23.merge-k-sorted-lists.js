@@ -1,16 +1,56 @@
-/**
- * 堆（heap，也称为优先队列）: 是一种满足特定条件的完全二叉树，使用数组表示
- *  小顶堆（min heap）：任意节点的值 <= 其子节点的值。
- *  大顶堆（max heap）：任意节点的值 >= 其子节点的值。
+/*
+ * @lc app=leetcode.cn id=23 lang=javascript
+ * @lcpr version=30204
  *
- * 因为是一颗
+ * [23] 合并 K 个升序链表
  */
 
+// @lcpr-template-start
+
+// @lcpr-template-end
+// @lc code=start
 /**
- * 1. 因为是完全二叉树，所以使用数组表示时，使用索引就可以计算出父节点和左右子节点对应的索引
+ * Definition for singly-linked list.
+ * function ListNode(val, next) {
+ *     this.val = (val===undefined ? 0 : val)
+ *     this.next = (next===undefined ? null : next)
+ * }
  */
+/**
+ * @param {ListNode[]} lists
+ * @return {ListNode}
+ */
+var mergeKLists = function (lists) {
+  /** 优先级队列 */
+  let heap = new Heap2(
+      lists.filter((item) => !!item),
+      (parent, son) => parent.val > son.val
+    ),
+    ans = null,
+    prev,
+    next;
 
-class Heap {
+  // 不断出堆和入堆
+  let cur;
+  while ((cur = heap.pop())) {
+    if (!ans) {
+      ans = cur;
+    } else {
+      prev.next = cur;
+    }
+
+    // 重置指针
+    prev = cur;
+
+    if (cur.next) {
+      heap.push(cur.next);
+    }
+  }
+
+  return ans;
+};
+
+class Heap2 {
   #maxHeap = [];
 
   /**
@@ -154,23 +194,19 @@ class Heap {
     }
   }
 }
+// @lc code=end
 
-/**
- * 测试
+/*
+// @lcpr case=start
+// [[1,4,5,10,80],[1,3,4,20,50,52],[2,6,21,22,23]]\n
+// @lcpr case=end
+
+// @lcpr case=start
+// []\n
+// @lcpr case=end
+
+// @lcpr case=start
+// [[]]\n
+// @lcpr case=end
+
  */
-const maxHelp = new MaxHelp();
-
-maxHelp.push(2);
-maxHelp.push(1);
-maxHelp.push(8);
-maxHelp.push(10);
-maxHelp.push(5);
-maxHelp.push(5);
-maxHelp.push(8);
-maxHelp.push(10);
-maxHelp.push(5);
-maxHelp.push(5);
-maxHelp.push(8);
-maxHelp.push(10);
-maxHelp.push(5);
-maxHelp.push(5);

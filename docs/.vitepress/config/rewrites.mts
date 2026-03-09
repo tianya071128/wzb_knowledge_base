@@ -201,6 +201,7 @@ const rewrites: Record<string, string> = {
   '04_更多/04_算法/02_字典树.md': 'algo/trie.md',
   '04_更多/04_算法/03_图.md': 'algo/graph.md',
   '04_更多/04_算法/04_拓扑排序.md': 'algo/topological-sort.md',
+  '04_更多/04_算法/05_链表.md': 'algo/linked.md',
   '04_更多/05_ts/01_index.md': 'ts/home.md',
   '04_更多/05_ts/02_types.md': 'ts/types.md',
   '04_更多/05_ts/03_lib.md': 'ts/lib.md',
@@ -234,5 +235,6 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/26_命令_revert_还原.md': 'git/git-revert.md',
   '04_更多/06_git/27_命令_rebase_变基.md': 'git/git-rebase.md',
   '04_更多/06_git/28_命令_show_查看详细信息.md': 'git/git-show.md',
+  '04_更多/06_git/29_命令_log_提交日志.md': 'git/git-log.md',
 };
 export default rewrites;
