@@ -236,5 +236,8 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/27_命令_rebase_变基.md': 'git/git-rebase.md',
   '04_更多/06_git/28_命令_show_查看详细信息.md': 'git/git-show.md',
   '04_更多/06_git/29_命令_log_提交日志.md': 'git/git-log.md',
+  '04_更多/06_git/30_gitignore.md': 'git/gitignore.md',
+  '04_更多/06_git/31_问题.md': 'git/issues.md',
+  '04_更多/06_git/32_githooks.md': 'git/hooks.md',
 };
 export default rewrites;

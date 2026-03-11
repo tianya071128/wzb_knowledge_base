@@ -1109,6 +1109,18 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '引用规范',
           link: 'refspec',
         },
+        {
+          text: 'gitignore',
+          link: 'gitignore',
+        },
+        {
+          text: 'hooks',
+          link: 'hooks',
+        },
+        {
+          text: '问题',
+          link: 'issues',
+        },
       ],
     },
     {

@@ -158,12 +158,53 @@ git config rename-section user author
 ## 常用配置项
 
 - `user.name`: 提交信息中的作者
+
 - `user.email`: 提交信息中的邮箱，**代码托管平台(GitHub、GitLab、Gitee)等平台**会通过提交信息中的 `user.email` 与用户账号绑定的邮箱进行匹配，从而：
   - 识别提交者身份，在仓库贡献者列表中正确显示用户。
   - 统计用户的贡献量（如 GitHub 的贡献热图）。
   - 触发相关通知（如提交关联的 Issue 通知）。
+  
 - `core.editor`: 默认编辑器配置
-  - 示例: `git config --global core.editor "code --wait"`
+  
+  - 示例: `git config --global core.editor "code --wait"``
+  
+### `credential.helper`
+指定如何存储 / 获取 HTTPS 模式下的账号密码 / PAT 凭证，避免每次推送 / 拉取都手动输入
+
+  - **存储**：首次输入凭证（账号 + 密码 / PAT）后，自动保存到指定位置；
+  - **获取**：后续操作时，自动从存储位置读取凭证，无需手动输入；
+  - **清除**：支持手动 / 自动失效缓存的凭证。
+
+支持多套凭证助手，不同系统推荐不同选项：
+
+1. 跨平台通用助手：`cache`（临时缓存）
+
+   * **作用**：将凭证缓存到内存中，会话级临时存储，关闭终端 / 超时后失效；
+
+   * **适用场景**：临时操作（如 1 小时内多次推送），不希望永久保存凭证；
+
+   * **配置语法**：
+
+     ```bash
+     # 缓存 1 小时（3600 秒），全局生效
+     git config --global credential.helper 'cache --timeout=3600'
+     
+     # 缓存 24 小时（86400 秒）
+     git config --global credential.helper 'cache --timeout=86400'
+     
+     # 立即失效缓存
+     git credential-cache exit
+     ```
+
+2. Windows 系统专属助手
+
+   | 助手名称               | 说明                                               | 配置命令                                             | 凭证存储位置                                                 |
+   | ---------------------- | -------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ |
+   | `manager`（旧版）      | Git 2.27 及以下默认，适配 Windows 凭据管理器       | `git config --global credential.helper manager`      | Windows 「凭据管理器」（控制面板 → 凭据管理器 → Windows 凭据） |
+   | `manager-core`（新版） | 跨平台新版 GCM，支持 PAT/OAuth2 / 双因素认证，推荐 | `git config --global credential.helper manager-core` | 同左，功能更强                                               |
+   | `wincred`（废弃）      | 旧版 Windows 凭证助手，已被 `manager` 替代         | `git config --global credential.helper wincred`      | 同左                                                         |
+
+3. [详见](https://git-scm.com/docs/gitcredentials)
 
 ## 选项
 
