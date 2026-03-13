@@ -4,6 +4,6 @@ if (import.meta.hot) {
   import.meta.hot.accept()
 }
 
-console.log('(invalidation) parent is executing')
+console.log('（无效）父级正在执行')
 
 document.querySelector('.invalidation-parent').innerHTML = value

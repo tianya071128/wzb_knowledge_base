@@ -475,6 +475,21 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '工作空间（Workspace）',
           link: 'workspaces',
         },
+        {
+          text: '问题(FAQ)',
+          link: 'issue',
+        },
+      ],
+    },
+  ],
+  '/vite/': [
+    {
+      base: '/vite/',
+      items: [
+        {
+          text: 'HMR',
+          link: 'HMR',
+        },
       ],
     },
   ],

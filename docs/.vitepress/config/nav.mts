@@ -17,7 +17,7 @@ const nav: DefaultTheme.NavItem[] = [
   },
   {
     text: '工程化',
-    activeMatch: `/babel|sass|eslint|npm|prettier|browserslist|vscode/`,
+    activeMatch: `/babel|sass|eslint|npm|prettier|browserslist|vscode|vite/`,
     items: [
       { text: 'babel', link: '/babel/home.html', activeMatch: '/babel/' },
       { text: 'sass', link: '/sass/home.html', activeMatch: '/sass/' },
@@ -32,7 +32,7 @@ const nav: DefaultTheme.NavItem[] = [
         link: '/vscode/home.html',
         activeMatch: '/vscode/',
       },
-      { text: 'webpack', link: '/webpack/home.html', activeMatch: '/webpack/' },
+      // { text: 'webpack', link: '/webpack/home.html', activeMatch: '/webpack/' },
       {
         text: 'prettier',
         link: '/prettier/home.html',
@@ -47,6 +47,11 @@ const nav: DefaultTheme.NavItem[] = [
         text: 'pnpm',
         link: '/pnpm/home.html',
         activeMatch: '/pnpm/',
+      },
+      {
+        text: 'vite',
+        link: '/vite/HMR.html',
+        activeMatch: '/vite/',
       },
       // { text: '其他', link: '/otherEngineering/' },
     ],

@@ -131,7 +131,7 @@ export function getShortName(file: string, root: string): string {
 }
 
 /**
- * 处理热模块替换（HMR）更新
+ * 处理热模块替换（HMR）更新 --> HMR 更新入口
  *
  *  1. 检测变更文件是否为配置文件、配置文件的依赖或环境文件发生变更，则调用 restartServerWithUrls 方法自动重启服务器
  *  2. 如果文件是注入的 src/client 相关文件, 则不能热更新 -- 直接重新整页重载

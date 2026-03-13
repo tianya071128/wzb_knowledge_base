@@ -533,9 +533,9 @@ export async function _createServer(
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root 配置文件依赖项和环境文件可能位于根目录之外
         [
-          root,
-          ...config.configFileDependencies,
-          ...getEnvFilesForMode(config.mode, config.envDir),
+          root, // 根目录名
+          ...config.configFileDependencies, // 配置文件 vite.config.ts 的依赖项
+          ...getEnvFilesForMode(config.mode, config.envDir), // 环境变量文件
           // Watch the public directory explicitly because it might be outside 显式监视公共目录，因为它可能位于外部
           // of the root directory. 根目录
           ...(publicDir && publicFiles ? [publicDir] : []),
@@ -922,11 +922,14 @@ export async function _createServer(
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
-  // 当监视的目录或文件中的某些内容发生更改时触发
+  /**
+   * 当监视的目录或文件中的某些内容发生更改时触发
+   *  - 准备启动 HMR 流程
+   */
   watcher.on('change', async (file) => {
     // 变化的文件
     file = normalizePath(file)
-    // 通知插件容器文件变化
+    // 通知插件容器文件变化 --> 通知插件执行
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change 在文件更改时使模块图缓存无效
     moduleGraph.onFileChange(file)
