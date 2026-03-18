@@ -50,6 +50,13 @@ export default defineConfig({
     sidebarMenuLabel: '菜单',
     returnToTopLabel: '返回顶部',
     darkModeSwitchLabel: '主题',
+    // 404 页面配置
+    notFound: {
+      title: '页面未找到',
+      quote: '如果你不改变方向，并且继续寻找，你可能会到达你正在去的地方。',
+      linkLabel: '返回首页',
+      linkText: '返回首页',
+    },
     // 启用搜索
     search: {
       provider: 'local',

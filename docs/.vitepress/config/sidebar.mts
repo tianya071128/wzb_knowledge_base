@@ -795,8 +795,8 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'home',
         },
         {
-          text: 'HTTP2 内核剖析',
-          link: 'analyze',
+          text: 'HTTP2 连接',
+          link: 'connection',
         },
       ],
     },
