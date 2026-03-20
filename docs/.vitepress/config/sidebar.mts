@@ -798,6 +798,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'HTTP2 连接',
           link: 'connection',
         },
+        {
+          text: 'HTTP2 流',
+          link: 'stream',
+        },
       ],
     },
   ],
