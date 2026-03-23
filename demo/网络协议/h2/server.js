@@ -5,8 +5,8 @@ const fs = require('fs');
 const server = http2.createSecureServer({
   key: fs.readFileSync('../certificate/server.key'),
   cert: fs.readFileSync('../certificate/server.cert'),
-  minVersion: 'TLSv1.2',
-  maxVersion: 'TLSv1.2',
+  // minVersion: 'TLSv1.2',
+  // maxVersion: 'TLSv1.2',
 });
 
 // 监听请求
@@ -23,7 +23,7 @@ server.on('stream', (stream, headers) => {
   // 返回内容
   stream.end('<h1>Hello HTTP/2 🔥</h1>');
 
-  stream.session.close();
+  // stream.session.close();
 });
 
 // 启动在 8443 端口

@@ -148,6 +148,7 @@ const rewrites: Record<string, string> = {
   '03_网络协议/03_http2/02_h2内核剖析.md': 'h2/analyze.md',
   '03_网络协议/03_http2/02_h2连接.md': 'h2/connection.md',
   '03_网络协议/03_http2/03_h2流.md': 'h2/stream.md',
+  '03_网络协议/03_http2/04_h2帧.md': 'h2/frame.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/03_path.md': 'node/path.md',

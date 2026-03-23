@@ -802,6 +802,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'HTTP2 流',
           link: 'stream',
         },
+        {
+          text: 'HTTP2 帧',
+          link: 'frame',
+        },
       ],
     },
   ],
