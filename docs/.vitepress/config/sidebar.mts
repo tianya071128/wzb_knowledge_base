@@ -806,6 +806,27 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'HTTP2 帧',
           link: 'frame',
         },
+        {
+          text: 'HTTP2 特性',
+          items: [
+            {
+              text: '多路复用',
+              link: 'multiplexing',
+            },
+            {
+              text: '头部压缩',
+              link: 'header_compress',
+            },
+            {
+              text: '服务端推送',
+              link: 'server_push',
+            },
+          ],
+        },
+        {
+          text: 'HTTP2 问题',
+          link: 'issue',
+        },
       ],
     },
   ],
