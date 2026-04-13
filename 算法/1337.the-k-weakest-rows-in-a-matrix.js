@@ -1,14 +1,46 @@
-/**
- * 堆（heap，也称为优先队列）: 是一种满足特定条件的完全二叉树，使用数组表示
- *  小顶堆（min heap）：任意节点的值 <= 其子节点的值。
- *  大顶堆（max heap）：任意节点的值 >= 其子节点的值。
+/*
+ * @lc app=leetcode.cn id=1337 lang=javascript
+ * @lcpr version=30204
  *
- * 因为是一颗
+ * [1337] 矩阵中战斗力最弱的 K 行
  */
 
+// @lcpr-template-start
+
+// @lcpr-template-end
+// @lc code=start
 /**
- * 1. 因为是完全二叉树，所以使用数组表示时，使用索引就可以计算出父节点和左右子节点对应的索引
+ * @param {number[][]} mat
+ * @param {number} k
+ * @return {number[]}
  */
+var kWeakestRows = function (mat, k) {
+  let heap = new CustomHeap(
+    [],
+    (i, j) => i[1] < j[1] || (i[1] === j[1] && i[0] < j[0])
+  );
+  // 优先级队列
+  for (let i = 0; i < mat.length; i++) {
+    // 得分
+    let total = 0;
+    for (const n of mat[i]) {
+      n === 1 && total++;
+    }
+
+    // 元素已满
+    if (heap.size() >= k && total >= heap.peek()[1]) continue;
+
+    // 入堆
+    heap.push([i, total]);
+
+    // 如果元素满了就出堆
+    if (heap.size() > k) {
+      heap.pop();
+    }
+  }
+
+  return heap.getList(true).map((item) => item[0]);
+};
 
 class CustomHeap {
   #maxHeap = [];
@@ -166,23 +198,15 @@ class CustomHeap {
     return ans;
   }
 }
+// @lc code=end
 
-/**
- * 测试
+/*
+// @lcpr case=start
+// [[1,1,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,1,0,0,0],[1,1,1,1,1]]\n3\n
+// @lcpr case=end
+
+// @lcpr case=start
+// [[1,0,0,0],[1,1,1,1],[1,0,0,0],[1,0,0,0]]\n2\n
+// @lcpr case=end
+
  */
-const maxHelp = new MaxHelp();
-
-maxHelp.push(2);
-maxHelp.push(1);
-maxHelp.push(8);
-maxHelp.push(10);
-maxHelp.push(5);
-maxHelp.push(5);
-maxHelp.push(8);
-maxHelp.push(10);
-maxHelp.push(5);
-maxHelp.push(5);
-maxHelp.push(8);
-maxHelp.push(10);
-maxHelp.push(5);
-maxHelp.push(5);
