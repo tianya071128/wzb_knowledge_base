@@ -1100,6 +1100,10 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'linked',
         },
         {
+          text: '单调队列',
+          link: 'monotonic_queue',
+        },
+        {
           text: '更多',
           link: 'home',
         },

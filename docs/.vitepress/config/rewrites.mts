@@ -210,6 +210,7 @@ const rewrites: Record<string, string> = {
   '04_更多/04_算法/03_图.md': 'algo/graph.md',
   '04_更多/04_算法/04_拓扑排序.md': 'algo/topological-sort.md',
   '04_更多/04_算法/05_链表.md': 'algo/linked.md',
+  '04_更多/04_算法/06_单调队列.md': 'algo/monotonic_queue.md',
   '04_更多/05_ts/01_index.md': 'ts/home.md',
   '04_更多/05_ts/02_types.md': 'ts/types.md',
   '04_更多/05_ts/03_lib.md': 'ts/lib.md',
