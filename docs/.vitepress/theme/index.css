@@ -7,3 +7,12 @@
 .medium-zoom-image {
   z-index: 210;
 }
+
+/* ========== 1. 分组标题样式（核心修改） ========== */
+.VPMenu .VPMenuGroup > .title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+  line-height: 28px;
+  transition: color 0.25s;
+}

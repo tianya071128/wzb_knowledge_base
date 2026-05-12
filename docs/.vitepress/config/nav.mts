@@ -58,11 +58,20 @@ const nav: DefaultTheme.NavItem[] = [
   },
   {
     text: '网络协议',
-    activeMatch: `/http|https|h2/`,
+    activeMatch: `/http|https|h2|tcp/`,
     items: [
-      { text: 'http', link: '/http/home.html', activeMatch: '/http/' },
-      { text: 'https', link: '/https/home.html', activeMatch: '/https/' },
-      { text: 'http2', link: '/h2/home.html', activeMatch: '/h2/' },
+      {
+        text: '应用层',
+        items: [
+          { text: 'http', link: '/http/home.html', activeMatch: '/http/' },
+          { text: 'https', link: '/https/home.html', activeMatch: '/https/' },
+          { text: 'http2', link: '/h2/home.html', activeMatch: '/h2/' },
+        ],
+      },
+      {
+        text: '传输层',
+        items: [{ text: 'tcp', link: '/tcp/home.html', activeMatch: '/tcp/' }],
+      },
     ],
   },
   {
