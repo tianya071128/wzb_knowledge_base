@@ -13,7 +13,8 @@
     "sourceMap": true,
     "baseUrl": ".",
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
-    "types": ["element-plus/global"]
+    "types": ["element-plus/global"],
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "docs/**/*.ts",

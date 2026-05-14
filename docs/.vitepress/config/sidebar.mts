@@ -830,6 +830,21 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/tcp/': [
+    {
+      base: '/tcp/',
+      items: [
+        {
+          text: 'TCP 基本概念',
+          link: 'home',
+        },
+        {
+          text: 'TCP 头部格式',
+          link: 'header_format',
+        },
+      ],
+    },
+  ],
   '/node/': [
     {
       text: 'Node.js 基础概念',
