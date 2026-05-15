@@ -841,6 +841,16 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'TCP 头部格式',
           link: 'header_format',
+          items: [
+            {
+              text: '可选选项',
+              link: 'header_option',
+            },
+          ],
+        },
+        {
+          text: 'TCP 建立连接',
+          link: 'establishing_onnection',
         },
       ],
     },

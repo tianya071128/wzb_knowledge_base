@@ -96,4 +96,5 @@ TCP 是**端到端、全双工**的协议，一台主机可以同时和多个主
 
 ## 参考资料
 
+- [RFC 9293](https://x.zhixing.co/translations/rfc9293/)
 - [文章](https://xiaolincoding.com/network/3_tcp/tcp_interview.html)
