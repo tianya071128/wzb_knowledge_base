@@ -851,6 +851,25 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'TCP 建立连接',
           link: 'establishing_onnection',
+          items: [
+            {
+              text: '三次握手',
+              items: [
+                {
+                  link: 'onnection_one',
+                  text: '第一次握手',
+                },
+                {
+                  link: 'onnection_two',
+                  text: '第二次握手',
+                },
+                {
+                  link: 'onnection_three',
+                  text: '第三次握手',
+                },
+              ],
+            },
+          ],
         },
       ],
     },

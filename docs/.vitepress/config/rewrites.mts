@@ -157,6 +157,9 @@ const rewrites: Record<string, string> = {
   '03_网络协议/04_tcp/03_header_option.md': 'tcp/header_option.md',
   '03_网络协议/04_tcp/04_establishing_onnection.md':
     'tcp/establishing_onnection.md',
+  '03_网络协议/04_tcp/05_onnection_one.md': 'tcp/onnection_one.md',
+  '03_网络协议/04_tcp/06_onnection_two.md': 'tcp/onnection_two.md',
+  '03_网络协议/04_tcp/07_onnection_three.md': 'tcp/onnection_three.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/03_path.md': 'node/path.md',
