@@ -156,10 +156,14 @@ const rewrites: Record<string, string> = {
   '03_网络协议/04_tcp/02_header_format.md': 'tcp/header_format.md',
   '03_网络协议/04_tcp/03_header_option.md': 'tcp/header_option.md',
   '03_网络协议/04_tcp/04_establishing_onnection.md':
-    'tcp/establishing_onnection.md',
-  '03_网络协议/04_tcp/05_onnection_one.md': 'tcp/onnection_one.md',
-  '03_网络协议/04_tcp/06_onnection_two.md': 'tcp/onnection_two.md',
-  '03_网络协议/04_tcp/07_onnection_three.md': 'tcp/onnection_three.md',
+    'tcp/establishing_connection.md',
+  '03_网络协议/04_tcp/05_onnection_one.md': 'tcp/connection_one.md',
+  '03_网络协议/04_tcp/06_onnection_two.md': 'tcp/connection_two.md',
+  '03_网络协议/04_tcp/07_onnection_three.md': 'tcp/connection_three.md',
+  '03_网络协议/04_tcp/08_connection_why_three.md':
+    'tcp/connection_why_three.md',
+  '03_网络协议/04_tcp/09_connection_lose.md': 'tcp/connection_lose.md',
+  '03_网络协议/04_tcp/10_data_transmission.md': 'tcp/data_transmission.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/03_path.md': 'node/path.md',

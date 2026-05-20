@@ -850,26 +850,38 @@ const sidebar: DefaultTheme.Sidebar = {
         },
         {
           text: 'TCP 建立连接',
-          link: 'establishing_onnection',
+          link: 'establishing_connection',
           items: [
             {
               text: '三次握手',
               items: [
                 {
-                  link: 'onnection_one',
+                  link: 'connection_one',
                   text: '第一次握手',
                 },
                 {
-                  link: 'onnection_two',
+                  link: 'connection_two',
                   text: '第二次握手',
                 },
                 {
-                  link: 'onnection_three',
+                  link: 'connection_three',
                   text: '第三次握手',
+                },
+                {
+                  link: 'connection_why_three',
+                  text: '为什么需要三次握手',
+                },
+                {
+                  link: 'connection_lose',
+                  text: '握手中丢失包',
                 },
               ],
             },
           ],
+        },
+        {
+          text: 'TCP 数据收发',
+          link: 'data_transmission',
         },
       ],
     },
