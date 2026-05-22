@@ -887,6 +887,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '重传机制',
               link: 'data_retransmission',
             },
+            {
+              text: '流量控制',
+              link: 'data_flow_control',
+            },
           ],
         },
       ],
