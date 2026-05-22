@@ -882,6 +882,12 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'TCP 数据收发',
           link: 'data_transmission',
+          items: [
+            {
+              text: '重传机制',
+              link: 'data_retransmission',
+            },
+          ],
         },
       ],
     },
