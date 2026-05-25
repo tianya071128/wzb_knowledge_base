@@ -166,6 +166,9 @@ const rewrites: Record<string, string> = {
   '03_网络协议/04_tcp/10_data_transmission.md': 'tcp/data_transmission.md',
   '03_网络协议/04_tcp/11_data_retransmission.md': 'tcp/data_retransmission.md',
   '03_网络协议/04_tcp/12_data_flow_control.md': 'tcp/data_flow_control.md',
+  '03_网络协议/04_tcp/13_data_congestion_control.md':
+    'tcp/data_congestion_control.md',
+  '03_网络协议/04_tcp/14_connection_close.md': 'tcp/connection_close.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/03_path.md': 'node/path.md',

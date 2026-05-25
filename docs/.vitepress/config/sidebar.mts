@@ -891,7 +891,15 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '流量控制',
               link: 'data_flow_control',
             },
+            {
+              text: '拥塞控制',
+              link: 'data_congestion_control',
+            },
           ],
+        },
+        {
+          text: 'TCP 断开连接',
+          link: 'connection_close',
         },
       ],
     },
