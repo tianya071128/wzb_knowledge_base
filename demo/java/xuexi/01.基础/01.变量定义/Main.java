@@ -13,7 +13,6 @@ public class Main {
     // 4. 使用 var 关键字: 自动推断类型
     var age3 = 18;
 
-
     // 5. 常量: 使用 final 关键字
     final double PI = 3.1415926;
 

@@ -49,3 +49,39 @@
 - [链接类型：preload](https://developer.mozilla.org/zh-CN/docs/Web/HTML/Link_types/preload)
 
 在 vue-cli 脚本架生成的 vue 项目中，这两个是内置的，但在不支持或支持度较差的浏览器中，可能会有副作用。具体见[vue-cli](https://cli.vuejs.org/zh/guide/html-and-static-assets.html#preload)
+
+## iframe 历史污染
+
+当页面中嵌入 `iframe`，并且 `iframe` 内部发生导航（例如 `location.hash` 变化、`location.href` 跳转、`history.pushState`）时，浏览器会为该 `iframe` 的导航产生历史记录。这种现象叫做“iframe 历史污染”。
+
+### 为什么会发生
+
+- `iframe` 有自己的浏览上下文和历史栈。
+- 浏览器的后退/前进按钮会先遍历 `iframe` 内部的历史记录，再返回父页面的历史记录。
+- 因此，`iframe` 内部的频繁跳转会“污染”当前页面的整体历史行为，导致用户按一次后退按钮并不离开当前页面，而是回到 `iframe` 里之前的状态。
+
+### 常见影响
+
+- 用户点击浏览器返回按钮时，先回到 `iframe` 内部的上一页，而不是父页面的上一页。
+- 体验上感觉“后退按钮失效”或“回退到错误页面”。
+- 做路由跳转、第三方嵌入内容或广告时尤其明显。
+
+### 解决方案
+
+1. 使用 `location.replace()` 或 `history.replaceState()`
+
+- 如果 `iframe` 内部需要更改 URL 但不希望产生历史记录，优先使用 `replace`。
+- 例如：
+
+```js
+window.location.replace('/new-page');
+```
+
+或者：
+
+```js
+history.replaceState(null, '', '/new-hash');
+```
+
+2. 跳转路由之前, 先销毁 `iframe`, 在执行跳转路由
+   - 销毁 `iframe`, 会将 `iframe` 内的页面从历史记录中移除。
