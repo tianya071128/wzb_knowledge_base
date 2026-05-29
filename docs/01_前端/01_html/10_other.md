@@ -68,20 +68,8 @@
 
 ### 解决方案
 
-1. 使用 `location.replace()` 或 `history.replaceState()`
-
-- 如果 `iframe` 内部需要更改 URL 但不希望产生历史记录，优先使用 `replace`。
-- 例如：
-
-```js
-window.location.replace('/new-page');
-```
-
-或者：
-
-```js
-history.replaceState(null, '', '/new-hash');
-```
+1. `iframe` 内部使用 `location.replace()` 或 `history.replaceState()`
+   - 如果 `iframe` 内部需要更改 URL 但不希望产生历史记录，优先使用 `replace`。
 
 2. 跳转路由之前, 先销毁 `iframe`, 在执行跳转路由
    - 销毁 `iframe`, 会将 `iframe` 内的页面从历史记录中移除。
