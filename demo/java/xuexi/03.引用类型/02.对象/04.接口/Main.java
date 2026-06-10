@@ -9,6 +9,13 @@ interface Person {
   void sleep();
 
   /**
+   * 支持静态字段, 且必须为 final 类型
+   * - interface的字段只能是public static final类型，所以我们可以把这些修饰符都去掉
+   */
+  // 编译器会自动加上public static final
+  int MALE = 1;
+
+  /**
    * default 方法:
    * 用于解决接口新增方法，不破坏原有代码！ --> 接口加一个方法 → 所有实现类全部报错，必须改。新增 default 方法, 则可以不用动
    * - 接口里带方法体的方法
