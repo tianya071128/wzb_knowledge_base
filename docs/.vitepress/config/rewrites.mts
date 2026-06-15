@@ -142,6 +142,7 @@ const rewrites: Record<string, string> = {
   '03_网络协议/02_https/04_TLS1.2连接过程.md': 'https/tls_handshake.md',
   '03_网络协议/02_https/06_TLS 相关概念.md': 'https/tls_concept.md',
   '03_网络协议/02_https/07_证书.md': 'https/tls_certificate.md',
+  '03_网络协议/02_https/08_https代理.md': 'https/proxy.md',
   '03_网络协议/02_https/09_抓包分析.md': 'https/capture.md',
   '03_网络协议/02_https/10_问题.md': 'https/issue.md',
   '03_网络协议/03_http2/01_h2.md': 'h2/home.md',

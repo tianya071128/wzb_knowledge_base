@@ -776,6 +776,10 @@ const sidebar: DefaultTheme.Sidebar = {
           ],
         },
         {
+          text: 'HTTPS 代理',
+          link: 'proxy',
+        },
+        {
           text: '抓包分析',
           link: 'capture',
         },
