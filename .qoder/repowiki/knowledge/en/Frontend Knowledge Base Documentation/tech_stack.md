@@ -1,0 +1,1 @@
+VitePress (Vue-powered static site generator) with TypeScript configuration (`.mts`).

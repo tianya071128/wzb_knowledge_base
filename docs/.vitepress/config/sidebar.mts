@@ -904,6 +904,32 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'TCP 断开连接',
           link: 'connection_close',
+          items: [
+            {
+              text: '第一次挥手',
+              link: 'connection_close_first',
+            },
+            {
+              text: '第二次挥手',
+              link: 'connection_close_second',
+            },
+            {
+              text: '第三次挥手',
+              link: 'connection_close_third',
+            },
+            {
+              text: '第四次挥手',
+              link: 'connection_close_fourth',
+            },
+            {
+              text: '为什么需要四次挥手',
+              link: 'connection_close_why_four',
+            },
+            {
+              text: '挥手中丢失包',
+              link: 'connection_close_lose',
+            },
+          ]
         },
       ],
     },

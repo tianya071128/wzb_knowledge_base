@@ -1,0 +1,3 @@
+- The workspace is structured into three distinct, self-contained domains: `docs` (VitePress site), `demo` (polyglot code samples), and `源码学习` (library source code).
+- There is no runtime orchestration or shared infrastructure; each domain operates independently with its own build tools and dependencies.
+- Cross-domain interaction is limited to developer workflow, where the documentation may reference concepts demonstrated in the demos or explained by the source code studies.

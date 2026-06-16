@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: docs_site
+title: Frontend Knowledge Base Documentation
+scope:
+    - docs/
+source_files: []
+depends_on: []
+related_to:
+    - path: source_code_study
+    - path: demo_projects

@@ -1,0 +1,4 @@
+- Koa v3 with `@koa/router` and `@koa/bodyparser` for the Node.js API layer.
+- Mongoose v8 for MongoDB ODM and `redis` v5 for caching/session storage.
+- Zod v4 for runtime schema validation and type inference.
+- Nuxt 3 with Pinia and Element Plus for the Vue.js server-side rendering demo.

@@ -1,0 +1,1 @@
+A VitePress-based static site documenting frontend technologies, engineering tools, network protocols, and browser internals.

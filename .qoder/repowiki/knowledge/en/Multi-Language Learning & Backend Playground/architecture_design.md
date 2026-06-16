@@ -1,0 +1,4 @@
+- The module is a loose aggregation of independent learning projects without a unified build system.
+- The `node/02_playground` sub-project implements a layered Koa architecture: routes delegate to controllers, which interact with Mongoose models and Redis utilities.
+- Global middleware in `node/02_playground` handles request parsing, static asset caching, and standardized JSON response formatting via `ctx.success` and `ctx.error`.
+- Other directories (`java`, `ts`, `my-vue-app`, `nuxt`) function as isolated sandboxes for specific language or framework features.

@@ -1,0 +1,3 @@
+- Core libraries expose a main entry file (e.g., `index.js`) that aggregates internal modules, initializes global APIs, and attaches static methods or plugins to the primary export.
+- Monorepo projects (Vue 3, Pinia, Vite) strictly separate public packages in a `packages/` directory, using workspace-aware package managers (pnpm) for dependency linking and build orchestration.
+- Legacy and complex libraries (Webpack, Axios) often use lazy loading patterns or factory functions in their entry points to defer heavy initialization until specific features are accessed.

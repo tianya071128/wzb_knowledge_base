@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: source_code_study
+title: Frontend Framework & Tooling Source Code Study
+scope:
+    - 源码学习/
+source_files: []
+depends_on: []
+related_to:
+    - path: docs_site

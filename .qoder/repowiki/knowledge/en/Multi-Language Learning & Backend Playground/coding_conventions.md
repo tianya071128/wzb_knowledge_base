@@ -1,0 +1,3 @@
+- Controllers export both the handler function and a corresponding Zod schema (e.g., `LoginSchema`) for centralized request validation.
+- Mongoose models use `InferSchemaType` to derive TypeScript interfaces directly from the schema definition, ensuring type consistency.
+- API responses are standardized through a custom Koa middleware that attaches `success` and `error` methods to the context object.

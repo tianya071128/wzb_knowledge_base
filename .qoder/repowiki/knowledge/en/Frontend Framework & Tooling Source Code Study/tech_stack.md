@@ -1,0 +1,1 @@
+The collection spans diverse ecosystems: Vue 2/3 and Pinia utilize TypeScript and Rollup/Vite for builds; Webpack and ESLint plugins rely on Node.js CommonJS modules; Vite and Pinia use pnpm workspaces for monorepo management.

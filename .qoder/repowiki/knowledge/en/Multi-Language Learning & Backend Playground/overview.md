@@ -1,0 +1,1 @@
+A collection of educational code samples for Java, TypeScript, and Node.js, featuring a Koa-based backend API with MongoDB and Redis integration.

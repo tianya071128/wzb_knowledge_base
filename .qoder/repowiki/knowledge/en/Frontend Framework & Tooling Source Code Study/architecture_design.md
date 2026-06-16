@@ -1,0 +1,3 @@
+- The module is structured as a flat directory of versioned third-party library snapshots (e.g., `vue@2.6.14`, `vite@5.2.11`), acting as an isolated study environment.
+- Each sub-module retains its original internal architecture: Vue 2 uses a monolithic `core/platforms` split, while Vue 3 and Pinia adopt a modern monorepo structure with `packages/`.
+- Entry points like `lib/index.js` (Axios), `src/index.js` (Vue Router), and `lib/index.js` (Webpack) are preserved to allow tracing of initialization flows, plugin registration, and core API exposure without external dependency interference.

@@ -1,0 +1,2 @@
+- The `node/02_playground` project uses a custom `scripts/start-redis.js` invoked via `pnpm redis:start` to manage local Redis instances.
+- Development relies on `nodemon` with `ts-node` for hot-reloading TypeScript changes in the Koa server.

@@ -171,6 +171,12 @@ const rewrites: Record<string, string> = {
   '03_网络协议/04_tcp/13_data_congestion_control.md':
     'tcp/data_congestion_control.md',
   '03_网络协议/04_tcp/14_断开连接.md': 'tcp/connection_close.md',
+  '03_网络协议/04_tcp/15_断开连接_第一次.md': 'tcp/connection_close_first.md',
+  '03_网络协议/04_tcp/16_断开连接_第二次.md': 'tcp/connection_close_second.md',
+  '03_网络协议/04_tcp/17_断开连接_第三次.md': 'tcp/connection_close_third.md',
+  '03_网络协议/04_tcp/18_断开连接_第四次.md': 'tcp/connection_close_fourth.md',
+  '03_网络协议/04_tcp/19_断开连接_为什么需要四次.md': 'tcp/connection_close_why_four.md',
+  '03_网络协议/04_tcp/20_断开连接_丢失包.md': 'tcp/connection_close_lose.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/03_path.md': 'node/path.md',

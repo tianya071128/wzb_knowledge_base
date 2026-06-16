@@ -1,0 +1,4 @@
+- Entry point: `docs/.vitepress/config.mts` defines the site configuration using `defineConfig`.
+- Configuration modularity: Navigation (`nav.mts`), sidebar (`sidebar.mts`), and rewrites (`rewrites.mts`) are extracted into separate modules under `.vitepress/config/` to maintain clarity.
+- Content organization: Markdown files are structured into four primary domains: Frontend Basics (HTML/CSS/JS/Browser), Engineering (Vite/Webpack/Npm/etc.), Network Protocols (HTTP/TCP), and Miscellaneous (Node/Git/Algorithms).
+- Asset management: Static resources (images, videos, HTML demos) are stored in `docs/public/` and served directly by VitePress.
