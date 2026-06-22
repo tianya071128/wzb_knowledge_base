@@ -82,6 +82,29 @@
 
 `bin` 字段指定项目的一个或多个可执行文件，将其安装到 PATH 中，这样在终端可以直接运行命令。
 
+### engines - 引擎
+
+`engines` 字段指定包可以运行的 Node.js 和其他运行环境的版本范围：
+
+```json
+{
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
+```
+
+- 可以指定 `node`、`npm`、`yarn`、`pnpm` 等运行环境的版本要求
+- 从 npm v7 开始，如果 `node` 版本不满足 `engines` 要求，npm 会默认报错并拒绝安装
+- 如果设置了 `"engineStrict": true`（npm v6 及以前），不兼容时会报错而不是仅警告
+
+::: tip 常见用法
+
+很多开源项目会在 `engines` 中声明最低 Node.js 版本，以确保使用了项目所需的语法特性和 API。例如 Vue 3 要求 `node >= 18.3.0`。
+
+:::
+
 ### 其他工具使用的字段
 
 - `browserslist`：配置项目的 Browserslist
