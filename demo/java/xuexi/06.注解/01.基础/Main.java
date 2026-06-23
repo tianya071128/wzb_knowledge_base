@@ -1,0 +1,5 @@
+public class Main {
+  public static void main(String[] args) {
+    // 注解是放在Java源码的类、方法、字段、参数前的一种特殊“注释”
+  }
+}

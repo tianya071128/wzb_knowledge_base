@@ -85,5 +85,8 @@ public class Main {
     // - %s: 显示字符串
     // - %d: 显示数字
     System.out.println(String.format("I have %s apples, %d oranges", 5, 3)); // I have 5 apples, 3 oranges
+
+    // 20. 比较大小
+    System.out.println("Hello".compareTo("Hello")); // 按 Unicode 字典顺序比较两个字符串，返回 int 类型结果，专门配合 list.sort() 排序使用。
   }
 }
