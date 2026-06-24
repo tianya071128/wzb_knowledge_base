@@ -119,6 +119,7 @@ const rewrites: Record<string, string> = {
   '02_工程化/10_pnpm/01_pnpm.md': 'pnpm/home.md',
   '02_工程化/10_pnpm/02_工作空间.md': 'pnpm/workspaces.md',
   '02_工程化/10_pnpm/03_问题.md': 'pnpm/issue.md',
+  '02_工程化/10_pnpm/04_Catalogs.md': 'pnpm/catalogs.md',
   '02_工程化/01_vscode/01_设置.md': 'vscode/home.md',
   '02_工程化/01_vscode/02_概述.md': 'vscode/summary.md',
   '02_工程化/01_vscode/03_调试.md': 'vscode/debug.md',

@@ -476,9 +476,14 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'workspaces',
         },
         {
+          text: 'Catalogs',
+          link: 'catalogs',
+        },
+        {
           text: '问题(FAQ)',
           link: 'issue',
         },
+        
       ],
     },
   ],
