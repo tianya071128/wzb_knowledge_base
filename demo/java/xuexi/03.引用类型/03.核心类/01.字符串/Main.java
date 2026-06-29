@@ -3,6 +3,7 @@ public class Main {
     // 字符串实际上 String 的引用类型
     String s1 = "Hello!";
     String s2 = new String(new char[] { 'H', 'e', 'l', 'l', 'o', '!' });
+    String s22 = new String(new char[] { 'H', 'e', 'l', 'l', 'o', '!' }, 0, 2); // 创建字符串, 截取部分字符
 
     // 1. 字符串比较: equals
     System.out.println(s1 == s2); // false
