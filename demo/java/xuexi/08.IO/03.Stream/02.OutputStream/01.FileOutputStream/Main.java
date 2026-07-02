@@ -11,6 +11,7 @@ public class Main {
      * - 实现类:
      * -- FileOutputStream: 文件字节输出流；
      * -- ByteArrayOutputStream: 字节数组输出流；
+     * -- BufferedOutputStream: 缓冲字节输出流, 默认内置 8192 字节缓冲区。
      */
 
     /**
