@@ -1246,6 +1246,42 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/java/annotation/': [
+    {
+      base: '/java/annotation/',
+      items: [
+        {
+          text: '注解',
+          link: 'home',
+        },
+        {
+          text: '使用注解',
+          link: 'usage',
+        },
+        {
+          text: '定义注解',
+          link: 'define',
+        },
+        {
+          text: '常见注解',
+          items: [
+            {
+              text: '元注解',
+              link: 'meta',
+            },
+            {
+              text: '内置注解',
+              link: 'builtin',
+            },
+            {
+              text: 'SpringMVC 请求映射',
+              link: 'springmvc-mapping',
+            },
+          ]
+        }
+      ],
+    },
+  ],
   '/git/': [
     {
       base: '/git/',

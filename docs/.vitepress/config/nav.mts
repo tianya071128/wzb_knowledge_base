@@ -90,6 +90,22 @@ const nav: DefaultTheme.NavItem[] = [
       { text: 'Git', link: '/git/home.html', activeMatch: '/git/' },
     ],
   },
+  {
+    text: 'Java',
+    activeMatch: `/java/`,
+    items: [
+      {
+        text: '语法',
+        items: [
+          {
+            text: '注解',
+            link: '/java/annotation/home.html',
+            activeMatch: '/java/annotation/',
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 export default nav;

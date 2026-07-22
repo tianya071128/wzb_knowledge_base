@@ -274,5 +274,11 @@ const rewrites: Record<string, string> = {
   '04_更多/06_git/30_gitignore.md': 'git/gitignore.md',
   '04_更多/06_git/31_问题.md': 'git/issues.md',
   '04_更多/06_git/32_githooks.md': 'git/hooks.md',
+  '05_java/01_语法/01_注解/01_index.md': 'java/annotation/home.md',
+  '05_java/01_语法/01_注解/02_使用注解.md': 'java/annotation/usage.md',
+  '05_java/01_语法/01_注解/03_定义注解.md': 'java/annotation/define.md',
+  '05_java/01_语法/01_注解/04_元注解.md': 'java/annotation/meta.md',
+  '05_java/01_语法/01_注解/05_内置注解.md': 'java/annotation/builtin.md',
+  '05_java/01_语法/01_注解/06_SpringMVC 请求映射.md': 'java/annotation/springmvc-mapping.md',
 };
 export default rewrites;

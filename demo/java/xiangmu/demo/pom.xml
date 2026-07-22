@@ -2,15 +2,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <!-- 父项目：继承 Spring Boot 的默认配置（依赖版本管理、插件配置等） -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.1.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/> <!-- 不从本地查找父 POM，直接从仓库获取 -->
     </parent>
-    <groupId>com.example</groupId>
-    <artifactId>demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+
+    <!-- 项目坐标：唯一标识当前项目 -->
+    <groupId>com.example</groupId>       <!-- 组织/公司标识 -->
+    <artifactId>demo</artifactId>        <!-- 项目名称 -->
+    <version>0.0.1-SNAPSHOT</version>    <!-- 版本号，SNAPSHOT 表示开发中 -->
     <name>demo</name>
     <description>demo</description>
     <url/>
@@ -26,35 +29,44 @@
         <tag/>
         <url/>
     </scm>
+    <!-- 全局属性：定义可复用的变量 -->
     <properties>
-        <java.version>25</java.version>
+        <java.version>25</java.version> <!-- Java 编译版本 -->
     </properties>
+    <!-- 项目依赖 -->
     <dependencies>
+        <!-- Redis：提供 RedisTemplate、连接池等 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        
+        <!-- Web MVC：提供 Spring MVC、内嵌 Tomcat、JSON 序列化等 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
+        <!-- DevTools：开发时热重载，不会打包到最终 jar 中 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
+            <scope>runtime</scope>       <!-- 仅运行时生效 -->
+            <optional>true</optional>    <!-- 不传递给依赖此项目的其他项目 -->
         </dependency>
+        <!-- MySQL 驱动 -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
+            <scope>runtime</scope>       <!-- 仅运行时需要，编译时不参与 -->
         </dependency>
+        <!-- Lombok：编译时自动生成 getter/setter/构造器等，减少样板代码 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <optional>true</optional>    <!-- 不传递依赖 -->
         </dependency>
+        <!-- 测试依赖：仅在 test 阶段可用 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-test</artifactId>
@@ -67,12 +79,15 @@
         </dependency>
     </dependencies>
 
+    <!-- 构建配置 -->
     <build>
         <plugins>
+            <!-- Spring Boot Maven 插件：打包为可执行 jar（内嵌 Tomcat） -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <!-- 排除 Lombok，避免打包进最终 jar -->
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -81,10 +96,12 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- Maven 编译插件：配置注解处理器 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <executions>
+                    <!-- 主代码编译时启用 Lombok 注解处理器 -->
                     <execution>
                         <id>default-compile</id>
                         <phase>compile</phase>
@@ -100,6 +117,7 @@
                             </annotationProcessorPaths>
                         </configuration>
                     </execution>
+                    <!-- 测试代码编译时同样启用 Lombok 注解处理器 -->
                     <execution>
                         <id>default-testCompile</id>
                         <phase>test-compile</phase>
