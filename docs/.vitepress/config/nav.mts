@@ -58,7 +58,7 @@ const nav: DefaultTheme.NavItem[] = [
   },
   {
     text: '网络协议',
-    activeMatch: `/http|https|h2|tcp/`,
+    activeMatch: `/http|https|h2|tcp|ip/`,
     items: [
       {
         text: '应用层',
@@ -71,6 +71,10 @@ const nav: DefaultTheme.NavItem[] = [
       {
         text: '传输层',
         items: [{ text: 'tcp', link: '/tcp/home.html', activeMatch: '/tcp/' }],
+      },
+      {
+        text: '网络层',
+        items: [{ text: 'IP', link: '/ip/home.html', activeMatch: '/ip/' }],
       },
     ],
   },

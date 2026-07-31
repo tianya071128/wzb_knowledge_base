@@ -939,6 +939,30 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/ip/': [
+    {
+      base: '/ip/',
+      items: [
+        {
+          text: 'IP 简介',
+          link: 'home',
+        },
+        {
+          text: 'IPv4 地址的结构',
+          link: 'ipv4_address',
+          items: [
+            {
+              text: 'IPv4(网络号和主机号)的分类',
+              items: [
+                { text: '有类编址', link: 'classful' },
+                { text: '无类编址', link: 'classless' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
   '/node/': [
     {
       text: 'Node.js 基础概念',
