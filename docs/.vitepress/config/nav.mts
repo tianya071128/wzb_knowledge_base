@@ -74,7 +74,7 @@ const nav: DefaultTheme.NavItem[] = [
       },
       {
         text: '网络层',
-        items: [{ text: 'IP', link: '/ip/home.html', activeMatch: '/ip/' }],
+        items: [{ text: 'IPv4', link: '/ipv4/home.html', activeMatch: '/ipv4/' }],
       },
     ],
   },

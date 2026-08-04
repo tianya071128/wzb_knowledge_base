@@ -939,12 +939,12 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
-  '/ip/': [
+  '/ipv4/': [
     {
-      base: '/ip/',
+      base: '/ipv4/',
       items: [
         {
-          text: 'IP 简介',
+          text: 'IPv4 简介',
           link: 'home',
         },
         {
@@ -958,6 +958,20 @@ const sidebar: DefaultTheme.Sidebar = {
                 { text: '无类编址', link: 'classless' },
               ],
             },
+          ],
+        },
+        {
+          text: 'IP 报文',
+          link: 'packet',
+          items: [
+            { text: 'IP 报文抓包', link: 'packet_capture' },
+          ],
+        },
+        {
+          text: 'IP 配置协议',
+          link: 'supporting_protocols',
+          items: [
+            { text: 'DHCP: 动态主机配置协议', link: 'dhcp' },
           ],
         },
       ],
