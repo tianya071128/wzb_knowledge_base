@@ -483,7 +483,6 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '问题(FAQ)',
           link: 'issue',
         },
-        
       ],
     },
   ],
@@ -934,7 +933,7 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '挥手中丢失包',
               link: 'connection_close_lose',
             },
-          ]
+          ],
         },
       ],
     },
@@ -963,15 +962,30 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'IP 报文',
           link: 'packet',
-          items: [
-            { text: 'IP 报文抓包', link: 'packet_capture' },
-          ],
+          items: [{ text: 'IP 报文抓包', link: 'packet_capture' }],
         },
         {
           text: 'IP 配置协议',
           link: 'supporting_protocols',
           items: [
-            { text: 'DHCP: 动态主机配置协议', link: 'dhcp' },
+            {
+              text: 'DHCP: 动态主机配置协议',
+              link: 'dhcp',
+              items: [
+                { text: 'DHCP 报文详解', link: 'dhcp_packet' },
+                { text: '获取指定 IP', link: 'dhcp_specific_ip' },
+              ],
+            },
+            {
+              text: 'ARP: 地址解析协议',
+              link: 'arp',
+              items: [{ text: 'ARP 协议抓包', link: 'arp_capture' }],
+            },
+            {
+              text: 'ICMP: 互联网控制报文协议',
+              link: 'icmp',
+              items: [{ text: 'ping 命令', link: 'ping' }],
+            },
           ],
         },
       ],
@@ -1315,8 +1329,8 @@ const sidebar: DefaultTheme.Sidebar = {
               text: 'SpringMVC 请求映射',
               link: 'springmvc-mapping',
             },
-          ]
-        }
+          ],
+        },
       ],
     },
   ],
