@@ -957,6 +957,10 @@ const sidebar: DefaultTheme.Sidebar = {
                 { text: '无类编址', link: 'classless' },
               ],
             },
+            {
+              text: 'IPv4 地址的分配',
+              link: 'address_allocation',
+            },
           ],
         },
         {
@@ -988,6 +992,25 @@ const sidebar: DefaultTheme.Sidebar = {
             },
           ],
         },
+        {
+          text: '路由',
+          link: 'routing',
+          items: [{ text: '路由选路', link: 'route_selection' }],
+        },
+        {
+          text: 'NAT: 网络地址转换技术',
+          link: 'nat',
+        },
+        {
+          text: '网络通信的三种基本模式',
+          link: 'communication_modes',
+          items: [
+            {
+              text: '单播',
+              link: 'unicast',
+            },
+          ]
+        }
       ],
     },
   ],
