@@ -1,3 +1,6 @@
+import java.util.Arrays;
+import java.util.List;
+
 public class Main {
   public static void main(String[] args) {
     // 1. 基础定义: type 变量名 = 值;
@@ -17,5 +20,9 @@ public class Main {
     final double PI = 3.1415926;
 
     System.err.println(age);
+
+    int[] arr = { 2, 3, 4, 5 };
+    System.out.print(arr.length);
+    // System.out.print(List.of(arr));
   }
 }

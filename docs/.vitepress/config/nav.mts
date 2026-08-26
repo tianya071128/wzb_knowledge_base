@@ -79,6 +79,27 @@ const nav: DefaultTheme.NavItem[] = [
     ],
   },
   {
+    text: 'Java',
+    activeMatch: `/java/`,
+    items: [
+      {
+        text: '语法',
+        items: [
+          {
+            text: '基础',
+            link: '/java/basics/define-variable.html',
+            activeMatch: '/java/basics/',
+          },
+          {
+            text: '注解',
+            link: '/java/annotation/home.html',
+            activeMatch: '/java/annotation/',
+          },
+        ],
+      },
+    ],
+  },
+  {
     text: '更多',
     activeMatch: `/node|devtools|reg/`,
     items: [
@@ -94,22 +115,7 @@ const nav: DefaultTheme.NavItem[] = [
       { text: 'Git', link: '/git/home.html', activeMatch: '/git/' },
     ],
   },
-  {
-    text: 'Java',
-    activeMatch: `/java/`,
-    items: [
-      {
-        text: '语法',
-        items: [
-          {
-            text: '注解',
-            link: '/java/annotation/home.html',
-            activeMatch: '/java/annotation/',
-          },
-        ],
-      },
-    ],
-  },
+  
 ];
 
 export default nav;

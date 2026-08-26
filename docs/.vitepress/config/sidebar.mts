@@ -1357,6 +1357,66 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/java/basics/': [
+    {
+      text: '基础',
+      collapsed: false,
+      base: '/java/basics/',
+      items: [
+        {
+          text: '定义变量',
+          link: 'define-variable',
+        },
+        {
+          text: '基础数据类型',
+          link: 'data-types',
+        },
+        {
+          text: '数组类型',
+          link: 'array',
+        },
+        {
+          text: '流程控制',
+          link: 'flow-control',
+        },
+      ],
+    },
+    {
+      text: '面向对象',
+      collapsed: false,
+      base: '/java/basics/',
+      items: [
+        {
+          text: '类的基础',
+          link: 'class-basic',
+        },
+        {
+          text: '类的字段',
+          link: 'class-fields',
+        },
+        {
+          text: '类的方法',
+          link: 'class-methods',
+        },
+        {
+          text: '构造方法',
+          link: 'constructor',
+        },
+        {
+          text: '访问权限修饰符',
+          link: 'access-modifiers',
+        },
+        {
+          text: '方法重载',
+          link: 'overloading',
+        },
+        {
+          text: '静态字段和静态方法',
+          link: 'static',
+        },
+      ],
+    },
+  ],
   '/git/': [
     {
       base: '/git/',

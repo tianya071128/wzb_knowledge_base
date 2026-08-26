@@ -300,5 +300,16 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/01_注解/04_元注解.md': 'java/annotation/meta.md',
   '05_java/01_语法/01_注解/05_内置注解.md': 'java/annotation/builtin.md',
   '05_java/01_语法/01_注解/06_SpringMVC 请求映射.md': 'java/annotation/springmvc-mapping.md',
+  '05_java/01_语法/02_基础/01_定义变量.md': 'java/basics/define-variable.md',
+  '05_java/01_语法/02_基础/02_基础数据类型.md': 'java/basics/data-types.md',
+  '05_java/01_语法/02_基础/03_数组类型.md': 'java/basics/array.md',
+  '05_java/01_语法/02_基础/04_流程控制.md': 'java/basics/flow-control.md',
+  '05_java/01_语法/02_基础/05_类的基础.md': 'java/basics/class-basic.md',
+  '05_java/01_语法/02_基础/06_类的字段.md': 'java/basics/class-fields.md',
+  '05_java/01_语法/02_基础/07_类的方法.md': 'java/basics/class-methods.md',
+  '05_java/01_语法/02_基础/08_构造方法.md': 'java/basics/constructor.md',
+  '05_java/01_语法/02_基础/09_方法重载.md': 'java/basics/overloading.md',
+  '05_java/01_语法/02_基础/10_访问权限修饰符.md': 'java/basics/access-modifiers.md',
+  '05_java/01_语法/02_基础/11_静态字段和静态方法.md': 'java/basics/static.md',
 };
 export default rewrites;
