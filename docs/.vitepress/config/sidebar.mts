@@ -1438,6 +1438,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '接口',
           link: 'interface',
         },
+        {
+          text: '内部类',
+          link: 'inner-class',
+        },
       ],
     },
   ],

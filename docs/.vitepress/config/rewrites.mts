@@ -317,5 +317,6 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/15_抽象类.md': 'java/basics/abstract-class.md',
   '05_java/01_语法/02_基础/16_接口.md': 'java/basics/interface.md',
   '05_java/01_语法/02_基础/17_final常量.md': 'java/basics/final-constant.md',
+  '05_java/01_语法/02_基础/18_内部类.md': 'java/basics/inner-class.md',
 };
 export default rewrites;
