@@ -311,5 +311,11 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/09_方法重载.md': 'java/basics/overloading.md',
   '05_java/01_语法/02_基础/10_访问权限修饰符.md': 'java/basics/access-modifiers.md',
   '05_java/01_语法/02_基础/11_静态字段和静态方法.md': 'java/basics/static.md',
+  '05_java/01_语法/02_基础/12_类的继承.md': 'java/basics/inheritance.md',
+  '05_java/01_语法/02_基础/13_类的封装.md': 'java/basics/encapsulation.md',
+  '05_java/01_语法/02_基础/14_类的多态.md': 'java/basics/polymorphism.md',
+  '05_java/01_语法/02_基础/15_抽象类.md': 'java/basics/abstract-class.md',
+  '05_java/01_语法/02_基础/16_接口.md': 'java/basics/interface.md',
+  '05_java/01_语法/02_基础/17_final常量.md': 'java/basics/final-constant.md',
 };
 export default rewrites;

@@ -1368,6 +1368,10 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'define-variable',
         },
         {
+          text: 'final 常量',
+          link: 'final-constant',
+        },
+        {
           text: '基础数据类型',
           link: 'data-types',
         },
@@ -1413,6 +1417,26 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: '静态字段和静态方法',
           link: 'static',
+        },
+        {
+          text: '类的封装',
+          link: 'encapsulation',
+        },
+        {
+          text: '类的继承',
+          link: 'inheritance',
+        },
+        {
+          text: '类的多态',
+          link: 'polymorphism',
+        },
+        {
+          text: '抽象类',
+          link: 'abstract-class',
+        },
+        {
+          text: '接口',
+          link: 'interface',
         },
       ],
     },
