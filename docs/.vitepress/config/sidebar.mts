@@ -1009,8 +1009,8 @@ const sidebar: DefaultTheme.Sidebar = {
               text: '单播',
               link: 'unicast',
             },
-          ]
-        }
+          ],
+        },
       ],
     },
   ],
@@ -1376,10 +1376,6 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'data-types',
         },
         {
-          text: '数组类型',
-          link: 'array',
-        },
-        {
           text: '流程控制',
           link: 'flow-control',
         },
@@ -1441,6 +1437,25 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: '内部类',
           link: 'inner-class',
+        },
+      ],
+    },
+    {
+      text: '数据类型',
+      collapsed: false,
+      base: '/java/basics/',
+      items: [
+        {
+          text: '数组类型',
+          link: 'array',
+        },
+        {
+          text: 'List 接口',
+          link: 'list',
+        },
+        {
+          text: 'Set 接口',
+          link: 'set',
         },
       ],
     },

@@ -1,5 +1,6 @@
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class Main {
   public static void main(String[] args) {
@@ -11,9 +12,9 @@ public class Main {
      * - LinkedHashSet: 底层基于 LinkedHashMap, 顺序和添加顺序一致, 不重复
      * - TreeSet: 底层基于 TreeMap, 升序, 不重复
      */
-
+    
     // 创建
-    HashSet<String> set = new HashSet<>();
+    HashSet<String> set = new TreeSet<>();
     HashSet<String> set2 = new HashSet<>(Set.of("Hello", "Go", "Java")); // 创建并初始化
     HashSet<String> set3 = Set.of("Hello", "World"); // 不可变只读 Set
 

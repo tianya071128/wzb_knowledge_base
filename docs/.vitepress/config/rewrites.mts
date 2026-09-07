@@ -176,7 +176,8 @@ const rewrites: Record<string, string> = {
   '03_网络协议/04_tcp/16_断开连接_第二次.md': 'tcp/connection_close_second.md',
   '03_网络协议/04_tcp/17_断开连接_第三次.md': 'tcp/connection_close_third.md',
   '03_网络协议/04_tcp/18_断开连接_第四次.md': 'tcp/connection_close_fourth.md',
-  '03_网络协议/04_tcp/19_断开连接_为什么需要四次.md': 'tcp/connection_close_why_four.md',
+  '03_网络协议/04_tcp/19_断开连接_为什么需要四次.md':
+    'tcp/connection_close_why_four.md',
   '03_网络协议/04_tcp/20_断开连接_丢失包.md': 'tcp/connection_close_lose.md',
   '03_网络协议/05_IPV4/01_index.md': 'ipv4/home.md',
   '03_网络协议/05_IPV4/02_IPv4地址的结构.md': 'ipv4/ipv4_address.md',
@@ -197,7 +198,8 @@ const rewrites: Record<string, string> = {
   '03_网络协议/05_IPV4/17_NAT网络地址转换.md': 'ipv4/nat.md',
   '03_网络协议/05_IPV4/18_IPv4地址的分配.md': 'ipv4/address_allocation.md',
   '03_网络协议/05_IPV4/19_单播.md': 'ipv4/unicast.md',
-  '03_网络协议/05_IPV4/20_网络通信的三种基本模式.md': 'ipv4/communication_modes.md',
+  '03_网络协议/05_IPV4/20_网络通信的三种基本模式.md':
+    'ipv4/communication_modes.md',
   '04_更多/01_node/01_index.md': 'node/home.md',
   '04_更多/01_node/02_模块系统.md': 'node/module.md',
   '04_更多/01_node/03_path.md': 'node/path.md',
@@ -299,7 +301,8 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/01_注解/03_定义注解.md': 'java/annotation/define.md',
   '05_java/01_语法/01_注解/04_元注解.md': 'java/annotation/meta.md',
   '05_java/01_语法/01_注解/05_内置注解.md': 'java/annotation/builtin.md',
-  '05_java/01_语法/01_注解/06_SpringMVC 请求映射.md': 'java/annotation/springmvc-mapping.md',
+  '05_java/01_语法/01_注解/06_SpringMVC 请求映射.md':
+    'java/annotation/springmvc-mapping.md',
   '05_java/01_语法/02_基础/01_定义变量.md': 'java/basics/define-variable.md',
   '05_java/01_语法/02_基础/02_基础数据类型.md': 'java/basics/data-types.md',
   '05_java/01_语法/02_基础/03_数组类型.md': 'java/basics/array.md',
@@ -309,7 +312,8 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/07_类的方法.md': 'java/basics/class-methods.md',
   '05_java/01_语法/02_基础/08_构造方法.md': 'java/basics/constructor.md',
   '05_java/01_语法/02_基础/09_方法重载.md': 'java/basics/overloading.md',
-  '05_java/01_语法/02_基础/10_访问权限修饰符.md': 'java/basics/access-modifiers.md',
+  '05_java/01_语法/02_基础/10_访问权限修饰符.md':
+    'java/basics/access-modifiers.md',
   '05_java/01_语法/02_基础/11_静态字段和静态方法.md': 'java/basics/static.md',
   '05_java/01_语法/02_基础/12_类的继承.md': 'java/basics/inheritance.md',
   '05_java/01_语法/02_基础/13_类的封装.md': 'java/basics/encapsulation.md',
@@ -318,5 +322,7 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/16_接口.md': 'java/basics/interface.md',
   '05_java/01_语法/02_基础/17_final常量.md': 'java/basics/final-constant.md',
   '05_java/01_语法/02_基础/18_内部类.md': 'java/basics/inner-class.md',
+  '05_java/01_语法/02_基础/19_List.md': 'java/basics/list.md',
+  '05_java/01_语法/02_基础/20_Set.md': 'java/basics/set.md',
 };
 export default rewrites;
