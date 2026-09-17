@@ -74,7 +74,9 @@ const nav: DefaultTheme.NavItem[] = [
       },
       {
         text: '网络层',
-        items: [{ text: 'IPv4', link: '/ipv4/home.html', activeMatch: '/ipv4/' }],
+        items: [
+          { text: 'IPv4', link: '/ipv4/home.html', activeMatch: '/ipv4/' },
+        ],
       },
     ],
   },
@@ -89,6 +91,11 @@ const nav: DefaultTheme.NavItem[] = [
             text: '基础',
             link: '/java/basics/define-variable.html',
             activeMatch: '/java/basics/',
+          },
+          {
+            text: '核心类',
+            link: '/java/core/object.html',
+            activeMatch: '/java/core/',
           },
           {
             text: '注解',
@@ -115,7 +122,6 @@ const nav: DefaultTheme.NavItem[] = [
       { text: 'Git', link: '/git/home.html', activeMatch: '/git/' },
     ],
   },
-  
 ];
 
 export default nav;

@@ -1457,6 +1457,38 @@ const sidebar: DefaultTheme.Sidebar = {
           text: 'Set 接口',
           link: 'set',
         },
+        {
+          text: 'Map 接口',
+          link: 'map',
+        },
+      ],
+    },
+  ],
+  '/java/core/': [
+    {
+      base: '/java/',
+      items: [
+        {
+          text: '根类 Object',
+          link: 'core/object',
+        },
+        {
+          text: '字符串',
+          items: [
+            {
+              text: 'String',
+              link: 'core/string',
+            },
+            {
+              text: 'StringBuilder',
+              link: 'core/string-builder',
+            },
+            {
+              text: 'StringJoiner',
+              link: 'core/string-joiner',
+            },
+          ],
+        },
       ],
     },
   ],

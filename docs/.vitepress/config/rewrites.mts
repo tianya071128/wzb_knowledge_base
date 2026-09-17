@@ -324,5 +324,10 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/18_内部类.md': 'java/basics/inner-class.md',
   '05_java/01_语法/02_基础/19_List.md': 'java/basics/list.md',
   '05_java/01_语法/02_基础/20_Set.md': 'java/basics/set.md',
+  '05_java/01_语法/02_基础/21_Map.md': 'java/basics/map.md',
+  '05_java/01_语法/03_核心类/01_根类Object.md': 'java/core/object.md',
+  '05_java/01_语法/03_核心类/02_String.md': 'java/core/string.md',
+  '05_java/01_语法/03_核心类/03_StringBuilder.md': 'java/core/string-builder.md',
+  '05_java/01_语法/03_核心类/04_StringJoiner.md': 'java/core/string-joiner.md',
 };
 export default rewrites;
