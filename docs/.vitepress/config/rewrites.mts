@@ -345,5 +345,25 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/03_核心类/17_ThreadLocalRandom.md':
     'java/core/thread-local-random.md',
   '05_java/01_语法/03_核心类/18_SecureRandom.md': 'java/core/secure-random.md',
+  '05_java/01_语法/03_核心类/19_List.md': 'java/core/list.md',
+  '05_java/01_语法/03_核心类/20_Set.md': 'java/core/set.md',
+  '05_java/01_语法/03_核心类/21_Map.md': 'java/core/map.md',
+  '05_java/01_语法/03_核心类/22_Collections.md': 'java/core/collections.md',
+  '05_java/01_语法/03_核心类/23_日期和时间.md': 'java/core/date-time.md',
+  '05_java/01_语法/03_核心类/24_LocalTime.md': 'java/core/local-time.md',
+  '05_java/01_语法/03_核心类/25_LocalDate.md': 'java/core/local-date.md',
+  '05_java/01_语法/03_核心类/26_LocalDateTime.md':
+    'java/core/local-date-time.md',
+  '05_java/01_语法/03_核心类/27_ZonedDateTime.md':
+    'java/core/zoned-date-time.md',
+  '05_java/01_语法/03_核心类/28_Instant.md': 'java/core/instant.md',
+  '05_java/01_语法/03_核心类/29_ZoneId.md': 'java/core/zone-id.md',
+  '05_java/01_语法/03_核心类/30_ZoneOffset.md': 'java/core/zone-offset.md',
+  '05_java/01_语法/03_核心类/31_DateTimeFormatter.md':
+    'java/core/date-time-formatter.md',
+  '05_java/01_语法/03_核心类/32_Period.md': 'java/core/period.md',
+  '05_java/01_语法/03_核心类/33_Duration.md': 'java/core/duration.md',
+  '05_java/01_语法/03_核心类/34_集合.md': 'java/core/collections-overview.md',
+  '05_java/01_语法/03_核心类/35_包装类型.md': 'java/core/wrapper-types.md',
 };
 export default rewrites;

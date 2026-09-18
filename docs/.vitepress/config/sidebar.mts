@@ -1490,8 +1490,47 @@ const sidebar: DefaultTheme.Sidebar = {
           ],
         },
         {
+          text: '数字',
+          items: [
+            {
+              text: 'BigInteger：超大整数',
+              link: 'core/big-integer',
+            },
+            {
+              text: 'BigDecimal：高精度浮点数',
+              link: 'core/big-decimal',
+            },
+            {
+              text: 'Math：数学运算',
+              link: 'core/math',
+            },
+          ],
+        },
+        {
+          text: '集合',
+          link: 'core/collections-overview',
+          items: [
+            {
+              text: 'List：有序列表',
+              link: 'core/list',
+            },
+            {
+              text: 'Set：无序集合',
+              link: 'core/set',
+            },
+            {
+              text: 'Map：键值对',
+              link: 'core/map',
+            },
+            {
+              text: 'Collections：集合工具类',
+              link: 'core/collections',
+            },
+          ],
+        },
+        {
           text: '包装类型',
-          collapsed: true,
+          link: 'core/wrapper-types',
           items: [
             {
               text: 'Byte',
@@ -1528,19 +1567,48 @@ const sidebar: DefaultTheme.Sidebar = {
           ],
         },
         {
-          text: '数字',
+          text: '日期和时间',
+          link: 'core/date-time',
           items: [
             {
-              text: 'BigInteger：超大整数',
-              link: 'core/big-integer',
+              text: 'LocalTime：本地时间',
+              link: 'core/local-time',
             },
             {
-              text: 'BigDecimal：高精度浮点数',
-              link: 'core/big-decimal',
+              text: 'LocalDate：本地日期',
+              link: 'core/local-date',
             },
             {
-              text: 'Math：数学运算',
-              link: 'core/math',
+              text: 'LocalDateTime：本地日期时间',
+              link: 'core/local-date-time',
+            },
+            {
+              text: 'ZonedDateTime：带时区的日期时间',
+              link: 'core/zoned-date-time',
+            },
+            {
+              text: 'Instant：时间戳',
+              link: 'core/instant',
+            },
+            {
+              text: 'ZoneId：时区 ID',
+              link: 'core/zone-id',
+            },
+            {
+              text: 'ZoneOffset：时区偏移',
+              link: 'core/zone-offset',
+            },
+            {
+              text: 'DateTimeFormatter：格式化器',
+              link: 'core/date-time-formatter',
+            },
+            {
+              text: 'Period：日期间隔',
+              link: 'core/period',
+            },
+            {
+              text: 'Duration：时间间隔',
+              link: 'core/duration',
             },
           ],
         },
