@@ -208,3 +208,9 @@ public final class String {
 2. **缓存哈希码**：适合作为 HashMap 的键
 3. **字符串常量池**：节省内存
 4. **安全性**：作为参数传递时不会被修改
+
+---
+
+## 参考
+
+- [Java 官方文档 - String](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html)

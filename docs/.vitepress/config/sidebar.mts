@@ -1489,6 +1489,78 @@ const sidebar: DefaultTheme.Sidebar = {
             },
           ],
         },
+        {
+          text: '包装类型',
+          collapsed: true,
+          items: [
+            {
+              text: 'Byte',
+              link: 'core/byte',
+            },
+            {
+              text: 'Short',
+              link: 'core/short',
+            },
+            {
+              text: 'Integer',
+              link: 'core/integer',
+            },
+            {
+              text: 'Long',
+              link: 'core/long',
+            },
+            {
+              text: 'Float',
+              link: 'core/float',
+            },
+            {
+              text: 'Double',
+              link: 'core/double',
+            },
+            {
+              text: 'Character',
+              link: 'core/character',
+            },
+            {
+              text: 'Boolean',
+              link: 'core/boolean',
+            },
+          ],
+        },
+        {
+          text: '数字',
+          items: [
+            {
+              text: 'BigInteger：超大整数',
+              link: 'core/big-integer',
+            },
+            {
+              text: 'BigDecimal：高精度浮点数',
+              link: 'core/big-decimal',
+            },
+            {
+              text: 'Math：数学运算',
+              link: 'core/math',
+            },
+          ],
+        },
+        {
+          text: '随机数',
+          items: [
+            {
+              text: 'Random：伪随机数',
+              link: 'core/random',
+            },
+            {
+              text: 'ThreadLocalRandom：多线程伪随机数',
+              link: 'core/thread-local-random',
+            },
+            {
+              text: 'SecureRandom：密码学安全随机数',
+              link: 'core/secure-random',
+            },
+          ],
+        },
       ],
     },
   ],

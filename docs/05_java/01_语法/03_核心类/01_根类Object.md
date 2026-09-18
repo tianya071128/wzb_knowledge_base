@@ -153,3 +153,9 @@ int hash = obj.hashCode();  // 哈希码值
 // getClass
 Class<?> clazz = obj.getClass();  // java.lang.String
 ```
+
+---
+
+## 参考
+
+- [Java 官方文档 - Object](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html)

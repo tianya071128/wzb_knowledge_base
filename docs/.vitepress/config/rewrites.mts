@@ -327,7 +327,23 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/21_Map.md': 'java/basics/map.md',
   '05_java/01_语法/03_核心类/01_根类Object.md': 'java/core/object.md',
   '05_java/01_语法/03_核心类/02_String.md': 'java/core/string.md',
-  '05_java/01_语法/03_核心类/03_StringBuilder.md': 'java/core/string-builder.md',
+  '05_java/01_语法/03_核心类/03_StringBuilder.md':
+    'java/core/string-builder.md',
   '05_java/01_语法/03_核心类/04_StringJoiner.md': 'java/core/string-joiner.md',
+  '05_java/01_语法/03_核心类/05_Byte.md': 'java/core/byte.md',
+  '05_java/01_语法/03_核心类/06_Short.md': 'java/core/short.md',
+  '05_java/01_语法/03_核心类/07_Integer.md': 'java/core/integer.md',
+  '05_java/01_语法/03_核心类/08_Long.md': 'java/core/long.md',
+  '05_java/01_语法/03_核心类/09_Float.md': 'java/core/float.md',
+  '05_java/01_语法/03_核心类/10_Double.md': 'java/core/double.md',
+  '05_java/01_语法/03_核心类/11_Character.md': 'java/core/character.md',
+  '05_java/01_语法/03_核心类/12_Boolean.md': 'java/core/boolean.md',
+  '05_java/01_语法/03_核心类/13_BigInteger.md': 'java/core/big-integer.md',
+  '05_java/01_语法/03_核心类/14_BigDecimal.md': 'java/core/big-decimal.md',
+  '05_java/01_语法/03_核心类/15_Math.md': 'java/core/math.md',
+  '05_java/01_语法/03_核心类/16_Random.md': 'java/core/random.md',
+  '05_java/01_语法/03_核心类/17_ThreadLocalRandom.md':
+    'java/core/thread-local-random.md',
+  '05_java/01_语法/03_核心类/18_SecureRandom.md': 'java/core/secure-random.md',
 };
 export default rewrites;

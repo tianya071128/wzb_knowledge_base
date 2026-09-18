@@ -117,12 +117,12 @@ System.out.println(result2);  // "[Alice, Bob, Charlie]"
 
 ## 与 String.join 对比
 
-| 特性 | StringJoiner | String.join |
-| --- | --- | --- |
-| 前缀/后缀 | 支持 | 不支持 |
-| 空值处理 | 支持 `setEmptyValue()` | 不支持 |
-| 链式调用 | 支持 | 不支持 |
-| Stream 集成 | 通过 Collector | 直接转换 |
+| 特性        | StringJoiner           | String.join |
+| ----------- | ---------------------- | ----------- |
+| 前缀/后缀   | 支持                   | 不支持      |
+| 空值处理    | 支持 `setEmptyValue()` | 不支持      |
+| 链式调用    | 支持                   | 不支持      |
+| Stream 集成 | 通过 Collector         | 直接转换    |
 
 ```java
 // String.join 简单场景
@@ -150,3 +150,9 @@ StringJoiner jsonSj = new StringJoiner(", ", "[", "]");
 items.forEach(item -> jsonSj.add("\"" + item + "\""));
 String json = jsonSj.toString();  // "["apple", "banana", "cherry"]"
 ```
+
+---
+
+## 参考
+
+- [Java 官方文档 - StringJoiner](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/StringJoiner.html)

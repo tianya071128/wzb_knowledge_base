@@ -182,10 +182,16 @@ String result2 = sb.toString();
 
 ## StringBuilder vs StringBuffer
 
-| 特性 | StringBuilder | StringBuffer |
-| --- | --- | --- |
-| 线程安全 | 否 | 是（方法加 `synchronized`） |
-| 性能 | 快 | 较慢 |
-| 引入版本 | Java 5 | Java 1.0 |
+| 特性     | StringBuilder | StringBuffer                |
+| -------- | ------------- | --------------------------- |
+| 线程安全 | 否            | 是（方法加 `synchronized`） |
+| 性能     | 快            | 较慢                        |
+| 引入版本 | Java 5        | Java 1.0                    |
 
 > **实际开发中**，绝大多数场景使用 `StringBuilder` 即可。只有在多线程环境下才考虑 `StringBuffer`。
+
+---
+
+## 参考
+
+- [Java 官方文档 - StringBuilder](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/StringBuilder.html)
