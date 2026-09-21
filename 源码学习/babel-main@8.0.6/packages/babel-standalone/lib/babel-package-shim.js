@@ -1,1 +1,0 @@
-export const version = BABEL_VERSION;

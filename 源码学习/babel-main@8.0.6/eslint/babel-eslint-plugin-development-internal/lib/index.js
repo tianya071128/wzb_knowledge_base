@@ -12,3 +12,4 @@ export default {
   meta,
   rules
 };
+//# sourceMappingURL=index.js.map

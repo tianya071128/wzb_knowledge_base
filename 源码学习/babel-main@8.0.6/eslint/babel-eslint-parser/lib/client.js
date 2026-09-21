@@ -38,3 +38,4 @@ export class WorkerClient extends Client {
     this.#worker.unref();
   }
 }
+//# sourceMappingURL=client.js.map

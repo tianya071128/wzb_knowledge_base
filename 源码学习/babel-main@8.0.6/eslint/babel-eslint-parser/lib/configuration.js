@@ -18,3 +18,4 @@ export default function normalizeESLintConfig(options) {
     ...otherOptions
   };
 }
+//# sourceMappingURL=configuration.js.map

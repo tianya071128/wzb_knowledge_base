@@ -34,7 +34,7 @@ export async function transform(src: string, dest: string, opts: any = {}) {
   }
   log(`Compiling '${styleText("cyan", src)}'...`);
   const content = readFileSync(src, { encoding: "utf8" });
-  const { code } = (await transformAsync(content, {
+  const { code, map } = (await transformAsync(content, {
     filename: src,
     sourceFileName: path.relative(path.dirname(dest), src),
     caller: {
@@ -46,6 +46,12 @@ export async function transform(src: string, dest: string, opts: any = {}) {
   }))!;
 
   if (code) {
-    writeFileSync(dest, code, "utf8");
+    // Emit an external source map so debuggers can map lib/*.js back to src/*.ts.
+    let output = code;
+    if (map) {
+      writeFileSync(dest + ".map", JSON.stringify(map), "utf8");
+      output += `\n//# sourceMappingURL=${path.basename(dest)}.map\n`;
+    }
+    writeFileSync(dest, output, "utf8");
   }
 }

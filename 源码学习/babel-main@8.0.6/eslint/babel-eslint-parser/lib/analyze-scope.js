@@ -285,3 +285,4 @@ export default function analyzeScope(ast, parserOptions) {
   referencer.visit(ast);
   return scopeManager;
 }
+//# sourceMappingURL=analyze-scope.js.map

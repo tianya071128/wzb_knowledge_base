@@ -20,3 +20,4 @@ export default {
   rules,
   rulesConfig
 };
+//# sourceMappingURL=index.js.map

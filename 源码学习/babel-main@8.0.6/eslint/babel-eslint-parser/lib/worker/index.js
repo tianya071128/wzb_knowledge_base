@@ -31,3 +31,4 @@ parentPort.addListener("message", async ({
     Atomics.notify(signal, 0);
   }
 });
+//# sourceMappingURL=index.js.map

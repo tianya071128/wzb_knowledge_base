@@ -7,3 +7,4 @@ export default async function handleMessage(action, payload) {
       return await maybeParse(payload.code, await normalizeBabelParseConfig(payload.options));
   }
 }
+//# sourceMappingURL=handle-message.js.map

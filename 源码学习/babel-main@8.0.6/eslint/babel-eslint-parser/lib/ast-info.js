@@ -26,3 +26,4 @@ let tokLabels;
 export function getTokLabels() {
   return tokLabels ||= Object.fromEntries(Object.entries(tokTypes).map(([key, tok]) => [key, tok.label]));
 }
+//# sourceMappingURL=ast-info.js.map

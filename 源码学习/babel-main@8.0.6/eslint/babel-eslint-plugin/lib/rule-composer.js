@@ -16,3 +16,4 @@ export function filterReports(rule, predicate) {
     meta: rule.meta
   });
 }
+//# sourceMappingURL=rule-composer.js.map

@@ -5,3 +5,4 @@ function isDecorator(node) {
   return node.parent.type === "Decorator";
 }
 export default ruleComposer.filterReports(rule, problem => !isDecorator(problem.node));
+//# sourceMappingURL=new-cap.js.map

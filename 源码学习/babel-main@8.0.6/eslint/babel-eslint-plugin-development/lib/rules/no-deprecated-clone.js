@@ -35,3 +35,4 @@ export default {
     };
   }
 };
+//# sourceMappingURL=no-deprecated-clone.js.map

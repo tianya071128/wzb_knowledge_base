@@ -11,3 +11,6 @@ urls.txt
 # mac
 .DS_Store
 
+# 源码学习 / Babel：编译产物（lib 构建目录）
+源码学习/babel-main@8.0.6/packages/*/lib/
+

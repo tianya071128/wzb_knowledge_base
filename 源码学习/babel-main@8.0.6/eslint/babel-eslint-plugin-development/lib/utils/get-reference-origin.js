@@ -95,3 +95,4 @@ function getPatternPath(node) {
   } while (current = current.parent.parent);
   return path;
 }
+//# sourceMappingURL=get-reference-origin.js.map

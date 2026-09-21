@@ -1,3 +1,4 @@
 import { builtinRules } from "eslint/use-at-your-own-risk";
 const rule = builtinRules.get("no-undef");
 export default rule;
+//# sourceMappingURL=no-undef.js.map

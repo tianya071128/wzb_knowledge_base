@@ -50,3 +50,4 @@ export default function parse(code, options) {
     throw convertError(err);
   }
 }
+//# sourceMappingURL=parse.js.map

@@ -24,3 +24,4 @@ export default {
   parse,
   parseForESLint
 };
+//# sourceMappingURL=index.js.map

@@ -4,3 +4,4 @@ export default function convertComments(comments) {
     comment.range ||= [comment.start, comment.end];
   }
 }
+//# sourceMappingURL=convertComments.js.map

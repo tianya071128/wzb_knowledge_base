@@ -44,3 +44,4 @@ export default {
     }
   }
 };
+//# sourceMappingURL=plugin-name.js.map

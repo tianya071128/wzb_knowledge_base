@@ -38,3 +38,4 @@ export default async function maybeParse(code, options) {
     parserOptions: null
   };
 }
+//# sourceMappingURL=maybeParse.js.map

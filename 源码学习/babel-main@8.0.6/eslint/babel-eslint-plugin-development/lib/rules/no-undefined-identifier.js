@@ -29,3 +29,4 @@ export default {
     };
   }
 };
+//# sourceMappingURL=no-undefined-identifier.js.map

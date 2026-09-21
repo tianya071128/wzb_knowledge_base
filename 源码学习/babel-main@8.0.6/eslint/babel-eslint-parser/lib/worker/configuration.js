@@ -63,3 +63,4 @@ export async function normalizeBabelParseConfig(options) {
   const config = await loadPartialConfigAsync(parseOptions);
   return validateResolvedConfig(config, options, parseOptions);
 }
+//# sourceMappingURL=configuration.js.map

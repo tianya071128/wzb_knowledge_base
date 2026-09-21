@@ -10,3 +10,4 @@ export default function isBabelPluginFactory(node, scope) {
   }
   return isDefaultExport(parent);
 }
+//# sourceMappingURL=is-babel-plugin-factory.js.map

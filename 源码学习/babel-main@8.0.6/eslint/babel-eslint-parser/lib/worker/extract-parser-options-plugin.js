@@ -5,3 +5,4 @@ export default function extractParserOptionsPlugin() {
     }
   };
 }
+//# sourceMappingURL=extract-parser-options-plugin.js.map

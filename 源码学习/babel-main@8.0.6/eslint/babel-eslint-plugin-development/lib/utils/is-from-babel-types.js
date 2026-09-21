@@ -11,3 +11,4 @@ export default function isFromBabelTypes(origin, scope) {
   }
   return false;
 }
+//# sourceMappingURL=is-from-babel-types.js.map

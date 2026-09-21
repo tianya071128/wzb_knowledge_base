@@ -7,3 +7,4 @@ export default function isDefaultExport(node) {
   }
   return false;
 }
+//# sourceMappingURL=is-default-export.js.map

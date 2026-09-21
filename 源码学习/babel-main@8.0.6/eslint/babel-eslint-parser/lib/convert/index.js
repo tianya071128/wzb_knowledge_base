@@ -14,3 +14,4 @@ export function convertError(err) {
   }
   return err;
 }
+//# sourceMappingURL=index.js.map
