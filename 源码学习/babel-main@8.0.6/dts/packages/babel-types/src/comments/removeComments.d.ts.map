@@ -1,0 +1,1 @@
+{"version":3,"file":"removeComments.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/comments/removeComments.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC;;GAEG;AACH,MAAM,CAAC,OAAO,UAAU,cAAc,CAAC,CAAC,SAAS,CAAC,CAAC,IAAI,EAAE,IAAI,EAAE,CAAC,GAAG,CAAC,CAMnE"}

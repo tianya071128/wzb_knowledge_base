@@ -1,0 +1,1 @@
+{"version":3,"file":"inheritInnerComments.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/comments/inheritInnerComments.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC,MAAM,CAAC,OAAO,UAAU,oBAAoB,CAC1C,KAAK,EAAE,CAAC,CAAC,IAAI,EACb,MAAM,EAAE,CAAC,CAAC,IAAI,GACb,IAAI,CAEN"}

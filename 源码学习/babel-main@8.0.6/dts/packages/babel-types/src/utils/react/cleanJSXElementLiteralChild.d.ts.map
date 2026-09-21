@@ -1,0 +1,1 @@
+{"version":3,"file":"cleanJSXElementLiteralChild.d.ts","sourceRoot":"","sources":["../../../../../../packages/babel-types/src/utils/react/cleanJSXElementLiteralChild.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,KAAK,CAAC,MAAM,gBAAgB,CAAC;AAGzC,MAAM,CAAC,OAAO,UAAU,2BAA2B,CACjD,KAAK,EAAE,CAAC,CAAC,OAAO,EAChB,IAAI,EAAE,CAAC,CAAC,IAAI,EAAE,QA4Cf"}

@@ -1,0 +1,6 @@
+import type * as t from "../index.ts";
+/**
+ * Inherit all contextual properties from `parent` node to `child` node.
+ */
+export default function inherits<T extends t.Node | null | undefined>(child: T, parent: t.Node | null | undefined): T;
+//# sourceMappingURL=inherits.d.ts.map

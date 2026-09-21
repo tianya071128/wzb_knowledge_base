@@ -1,0 +1,1 @@
+{"version":3,"file":"context.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-parser/src/tokenizer/context.ts"],"names":[],"mappings":"AAGA,qBAAa,UAAU;gBACT,KAAK,EAAE,MAAM,EAAE,aAAa,CAAC,EAAE,OAAO;IAKlD,KAAK,EAAE,MAAM,CAAC;IACd,aAAa,EAAE,OAAO,CAAC;CACxB;AAED,QAAA,MAAM,KAAK,EAAE,MAAM,CAAC,MAAM,EAAE,UAAU,CAKrC,CAAC;AAEF,OAAO,EAAE,KAAK,EAAE,CAAC"}

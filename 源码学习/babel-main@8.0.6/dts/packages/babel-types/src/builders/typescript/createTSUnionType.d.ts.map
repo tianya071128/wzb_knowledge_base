@@ -1,0 +1,1 @@
+{"version":3,"file":"createTSUnionType.d.ts","sourceRoot":"","sources":["../../../../../../packages/babel-types/src/builders/typescript/createTSUnionType.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,KAAK,CAAC,MAAM,gBAAgB,CAAC;AAEzC;;;GAGG;AACH,MAAM,CAAC,OAAO,UAAU,iBAAiB,CACvC,eAAe,EAAE,CAAC,CAAC,CAAC,gBAAgB,GAAG,CAAC,CAAC,MAAM,CAAC,EAAE,GACjD,CAAC,CAAC,MAAM,CAWV"}

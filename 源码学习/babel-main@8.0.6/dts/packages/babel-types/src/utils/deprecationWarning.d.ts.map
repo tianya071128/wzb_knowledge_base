@@ -1,0 +1,1 @@
+{"version":3,"file":"deprecationWarning.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/utils/deprecationWarning.ts"],"names":[],"mappings":"AAEA,MAAM,CAAC,OAAO,UAAU,kBAAkB,CACxC,OAAO,EAAE,MAAM,EACf,OAAO,EAAE,MAAM,EACf,MAAM,GAAE,MAAW,EACnB,QAAQ,GAAE,MAAgB,QAgB3B"}

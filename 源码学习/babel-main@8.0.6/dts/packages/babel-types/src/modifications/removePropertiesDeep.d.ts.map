@@ -1,0 +1,1 @@
+{"version":3,"file":"removePropertiesDeep.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/modifications/removePropertiesDeep.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC,MAAM,CAAC,OAAO,UAAU,oBAAoB,CAAC,CAAC,SAAS,CAAC,CAAC,IAAI,EAC3D,IAAI,EAAE,CAAC,EACP,IAAI,CAAC,EAAE;IAAE,gBAAgB,EAAE,OAAO,CAAA;CAAE,GAAG,IAAI,GAC1C,CAAC,CAIH"}

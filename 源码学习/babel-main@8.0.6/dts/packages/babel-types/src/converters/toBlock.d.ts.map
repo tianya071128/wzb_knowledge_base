@@ -1,0 +1,1 @@
+{"version":3,"file":"toBlock.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/converters/toBlock.ts"],"names":[],"mappings":"AAWA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC,MAAM,CAAC,OAAO,UAAU,OAAO,CAC7B,IAAI,EAAE,CAAC,CAAC,SAAS,GAAG,CAAC,CAAC,UAAU,EAChC,MAAM,CAAC,EAAE,CAAC,CAAC,IAAI,GACd,CAAC,CAAC,cAAc,CAsBlB"}

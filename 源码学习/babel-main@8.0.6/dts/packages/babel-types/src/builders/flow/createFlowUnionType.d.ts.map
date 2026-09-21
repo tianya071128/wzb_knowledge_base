@@ -1,0 +1,1 @@
+{"version":3,"file":"createFlowUnionType.d.ts","sourceRoot":"","sources":["../../../../../../packages/babel-types/src/builders/flow/createFlowUnionType.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,KAAK,CAAC,MAAM,gBAAgB,CAAC;AAEzC;;;GAGG;AACH,MAAM,CAAC,OAAO,UAAU,mBAAmB,CAAC,CAAC,SAAS,CAAC,CAAC,QAAQ,EAC9D,KAAK,EAAE,CAAC,CAAC,CAAC,GAAG,CAAC,EAAE,GACf,CAAC,GAAG,CAAC,CAAC,mBAAmB,CAQ3B"}

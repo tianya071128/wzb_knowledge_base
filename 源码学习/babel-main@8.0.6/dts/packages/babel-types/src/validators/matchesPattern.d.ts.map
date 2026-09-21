@@ -1,0 +1,1 @@
+{"version":3,"file":"matchesPattern.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/validators/matchesPattern.ts"],"names":[],"mappings":"AASA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAQtC;;;;;;GAMG;AACH,MAAM,CAAC,OAAO,UAAU,cAAc,CACpC,MAAM,EAAE,CAAC,CAAC,IAAI,GAAG,IAAI,GAAG,SAAS,EACjC,KAAK,EAAE,MAAM,GAAG,MAAM,EAAE,EACxB,YAAY,CAAC,EAAE,OAAO,GACrB,OAAO,CAyCT"}

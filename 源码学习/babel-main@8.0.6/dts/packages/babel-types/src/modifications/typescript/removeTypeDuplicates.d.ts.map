@@ -1,0 +1,1 @@
+{"version":3,"file":"removeTypeDuplicates.d.ts","sourceRoot":"","sources":["../../../../../../packages/babel-types/src/modifications/typescript/removeTypeDuplicates.ts"],"names":[],"mappings":"AAQA,OAAO,KAAK,KAAK,CAAC,MAAM,gBAAgB,CAAC;AAUzC;;GAEG;AACH,MAAM,CAAC,OAAO,UAAU,oBAAoB,CAC1C,OAAO,EAAE,SAAS,CAAC,CAAC,MAAM,EAAE,GAC3B,CAAC,CAAC,MAAM,EAAE,CA0EZ"}

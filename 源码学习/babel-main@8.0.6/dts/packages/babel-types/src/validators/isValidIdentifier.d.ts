@@ -1,0 +1,6 @@
+/**
+ * Check if the input `name` is a valid identifier name
+ * and isn't a reserved word.
+ */
+export default function isValidIdentifier(name: string, reserved?: boolean): boolean;
+//# sourceMappingURL=isValidIdentifier.d.ts.map

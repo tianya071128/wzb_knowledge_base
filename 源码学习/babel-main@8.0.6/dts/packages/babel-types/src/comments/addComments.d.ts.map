@@ -1,0 +1,1 @@
+{"version":3,"file":"addComments.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/comments/addComments.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC;;GAEG;AACH,MAAM,CAAC,OAAO,UAAU,WAAW,CAAC,CAAC,SAAS,CAAC,CAAC,IAAI,EAClD,IAAI,EAAE,CAAC,EACP,IAAI,EAAE,CAAC,CAAC,oBAAoB,EAC5B,QAAQ,EAAE,CAAC,CAAC,OAAO,EAAE,GACpB,CAAC,CAgBH"}

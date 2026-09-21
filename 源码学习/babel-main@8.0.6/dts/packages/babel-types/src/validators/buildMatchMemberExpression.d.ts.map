@@ -1,0 +1,1 @@
+{"version":3,"file":"buildMatchMemberExpression.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/validators/buildMatchMemberExpression.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC;;;;;;GAMG;AACH,MAAM,CAAC,OAAO,UAAU,0BAA0B,CAChD,KAAK,EAAE,MAAM,EACb,YAAY,CAAC,EAAE,OAAO,IAId,QAAQ,CAAC,CAAC,IAAI,aACvB"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"isReferenced.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/validators/isReferenced.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC;;GAEG;AACH,MAAM,CAAC,OAAO,UAAU,YAAY,CAClC,IAAI,EAAE,CAAC,CAAC,IAAI,GAAG,IAAI,GAAG,SAAS,EAC/B,MAAM,EAAE,CAAC,CAAC,IAAI,EACd,WAAW,CAAC,EAAE,CAAC,CAAC,IAAI,GACnB,OAAO,CAwKT"}

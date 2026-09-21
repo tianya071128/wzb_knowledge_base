@@ -1,0 +1,20 @@
+import { isLessThan } from "verkit";
+import { prettifyVersion } from "./pretty.js";
+import { semverify, isUnreleasedVersion, getLowestImplementedVersion } from "./utils.js";
+export function getInclusionReasons(item, targetVersions, list) {
+  const minVersions = list[item] || {};
+  return Object.keys(targetVersions).reduce((result, env) => {
+    const minVersion = getLowestImplementedVersion(minVersions, env);
+    const targetVersion = targetVersions[env];
+    if (!minVersion) {
+      result[env] = prettifyVersion(targetVersion);
+    } else {
+      const minIsUnreleased = isUnreleasedVersion(minVersion, env);
+      const targetIsUnreleased = isUnreleasedVersion(targetVersion, env);
+      if (!targetIsUnreleased && (minIsUnreleased || isLessThan(targetVersion.toString(), semverify(minVersion)))) {
+        result[env] = prettifyVersion(targetVersion);
+      }
+    }
+    return result;
+  }, {});
+}

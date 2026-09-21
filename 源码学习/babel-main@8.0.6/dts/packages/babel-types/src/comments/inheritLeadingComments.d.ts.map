@@ -1,0 +1,1 @@
+{"version":3,"file":"inheritLeadingComments.d.ts","sourceRoot":"","sources":["../../../../../packages/babel-types/src/comments/inheritLeadingComments.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,KAAK,CAAC,MAAM,aAAa,CAAC;AAEtC,MAAM,CAAC,OAAO,UAAU,sBAAsB,CAC5C,KAAK,EAAE,CAAC,CAAC,IAAI,GAAG,IAAI,EACpB,MAAM,EAAE,CAAC,CAAC,IAAI,GAAG,IAAI,GACpB,IAAI,CAEN"}

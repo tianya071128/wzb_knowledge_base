@@ -94,7 +94,8 @@
     "packages/*",
     "test/esm",
     "test/runtime-integration/*",
-    "benchmark"
+    "benchmark",
+    "playground"
   ],
   "resolutions": {
     "browserslist": "4.28.7",

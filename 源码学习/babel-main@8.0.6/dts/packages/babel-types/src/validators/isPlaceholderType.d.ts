@@ -1,0 +1,5 @@
+/**
+ * Test if a `placeholderType` is a `targetType` or if `targetType` is an alias of `placeholderType`.
+ */
+export default function isPlaceholderType(placeholderType: string, targetType: string): boolean;
+//# sourceMappingURL=isPlaceholderType.d.ts.map
