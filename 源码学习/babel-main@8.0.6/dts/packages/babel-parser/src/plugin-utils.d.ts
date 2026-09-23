@@ -2020,11 +2020,11 @@ export declare const mixinPlugins: {
             tsTokenCanFollowModifier(): boolean;
             tsNextTokenOnSameLineAndCanFollowModifier(): boolean;
             tsNextTokenCanFollowModifier(): boolean;
-            tsParseModifier<T extends "const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations>(modifiers: Map<T, boolean>, stopOnStartOfClassStaticBlock?: boolean, hasSeenStaticModifier?: boolean | null): T | undefined | null;
+            tsParseModifier<T extends "const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations>(modifiers: Map<T, boolean>, stopOnStartOfClassStaticBlock?: boolean, hasSeenStaticModifier?: boolean | null): T | undefined | null;
             tsParseModifiers<N extends {
                 accessibility?: import("./types.ts").Accessibility;
-            } & Partial<Record<"const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>>(modifiers: Map<"const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations, boolean>, errorTemplate: import("./parse-error.ts").ParseErrorConstructor<{
-                modifier: "const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations;
+            } & Partial<Record<"const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>>(modifiers: Map<"const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations, boolean>, errorTemplate: import("./parse-error.ts").ParseErrorConstructor<{
+                modifier: "const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations;
             }> | undefined, modified: N, stopOnStartOfClassStaticBlock?: boolean): void;
             tsIsListTerminator(kind: "EnumMembers" | "HeritageClauseElement" | "TupleElementTypes" | "TypeMembers" | "TypeParametersOrArguments"): boolean;
             tsParseList<T extends import("./types.ts").Node>(kind: "EnumMembers" | "HeritageClauseElement" | "TupleElementTypes" | "TypeMembers" | "TypeParametersOrArguments", parseElement: () => T): T[];
@@ -2047,13 +2047,13 @@ export declare const mixinPlugins: {
             tsParseTypeQuery(): import("@babel/types").TSTypeQuery;
             tsParseInOutModifiers: (modified: {
                 accessibility?: import("./types.ts").Accessibility;
-            } & Partial<Record<"const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>, stopOnStartOfClassStaticBlock?: boolean | undefined) => void;
+            } & Partial<Record<"const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>, stopOnStartOfClassStaticBlock?: boolean | undefined) => void;
             tsParseConstModifier: (modified: {
                 accessibility?: import("./types.ts").Accessibility;
-            } & Partial<Record<"const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>, stopOnStartOfClassStaticBlock?: boolean | undefined) => void;
+            } & Partial<Record<"const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>, stopOnStartOfClassStaticBlock?: boolean | undefined) => void;
             tsParseInOutConstModifiers: (modified: {
                 accessibility?: import("./types.ts").Accessibility;
-            } & Partial<Record<"const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>, stopOnStartOfClassStaticBlock?: boolean | undefined) => void;
+            } & Partial<Record<"const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations, boolean | null | undefined>>, stopOnStartOfClassStaticBlock?: boolean | undefined) => void;
             tsParseTypeParameter(parseModifiers: (node: import("./parser/node.ts").Undone<import("@babel/types").TSTypeParameter>) => void): import("@babel/types").TSTypeParameter;
             tsTryParseTypeParameters(parseModifiers: (node: import("./parser/node.ts").Undone<import("@babel/types").TSTypeParameter>) => void): import("@babel/types").TSTypeParameterDeclaration | undefined | null;
             tsParseTypeParameters(parseModifiers: (node: import("./parser/node.ts").Undone<import("@babel/types").TSTypeParameter>) => void): import("@babel/types").TSTypeParameterDeclaration;
@@ -2162,7 +2162,7 @@ export declare const mixinPlugins: {
             parseVarStatement(node: import("@babel/types").VariableDeclaration, kind: "var" | "let" | "const" | "using" | "await using", allowMissingInitializer?: boolean): import("@babel/types").VariableDeclaration;
             parseStatementContent(flags: import("./parser/statement.ts").ParseStatementFlag, decorators: import("@babel/types").Decorator[] | null): import("@babel/types").Statement;
             parseAccessModifier(): import("./types.ts").Accessibility | undefined | null;
-            tsHasSomeModifiers(member: any, modifiers: readonly ("const" | "static" | "readonly" | "abstract" | "declare" | import("./types.ts").Accessibility | "override" | import("./types.ts").VarianceAnnotations)[]): boolean;
+            tsHasSomeModifiers(member: any, modifiers: readonly ("const" | import("./types.ts").Accessibility | "readonly" | "abstract" | "declare" | "static" | "override" | import("./types.ts").VarianceAnnotations)[]): boolean;
             tsIsStartOfStaticBlocks(): boolean;
             parseClassMember(classBody: import("@babel/types").ClassBody, member: any, state: import("./types.ts").ParseClassMemberState): void;
             parseClassMemberWithIsStatic(classBody: import("@babel/types").ClassBody, member: import("./parser/node.ts").Undone<import("./types.ts").ClassMember | import("@babel/types").TSIndexSignature>, state: import("./types.ts").ParseClassMemberState, isStatic: boolean): void;

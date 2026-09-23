@@ -233,13 +233,13 @@ declare const TSErrors: {
     UnexpectedReadonly: import("../../parse-error.ts").ParseErrorConstructor<object>;
     UnexpectedTypeAnnotation: import("../../parse-error.ts").ParseErrorConstructor<object>;
     UnexpectedTypeCastInParameter: import("../../parse-error.ts").ParseErrorConstructor<object>;
-    UnexpectedTypeDeclaration: import("../../parse-error.ts").ParseErrorConstructor<"interface" | "type">;
+    UnexpectedTypeDeclaration: import("../../parse-error.ts").ParseErrorConstructor<"type" | "interface">;
     UnsupportedImportTypeArgument: import("../../parse-error.ts").ParseErrorConstructor<object>;
     UnsupportedParameterPropertyKind: import("../../parse-error.ts").ParseErrorConstructor<object>;
     UnsupportedSignatureParameterKind: import("../../parse-error.ts").ParseErrorConstructor<{
         type: string;
     }>;
-    UsingDeclarationInAmbientContext: import("../../parse-error.ts").ParseErrorConstructor<"using" | "await using">;
+    UsingDeclarationInAmbientContext: import("../../parse-error.ts").ParseErrorConstructor<"await using" | "using">;
 };
 export declare const enum tsParseEntityNameFlags {
     NONE = 0,

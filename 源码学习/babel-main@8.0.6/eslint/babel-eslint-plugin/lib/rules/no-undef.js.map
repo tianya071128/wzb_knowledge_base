@@ -1,1 +1,1 @@
-[object Object]
+{"version":3,"names":[],"sources":["../../src/rules/no-undef.ts"],"sourcesContent":["import { builtinRules } from \"eslint/use-at-your-own-risk\";\nconst rule = builtinRules.get(\"no-undef\")!;\n\nexport default rule;\n"],"mappings":"AAAA,SAAS,YAAY,QAAQ,6BAA6B;AAC1D,MAAM,IAAI,GAAG,YAAY,CAAC,GAAG,CAAC,UAAU,CAAE;AAE1C,eAAe,IAAI","ignoreList":[]}

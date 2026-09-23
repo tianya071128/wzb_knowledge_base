@@ -1,1 +1,1 @@
-[object Object]
+{"version":3,"names":[],"sources":["../../src/worker/extract-parser-options-plugin.ts"],"sourcesContent":["export default function extractParserOptionsPlugin() {\n  return {\n    parserOverride(code: string, opts: any) {\n      return opts;\n    },\n  };\n}\n"],"mappings":"AAAA,eAAe,SAAS,0BAA0B,GAAG;EACnD,OAAO;IACL,cAAc,CAAC,IAAY,EAAE,IAAS,EAAE;MACtC,OAAO,IAAI;IACb;EACF,CAAC;AACH","ignoreList":[]}

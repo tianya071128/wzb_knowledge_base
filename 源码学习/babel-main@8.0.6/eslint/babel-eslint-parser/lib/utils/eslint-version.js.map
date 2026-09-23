@@ -1,1 +1,1 @@
-[object Object]
+{"version":3,"names":[],"sources":["../../src/utils/eslint-version.ts"],"sourcesContent":["import { ESLint } from \"eslint\";\n\nexport default parseInt(ESLint.version, 10);\n"],"mappings":"AAAA,SAAS,MAAM,QAAQ,QAAQ;AAE/B,eAAe,QAAQ,CAAC,MAAM,CAAC,OAAO,EAAE,EAAE,CAAC","ignoreList":[]}
