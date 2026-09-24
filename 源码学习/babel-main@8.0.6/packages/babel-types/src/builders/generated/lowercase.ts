@@ -483,11 +483,7 @@ export function labeledStatement(
   validate(defs.body, node, "body", body, 1);
   return node;
 }
-/**
- * 创建一个字符串字面量节点
- */
 export function stringLiteral(value: string): t.StringLiteral {
-  /** 字符串字面量节点比较简单 */
   const node: t.StringLiteral = {
     type: "StringLiteral",
     value,

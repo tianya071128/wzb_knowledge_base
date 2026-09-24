@@ -76,7 +76,7 @@ export declare const classMethodOrPropertyCommon: () => {
         optional: boolean;
     };
     key: {
-        validate: import("./utils.ts").Validator<t.ClassAccessorProperty | t.ClassMethod | t.ClassPrivateMethod | t.ClassProperty | t.MemberExpression | t.ObjectMethod | t.ObjectProperty | t.OptionalMemberExpression | t.TSDeclareMethod | t.TSMethodSignature | t.TSPropertySignature>;
+        validate: import("./utils.ts").Validator<t.MemberExpression | t.OptionalMemberExpression | t.ClassAccessorProperty | t.ClassMethod | t.ClassPrivateMethod | t.ClassProperty | t.ObjectMethod | t.ObjectProperty | t.TSDeclareMethod | t.TSMethodSignature | t.TSPropertySignature>;
     };
 };
 export declare const classMethodOrDeclareMethodCommon: (allowDecorators?: boolean) => {
@@ -118,7 +118,7 @@ export declare const classMethodOrDeclareMethodCommon: (allowDecorators?: boolea
         optional: boolean;
     };
     key: {
-        validate: import("./utils.ts").Validator<t.ClassAccessorProperty | t.ClassMethod | t.ClassPrivateMethod | t.ClassProperty | t.MemberExpression | t.ObjectMethod | t.ObjectProperty | t.OptionalMemberExpression | t.TSDeclareMethod | t.TSMethodSignature | t.TSPropertySignature>;
+        validate: import("./utils.ts").Validator<t.MemberExpression | t.OptionalMemberExpression | t.ClassAccessorProperty | t.ClassMethod | t.ClassPrivateMethod | t.ClassProperty | t.ObjectMethod | t.ObjectProperty | t.TSDeclareMethod | t.TSMethodSignature | t.TSPropertySignature>;
     };
     generator: {
         default: boolean;

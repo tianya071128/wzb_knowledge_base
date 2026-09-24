@@ -15115,6 +15115,10 @@ __metadata:
   dependencies:
     "@babel/core": "workspace:^"
     "@babel/plugin-transform-arrow-functions": "workspace:^"
+    "@babel/plugin-transform-literals": "workspace:^"
+    "@babel/plugin-transform-member-expression-literals": "workspace:^"
+    "@babel/plugin-transform-optional-catch-binding": "workspace:^"
+    "@babel/plugin-transform-property-literals": "workspace:^"
     "@types/node": "npm:^24.13.3"
     "@vitejs/plugin-vue": "npm:^6.0.8"
     "@vue/tsconfig": "npm:^0.9.1"

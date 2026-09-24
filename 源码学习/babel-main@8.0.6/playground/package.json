@@ -14,7 +14,10 @@
   "devDependencies": {
     "@babel/core": "workspace:^",
     "@babel/plugin-transform-arrow-functions": "workspace:^",
+    "@babel/plugin-transform-literals": "workspace:^",
     "@babel/plugin-transform-member-expression-literals": "workspace:^",
+    "@babel/plugin-transform-optional-catch-binding": "workspace:^",
+    "@babel/plugin-transform-property-literals": "workspace:^",
     "@types/node": "^24.13.3",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/tsconfig": "^0.9.1",
