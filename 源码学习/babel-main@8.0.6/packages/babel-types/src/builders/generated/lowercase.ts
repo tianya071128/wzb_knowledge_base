@@ -242,18 +242,40 @@ export function breakStatement(
   validate(defs.label, node, "label", label, 1);
   return node;
 }
+
+/**
+ * 安全地构造一个函数调用 AST 节点: 类型为 CallExpression
+ */
 export function callExpression(
+  /**
+   * 被调用者
+   * Expression：普通表达式，如 foo()、obj.method()
+   * Super：super()
+   * Import：import() 动态导入
+   * V8IntrinsicIdentifier：V8 引擎内置，如 %DebugPrint()
+   */
   callee: t.Expression | t.Super | t.Import | t.V8IntrinsicIdentifier,
+  /**
+   * 参数数组。每个元素可以是
+   * Expression：普通参数
+   * SpreadElement：展开参数 ...args
+   * ArgumentPlaceholder：%? 占位符（模板相关）
+   */
   _arguments: (t.Expression | t.SpreadElement | t.ArgumentPlaceholder)[],
 ): t.CallExpression {
+  // 直接构造一个 AST 节点对象
   const node: t.CallExpression = {
     type: "CallExpression",
     callee,
     arguments: _arguments,
   };
+
+  // 验证节点字段: callee 和 arguments
   const defs = NODE_FIELDS.CallExpression;
   validate(defs.callee, node, "callee", callee, 1);
   validate(defs.arguments, node, "arguments", _arguments, 1);
+
+  // 返回构造的 AST 节点对象
   return node;
 }
 export function catchClause(

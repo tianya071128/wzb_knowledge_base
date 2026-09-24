@@ -15115,6 +15115,7 @@ __metadata:
   dependencies:
     "@babel/core": "workspace:^"
     "@babel/plugin-transform-arrow-functions": "workspace:^"
+    "@babel/plugin-transform-instanceof": "workspace:^"
     "@babel/plugin-transform-literals": "workspace:^"
     "@babel/plugin-transform-member-expression-literals": "workspace:^"
     "@babel/plugin-transform-optional-catch-binding": "workspace:^"

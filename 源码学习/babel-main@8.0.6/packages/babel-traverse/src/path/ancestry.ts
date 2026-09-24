@@ -5,17 +5,18 @@ import type * as t from "@babel/types";
 import type NodePath from "./index.ts";
 
 /**
- * Starting at the parent path of the current `NodePath` and going up the
- * tree, return the first `NodePath` that causes the provided `callback`
- * to return a truthy value, or `null` if the `callback` never returns a
- * truthy value.
+ * Starting at the parent path of the current `NodePath` and going up the 从当前`NodePath`的父路径开始，并向上遍历
+ * tree, return the first `NodePath` that causes the provided `callback` 遍历树，返回第一个满足所提供`callback`函数的`NodePath`
+ * to return a truthy value, or `null` if the `callback` never returns a 返回一个真值，或者如果`callback`从未返回任何值，则返回`null`
+ * truthy value. 真值。
  */
 
 export function findParent(
   this: NodePath<t.Node | null>,
-  callback: (path: NodePath) => boolean,
+  callback: (path: NodePath) => boolean, // 判断函数
 ): NodePath | null {
   let path = this;
+  // 遍历父路径, 找到符合条件的路径
   while ((path = path.parentPath)) {
     if (callback(path)) return path;
   }
