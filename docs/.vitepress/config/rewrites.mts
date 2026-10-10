@@ -325,6 +325,12 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/19_List.md': 'java/basics/list.md',
   '05_java/01_语法/02_基础/20_Set.md': 'java/basics/set.md',
   '05_java/01_语法/02_基础/21_Map.md': 'java/basics/map.md',
+  '05_java/01_语法/02_基础/22_JavaBean.md': 'java/basics/javabean.md',
+  '05_java/01_语法/02_基础/23_枚举类.md': 'java/basics/enum.md',
+  '05_java/01_语法/02_基础/24_异常简介.md': 'java/basics/exception.md',
+  '05_java/01_语法/02_基础/25_捕获异常.md': 'java/basics/catch-exception.md',
+  '05_java/01_语法/02_基础/26_抛出异常.md': 'java/basics/throw-exception.md',
+  '05_java/01_语法/02_基础/27_自定义异常.md': 'java/basics/custom-exception.md',
   '05_java/01_语法/03_核心类/01_根类Object.md': 'java/core/object.md',
   '05_java/01_语法/03_核心类/02_String.md': 'java/core/string.md',
   '05_java/01_语法/03_核心类/03_StringBuilder.md':
@@ -365,5 +371,6 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/03_核心类/33_Duration.md': 'java/core/duration.md',
   '05_java/01_语法/03_核心类/34_集合.md': 'java/core/collections-overview.md',
   '05_java/01_语法/03_核心类/35_包装类型.md': 'java/core/wrapper-types.md',
+  '05_java/01_语法/03_核心类/36_Arrays.md': 'java/core/arrays.md',
 };
 export default rewrites;

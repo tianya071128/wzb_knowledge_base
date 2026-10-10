@@ -1438,6 +1438,14 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '内部类',
           link: 'inner-class',
         },
+        {
+          text: 'JavaBean',
+          link: 'javabean',
+        },
+        {
+          text: '枚举类',
+          link: 'enum',
+        },
       ],
     },
     {
@@ -1460,6 +1468,29 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: 'Map 接口',
           link: 'map',
+        },
+      ],
+    },
+    {
+      text: '异常处理',
+      collapsed: false,
+      base: '/java/basics/',
+      items: [
+        {
+          text: '异常简介',
+          link: 'exception',
+        },
+        {
+          text: '捕获异常',
+          link: 'catch-exception',
+        },
+        {
+          text: '抛出异常',
+          link: 'throw-exception',
+        },
+        {
+          text: '自定义异常',
+          link: 'custom-exception',
         },
       ],
     },
@@ -1525,6 +1556,10 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: 'Collections：集合工具类',
               link: 'core/collections',
+            },
+            {
+              text: 'Arrays：数组工具类',
+              link: 'core/arrays',
             },
           ],
         },
