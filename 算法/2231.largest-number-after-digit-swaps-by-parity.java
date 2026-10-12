@@ -16,9 +16,9 @@ import java.util.List;
 
 class Solution {
     public int largestInteger(int num) {
-        List<Integer> one = new ArrayList<>();
-        List<Integer> two = new ArrayList<>();
-        List<Integer> cur = one;
+        List<Integer> odd = new ArrayList<>();
+        List<Integer> even = new ArrayList<>();
+        List<Integer> list = new ArrayList<>(); // 每一位数字
 
         // 提取出最后一位数字
         while (num > 0) {
@@ -26,26 +26,23 @@ class Solution {
 
             num /= 10;
 
-            cur.add(n);
-
-            cur = cur == one ? two : one;
+            if (n % 2 == 0) {
+                even.add(n);
+            } else {
+                odd.add(n);
+            }
+            list.addFirst(n);
         }
 
         // 排序
-        one.sort(Comparator.naturalOrder());
-        two.sort(Comparator.naturalOrder());
+        odd.sort(Comparator.reverseOrder());
+        even.sort(Comparator.reverseOrder());
 
         int ans = 0,
-                base = 1; // 基数
-        for (int i = 0; i < one.size(); i++) {
-            ans = ans + one.get(i) * base;
-
-            base *= 10;
-
-            if (i < two.size()) {
-                ans = ans + two.get(i) * base;
-                base *= 10;
-            }
+                oddP = 0,
+                evenP = 0;
+        for (Integer n : list) {
+            ans = ans * 10 + (n % 2 == 0 ? even.get(evenP++) : odd.get(oddP++));
         }
 
         return ans;
