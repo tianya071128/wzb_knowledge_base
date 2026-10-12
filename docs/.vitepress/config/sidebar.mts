@@ -1667,6 +1667,29 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/java/functional-programming/': [
+    {
+      base: '/java/functional-programming/',
+      items: [
+        {
+          text: '函数式编程介绍',
+          link: 'home',
+        },
+        {
+          text: 'Lambda 表达式',
+          link: 'lambda',
+        },
+        {
+          text: '函数式接口',
+          link: 'functional-interface',
+        },
+        {
+          text: '方法引用',
+          link: 'method-reference',
+        },
+      ],
+    },
+  ],
   '/git/': [
     {
       base: '/git/',

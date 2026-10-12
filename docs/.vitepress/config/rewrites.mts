@@ -372,5 +372,13 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/03_核心类/34_集合.md': 'java/core/collections-overview.md',
   '05_java/01_语法/03_核心类/35_包装类型.md': 'java/core/wrapper-types.md',
   '05_java/01_语法/03_核心类/36_Arrays.md': 'java/core/arrays.md',
+  '05_java/01_语法/04_函数式编程/01_函数式编程介绍.md':
+    'java/functional-programming/home.md',
+  '05_java/01_语法/04_函数式编程/02_Lambda表达式.md':
+    'java/functional-programming/lambda.md',
+  '05_java/01_语法/04_函数式编程/03_函数式接口.md':
+    'java/functional-programming/functional-interface.md',
+  '05_java/01_语法/04_函数式编程/04_方法引用.md':
+    'java/functional-programming/method-reference.md',
 };
 export default rewrites;

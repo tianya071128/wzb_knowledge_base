@@ -1,4 +1,7 @@
 import java.util.Arrays;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
 
 public class Main {
   public static void main(String[] args) {
@@ -30,6 +33,12 @@ public class Main {
     String[] array2 = new String[] { "Apple", "Orange", "Banana", "Lemon" };
     Arrays.sort(array2, String::compareTo);
     System.out.println(String.join(", ", array2));
+    Predicate<String> predicate = s -> s.length() > 5;
+    IntFunction<Integer> multiplier = x -> x * factor;
+    Function<Integer, Integer> multiplier = x -> x * factor;
 
+    
   }
 }
+
+
