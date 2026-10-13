@@ -1561,6 +1561,10 @@ const sidebar: DefaultTheme.Sidebar = {
               text: 'Arrays：数组工具类',
               link: 'core/arrays',
             },
+            {
+              text: 'Collectors：Stream 收集器',
+              link: 'core/collectors',
+            },
           ],
         },
         {
@@ -1686,6 +1690,29 @@ const sidebar: DefaultTheme.Sidebar = {
         {
           text: '方法引用',
           link: 'method-reference',
+        },
+      ],
+    },
+    {
+      text: 'Stream',
+      collapsed: false,
+      base: '/java/functional-programming/',
+      items: [
+        {
+          text: 'Stream 介绍',
+          link: 'stream-intro',
+        },
+        {
+          text: '创建 Stream',
+          link: 'stream-creation',
+        },
+        {
+          text: '中间操作方法',
+          link: 'stream-intermediate',
+        },
+        {
+          text: '终端操作方法',
+          link: 'stream-terminal',
         },
       ],
     },

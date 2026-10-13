@@ -10,7 +10,13 @@
 
 ## 常用方法
 
-### 排序
+### sort — 排序
+
+```java
+// 方法签名
+static <T extends Comparable<? super T>> void sort(List<T> list)
+static <T> void sort(List<T> list, Comparator<? super T> c)
+```
 
 ```java
 List<Integer> list = new ArrayList<>(List.of(3, 1, 4, 1, 5, 9, 2, 6));
@@ -26,26 +32,70 @@ List<String> names = new ArrayList<>(List.of("Charlie", "Alice", "Bob"));
 Collections.sort(names, (a, b) -> a.length() - b.length());  // 按长度排序
 ```
 
-### 搜索
+### binarySearch — 二分查找
+
+```java
+// 方法签名
+static <T extends Comparable<? super T>> int binarySearch(List<? extends T> list, T key)
+static <T> int binarySearch(List<? extends T> list, T key, Comparator<? super T> c)
+```
 
 ```java
 List<Integer> list = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
 // 二分查找（要求列表已排序）
 Collections.binarySearch(list, 5);  // 4（索引）
+```
+
+### max — 查找最大值
+
+```java
+// 方法签名
+static <T extends Object & Comparable<? super T>> T max(Collection<? extends T> coll)
+static <T> T max(Collection<? extends T> coll, Comparator<? super T> comp)
+```
+
+```java
+List<Integer> list = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
 // 查找最大值
 Collections.max(list);  // 9
+```
+
+### min — 查找最小值
+
+```java
+// 方法签名
+static <T extends Object & Comparable<? super T>> T min(Collection<? extends T> coll)
+static <T> T min(Collection<? extends T> coll, Comparator<? super T> comp)
+```
+
+```java
+List<Integer> list = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
 // 查找最小值
 Collections.min(list);  // 1
+```
 
-// 查找出现次数
+### frequency — 查找出现次数
+
+```java
+// 方法签名
+static int frequency(Collection<?> c, Object o)
+```
+
+```java
 List<String> words = List.of("a", "b", "a", "c", "a");
 Collections.frequency(words, "a");  // 3
 ```
 
-### 洗牌
+### shuffle — 洗牌
+
+```java
+// 方法签名
+static void shuffle(List<?> list)
+static void shuffle(List<?> list, Random rnd)
+```
 
 ```java
 List<Integer> list = new ArrayList<>(List.of(1, 2, 3, 4, 5));
@@ -57,7 +107,12 @@ Collections.shuffle(list);  // 例如：[3, 1, 5, 2, 4]
 Collections.shuffle(list, new Random(42));  // 可重现的洗牌
 ```
 
-### 旋转
+### rotate — 旋转
+
+```java
+// 方法签名
+static void rotate(List<?> list, int distance)
+```
 
 ```java
 List<Integer> list = new ArrayList<>(List.of(1, 2, 3, 4, 5));
@@ -69,7 +124,12 @@ Collections.rotate(list, 2);  // [4, 5, 1, 2, 3]
 Collections.rotate(list, -2);  // [1, 2, 3, 4, 5]
 ```
 
-### 交换
+### swap — 交换
+
+```java
+// 方法签名
+static void swap(List<?> list, int i, int j)
+```
 
 ```java
 List<Integer> list = new ArrayList<>(List.of(1, 2, 3, 4, 5));
@@ -78,20 +138,38 @@ List<Integer> list = new ArrayList<>(List.of(1, 2, 3, 4, 5));
 Collections.swap(list, 0, 4);  // [5, 2, 3, 4, 1]
 ```
 
-### 填充和复制
+### fill — 填充
 
 ```java
-// 填充
+// 方法签名
+static <T> void fill(List<? super T> list, T obj)
+```
+
+```java
 List<String> list = new ArrayList<>(Arrays.asList(new String[5]));
 Collections.fill(list, "A");  // [A, A, A, A, A]
+```
 
+### copy — 复制
+
+```java
+// 方法签名
+static <T> void copy(List<? super T> dest, List<? extends T> src)
+```
+
+```java
 // 复制（目标列表长度必须 >= 源列表长度）
 List<String> src = List.of("A", "B", "C");
 List<String> dest = new ArrayList<>(Arrays.asList(new String[5]));
 Collections.copy(dest, src);  // [A, B, C, null, null]
 ```
 
-### 添加所有
+### addAll — 添加所有
+
+```java
+// 方法签名
+static <T> boolean addAll(Collection<? super T> c, T... elements)
+```
 
 ```java
 List<String> list = new ArrayList<>();
@@ -100,7 +178,12 @@ List<String> list = new ArrayList<>();
 Collections.addAll(list, "A", "B", "C", "D");  // [A, B, C, D]
 ```
 
-### 不交集
+### disjoint — 不交集
+
+```java
+// 方法签名
+static boolean disjoint(Collection<?> c1, Collection<?> c2)
+```
 
 ```java
 List<Integer> list = new ArrayList<>(List.of(1, 2, 3, 4, 5));
@@ -115,31 +198,53 @@ Collections.disjoint(list, other2);  // false（有交集 5）
 
 ## 不可变集合
 
+### unmodifiableList — 不可变 List
+
 ```java
-// 创建不可变 List
+// 方法签名
+static <T> List<T> unmodifiableList(List<? extends T> list)
+```
+
+```java
 List<String> immutableList = Collections.unmodifiableList(List.of("A", "B", "C"));
 // immutableList.add("D");  // UnsupportedOperationException
-
-// 创建不可变 Set
-Set<String> immutableSet = Collections.unmodifiableSet(Set.of("A", "B", "C"));
-
-// 创建不可变 Map
-Map<String, Integer> immutableMap = Collections.unmodifiableMap(Map.of("A", 1, "B", 2));
-
-// 创建不可变集合（Java 10+ 推荐用 List.of()、Set.of()、Map.of()）
 ```
+
+### unmodifiableSet — 不可变 Set
+
+```java
+// 方法签名
+static <T> Set<T> unmodifiableSet(Set<? extends T> s)
+```
+
+```java
+Set<String> immutableSet = Collections.unmodifiableSet(Set.of("A", "B", "C"));
+```
+
+### unmodifiableMap — 不可变 Map
+
+```java
+// 方法签名
+static <K, V> Map<K, V> unmodifiableMap(Map<? extends K, ? extends V> m)
+```
+
+```java
+Map<String, Integer> immutableMap = Collections.unmodifiableMap(Map.of("A", 1, "B", 2));
+```
+
+> **注意**：Java 10+ 推荐使用 `List.of()`、`Set.of()`、`Map.of()` 创建不可变集合。
 
 ## 同步集合
 
+### synchronizedList — 线程安全 List
+
 ```java
-// 创建线程安全的 List
+// 方法签名
+static <T> List<T> synchronizedList(List<T> list)
+```
+
+```java
 List<String> syncList = Collections.synchronizedList(new ArrayList<>());
-
-// 创建线程安全的 Set
-Set<String> syncSet = Collections.synchronizedSet(new HashSet<>());
-
-// 创建线程安全的 Map
-Map<String, Integer> syncMap = Collections.synchronizedMap(new HashMap<>());
 
 // 注意：迭代时需要手动同步
 synchronized (syncList) {
@@ -149,31 +254,97 @@ synchronized (syncList) {
 }
 ```
 
+### synchronizedSet — 线程安全 Set
+
+```java
+// 方法签名
+static <T> Set<T> synchronizedSet(Set<T> s)
+```
+
+```java
+Set<String> syncSet = Collections.synchronizedSet(new HashSet<>());
+```
+
+### synchronizedMap — 线程安全 Map
+
+```java
+// 方法签名
+static <K, V> Map<K, V> synchronizedMap(Map<K, V> m)
+```
+
+```java
+Map<String, Integer> syncMap = Collections.synchronizedMap(new HashMap<>());
+```
+
 > **建议**：多线程环境下推荐使用 `ConcurrentHashMap`、`CopyOnWriteArrayList` 等并发集合，而不是同步集合。
 
 ## 单元素集合
 
+### singletonList — 单元素 List
+
 ```java
-// 创建单元素 List
+// 方法签名
+static <T> List<T> singletonList(T o)
+```
+
+```java
 List<String> singleList = Collections.singletonList("A");  // [A]
+```
 
-// 创建单元素 Set
+### singleton — 单元素 Set
+
+```java
+// 方法签名
+static <T> Set<T> singleton(T o)
+```
+
+```java
 Set<String> singleSet = Collections.singleton("A");  // [A]
+```
 
-// 创建单元素 Map
+### singletonMap — 单元素 Map
+
+```java
+// 方法签名
+static <K, V> Map<K, V> singletonMap(K key, V value)
+```
+
+```java
 Map<String, Integer> singleMap = Collections.singletonMap("A", 1);  // {A=1}
 ```
 
 ## 空集合
 
+### emptyList — 空 List
+
 ```java
-// 空 List
+// 方法签名
+static <T> List<T> emptyList()
+```
+
+```java
 List<String> emptyList = Collections.emptyList();
+```
 
-// 空 Set
+### emptySet — 空 Set
+
+```java
+// 方法签名
+static <T> Set<T> emptySet()
+```
+
+```java
 Set<String> emptySet = Collections.emptySet();
+```
 
-// 空 Map
+### emptyMap — 空 Map
+
+```java
+// 方法签名
+static <K, V> Map<K, V> emptyMap()
+```
+
+```java
 Map<String, Integer> emptyMap = Collections.emptyMap();
 ```
 

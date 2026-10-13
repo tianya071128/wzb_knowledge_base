@@ -29,7 +29,7 @@ public class Main {
     Stream<Integer> stream = Stream.of(1, 2, 3);
     Stream<Integer> stream2 = Arrays.stream(new Integer[] { 1, 2, 3 });
     Stream<Integer> stream3 = List.of(1, 2, 3).stream();
-
+    
     // #region ------------ 中间操作 ------------
     /**
      * 中间操作:

@@ -98,14 +98,14 @@ const nav: DefaultTheme.NavItem[] = [
             activeMatch: '/java/core/',
           },
           {
-            text: '注解',
-            link: '/java/annotation/home.html',
-            activeMatch: '/java/annotation/',
-          },
-          {
             text: '函数式编程',
             link: '/java/functional-programming/home.html',
             activeMatch: '/java/functional-programming/',
+          },
+          {
+            text: '注解',
+            link: '/java/annotation/home.html',
+            activeMatch: '/java/annotation/',
           },
         ],
       },
