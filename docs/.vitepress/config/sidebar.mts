@@ -1379,6 +1379,10 @@ const sidebar: DefaultTheme.Sidebar = {
           text: '流程控制',
           link: 'flow-control',
         },
+        {
+          text: '强制类型转换',
+          link: 'type-casting',
+        },
       ],
     },
     {
@@ -1560,6 +1564,15 @@ const sidebar: DefaultTheme.Sidebar = {
             {
               text: 'Arrays：数组工具类',
               link: 'core/arrays',
+            },
+          ],
+        },
+        {
+          text: '工具类',
+          items: [
+            {
+              text: 'Comparator：比较器',
+              link: 'core/comparator',
             },
             {
               text: 'Collectors：Stream 收集器',

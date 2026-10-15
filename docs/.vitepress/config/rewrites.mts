@@ -331,6 +331,7 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/02_基础/25_捕获异常.md': 'java/basics/catch-exception.md',
   '05_java/01_语法/02_基础/26_抛出异常.md': 'java/basics/throw-exception.md',
   '05_java/01_语法/02_基础/27_自定义异常.md': 'java/basics/custom-exception.md',
+  '05_java/01_语法/02_基础/28_强制类型转换.md': 'java/basics/type-casting.md',
   '05_java/01_语法/03_核心类/01_根类Object.md': 'java/core/object.md',
   '05_java/01_语法/03_核心类/02_String.md': 'java/core/string.md',
   '05_java/01_语法/03_核心类/03_StringBuilder.md':
@@ -373,6 +374,7 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/03_核心类/35_包装类型.md': 'java/core/wrapper-types.md',
   '05_java/01_语法/03_核心类/36_Arrays.md': 'java/core/arrays.md',
   '05_java/01_语法/03_核心类/37_Collectors.md': 'java/core/collectors.md',
+  '05_java/01_语法/03_核心类/38_Comparator.md': 'java/core/comparator.md',
   '05_java/01_语法/04_函数式编程/01_函数式编程介绍.md':
     'java/functional-programming/home.md',
   '05_java/01_语法/04_函数式编程/02_Lambda表达式.md':
