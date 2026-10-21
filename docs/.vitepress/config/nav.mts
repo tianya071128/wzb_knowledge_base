@@ -107,6 +107,11 @@ const nav: DefaultTheme.NavItem[] = [
             link: '/java/annotation/home.html',
             activeMatch: '/java/annotation/',
           },
+          {
+            text: '泛型',
+            link: '/java/generics/home.html',
+            activeMatch: '/java/generics/',
+          },
         ],
       },
     ],

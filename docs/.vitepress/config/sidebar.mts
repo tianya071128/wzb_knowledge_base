@@ -1730,6 +1730,33 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/java/generics/': [
+    {
+      base: '/java/generics/',
+      items: [
+        {
+          text: '泛型介绍',
+          link: 'home',
+        },
+        {
+          text: '使用泛型',
+          link: 'usage',
+        },
+        {
+          text: '编写泛型',
+          link: 'implementation',
+        },
+        {
+          text: '类型擦除',
+          link: 'type-erasure',
+        },
+        {
+          text: '通配符：extends 和 super',
+          link: 'wildcards',
+        },
+      ],
+    },
+  ],
   '/git/': [
     {
       base: '/git/',

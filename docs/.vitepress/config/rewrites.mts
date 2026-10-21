@@ -391,5 +391,10 @@ const rewrites: Record<string, string> = {
     'java/functional-programming/stream-intermediate.md',
   '05_java/01_语法/04_函数式编程/08_终端操作方法.md':
     'java/functional-programming/stream-terminal.md',
+  '05_java/01_语法/05_泛型/01_泛型介绍.md': 'java/generics/home.md',
+  '05_java/01_语法/05_泛型/02_使用泛型.md': 'java/generics/usage.md',
+  '05_java/01_语法/05_泛型/03_编写泛型.md': 'java/generics/implementation.md',
+  '05_java/01_语法/05_泛型/04_类型擦除.md': 'java/generics/type-erasure.md',
+  '05_java/01_语法/05_泛型/05_通配符extends和super.md': 'java/generics/wildcards.md',
 };
 export default rewrites;
