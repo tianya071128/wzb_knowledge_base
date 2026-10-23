@@ -1271,8 +1271,17 @@ const sidebar: DefaultTheme.Sidebar = {
       base: '/algo/',
       items: [
         {
+          text: '算法简介',
+          link: 'home',
+        },
+        {
           text: '字典树(前缀树)',
           link: 'trie',
+        },
+        { text: '二分查找', link: 'binary-search' },
+        {
+          text: '单调队列',
+          link: 'monotonic_queue',
         },
         {
           text: '图',
@@ -1284,12 +1293,16 @@ const sidebar: DefaultTheme.Sidebar = {
           link: 'linked',
         },
         {
-          text: '单调队列',
-          link: 'monotonic_queue',
-        },
-        {
           text: '更多',
-          link: 'home',
+          collapsed: false,
+          items: [
+            { text: '摩尔投票法', link: 'moore-voting' },
+            { text: '前缀和', link: 'prefix-sum' },
+            { text: '蓄水池抽样', link: 'reservoir-sampling' },
+            { text: '辗转相除法', link: 'euclidean-algorithm' },
+            { text: '差分数组', link: 'difference-array' }
+            ,
+          ],
         },
       ],
     },
