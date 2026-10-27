@@ -536,12 +536,18 @@ export function labeledStatement(
   validate(defs.body, node, "body", body, 1);
   return node;
 }
+/**
+ * 构造 StringLiteral 字符串字面量节点
+ */
 export function stringLiteral(value: string): t.StringLiteral {
+  // 组装字符串字面量基础AST结构
   const node: t.StringLiteral = {
     type: "StringLiteral",
     value,
   };
+  // 获取 StringLiteral 预定义字段校验规则
   const defs = NODE_FIELDS.StringLiteral;
+  // 校验 value 字段类型合法性
   validate(defs.value, node, "value", value);
   return node;
 }
@@ -771,6 +777,9 @@ export function objectProperty(
   computed?: boolean,
   shorthand?: boolean,
 ): t.ObjectProperty;
+/**
+ * 构造 ObjectProperty（对象字面量属性）AST 节点工厂函数 —— 对象字面量里的 "键: 值" 属性。
+ */
 export function objectProperty(
   key:
     | t.Expression
@@ -779,10 +788,14 @@ export function objectProperty(
     | t.NumericLiteral
     | t.BigIntLiteral
     | t.PrivateName,
+  // 值：任意表达式，或解构模式（PatternLike）
   value: t.Expression | t.PatternLike,
+  // 是否计算键
   computed: boolean = false,
+  // 是否简写（{ a } 形态）
   shorthand: boolean = false,
 ): t.ObjectProperty {
+  // 组装对象属性基础AST结构
   const node = {
     type: "ObjectProperty",
     key,
@@ -790,7 +803,11 @@ export function objectProperty(
     computed,
     shorthand,
   } as t.ObjectProperty;
+
+  // 获取 ObjectProperty 字段校验规则
   const defs = NODE_FIELDS.ObjectProperty;
+  
+  // 校验字段类型合法性
   validate(defs.key, node, "key", key, 1);
   validate(defs.value, node, "value", value, 1);
   validate(defs.computed, node, "computed", computed);

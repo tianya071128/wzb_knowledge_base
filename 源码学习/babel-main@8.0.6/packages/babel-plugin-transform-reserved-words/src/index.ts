@@ -40,10 +40,23 @@ export default declare(api => {
 
   return {
     name: "transform-reserved-words",
-
+    /**
+     * api.traverse.explode: 手动调用 explode
+     */
     visitor: api.traverse.explode({
+      /**
+       * 同时监听两个虚拟节点：
+       *  - BindingIdentifier: 绑定标识符，Identifier 处在绑定位置（变量声明、参数、函数 id，`path.isBindingIdentifier()`）
+       *  - ReferencedIdentifier: 引用标识符，Identifier 处在引用读取位置（`path.isReferencedIdentifier()`）
+       * 
+       * 虚拟节点的意义：过滤掉「虽是 Identifier、但既非声明也非引用」的节点，
+       */
       "BindingIdentifier|ReferencedIdentifier"(path) {
+        // path.node 此时一定是 Identifier（或 JSXIdentifier），有 .name。
+        // 名字「现代合法」却「在 ES3 名单里」时做处理
         if (!t.isValidES3Identifier(path.node.name)) {
+          // scope.rename：重命名整个绑定，自动同步所有绑定点 + 所有引用点
+          // 内部生成安全的新名字（_0 / _1），保证兼容 ES3（IE 老引擎）
           path.scope.rename(path.node.name);
         }
       },

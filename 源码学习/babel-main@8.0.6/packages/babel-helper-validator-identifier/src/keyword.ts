@@ -91,6 +91,9 @@ export function isStrictBindReservedWord(
   );
 }
 
+/**
+ * 判断 word 是否是 ECMAScript「关键字」（keyword）。
+ */
 export function isKeyword(word: string): boolean {
   return keywords.has(word);
 }

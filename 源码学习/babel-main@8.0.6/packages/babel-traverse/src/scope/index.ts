@@ -649,12 +649,19 @@ class Scope {
     }
   }
 
+  /**
+   * 重命名一个变量绑定
+   */
   rename(oldName: string, newName?: string) {
+    // 先定位绑定：从 this（当前作用域）沿作用域链向上找 oldName 的声明。
     const binding = this.getBinding(oldName);
     if (binding) {
+      // ② 新名缺省时自动生成：generateUidIdentifier(int) → _int。
       newName ||= this.generateUidIdentifier(oldName).name;
+      // 创建重命名器实例，传入绑定对象、旧名字、目标新名字
       const renamer = new Renamer(binding, oldName, newName);
 
+      // 执行批量重命名逻辑
       renamer.rename();
     }
   }
