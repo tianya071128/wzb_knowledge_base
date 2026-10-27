@@ -217,18 +217,31 @@ export function directiveLiteral(value: string): t.DirectiveLiteral {
   validate(defs.value, node, "value", value);
   return node;
 }
+/**
+ * 构造 BlockStatement —— 即 `{ ...语句 }` 这个块
+ * 也是所有函数体/program 之外的语句容器（FunctionDeclaration.body、if/try/loop 的分支体等）的节点类型。
+ */
 export function blockStatement(
+  // 语句列表。必填、无默认值、不可 null —— 空块也必须显式传 []。
   body: t.Statement[],
+  // 指令列表，即块开头的 "use strict" / "use asm" 等字符串字面量指令。
   directives: t.Directive[] = [],
 ): t.BlockStatement {
+  // 初始化 BlockStatement 基础结构
   const node: t.BlockStatement = {
     type: "BlockStatement",
     body,
     directives,
   };
+
+  // 获取 BlockStatement 预定义的字段校验规则
   const defs = NODE_FIELDS.BlockStatement;
+
+  // 逐个字段校验类型是否合法
   validate(defs.body, node, "body", body, 1);
   validate(defs.directives, node, "directives", directives, 1);
+
+  // 返回节点。
   return node;
 }
 export function breakStatement(
@@ -442,13 +455,22 @@ export function functionDeclaration(
   validate(defs.async, node, "async", async);
   return node;
 }
+/**
+ * 构造一个 FunctionExpression 节点（对应 AST 里的 function (...) {...}）。
+ * */
 export function functionExpression(
+  // 函数名。匿名函数表达式必须传 null
   id: t.Identifier | null | undefined = null,
+  // 形参列表
   params: t.FunctionParameter[],
+  // 函数体，只能是 BlockStatement。
   body: t.BlockStatement,
+  // 是否为生成器函数
   generator: boolean = false,
+  // 是否异步函数
   async: boolean = false,
 ): t.FunctionExpression {
+  // 构造节点原始对象
   const node: t.FunctionExpression = {
     type: "FunctionExpression",
     id,
@@ -457,12 +479,21 @@ export function functionExpression(
     generator,
     async,
   };
+
+  // 拿到 FunctionExpression 预定义的字段校验规则
   const defs = NODE_FIELDS.FunctionExpression;
+
+  // 逐个字段校验类型是否合法
   validate(defs.id, node, "id", id, 1);
   validate(defs.params, node, "params", params, 1);
   validate(defs.body, node, "body", body, 1);
   validate(defs.generator, node, "generator", generator);
   validate(defs.async, node, "async", async);
+
+  // 返回节点。
+  // 父子槽位的合法性不在这里查，而在挂载时查：
+  // path.replaceWith → _replaceWith → validate(this.parent, this.key, node)
+  // 两道关卡合起来等价于「AST 版本的类型系统」。
   return node;
 }
 export function identifier(name: string): t.Identifier {
@@ -785,15 +816,26 @@ export function restElement(
   validate(defs.argument, node, "argument", argument, 1);
   return node;
 }
+/**
+ * 构造 ReturnStatement 节点 —— 即 `return xxx;` / `return;`。
+ */
 export function returnStatement(
+  // 返回值表达式
   argument: t.Expression | null = null,
 ): t.ReturnStatement {
+  // 初始化 ReturnStatement 基础结构
   const node: t.ReturnStatement = {
     type: "ReturnStatement",
     argument,
   };
+
+  // 获取 ReturnStatement 预定义的字段校验规则
   const defs = NODE_FIELDS.ReturnStatement;
+
+  // 逐个字段校验类型是否合法
   validate(defs.argument, node, "argument", argument, 1);
+
+  // 返回节点
   return node;
 }
 export function sequenceExpression(

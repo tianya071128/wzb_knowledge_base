@@ -114,7 +114,9 @@ export function replaceWithSourceString(
 }
 
 /**
- * Replace the current node with another.
+ * 用一个新 AST 节点替换当前 path 对应的旧节点，
+ * 自动维护 path 链路、注释、作用域，并且处理「语句 ↔ 表达式」类型不匹配的兼容逻辑。
+ * Replace the current node with another. 用另一个节点替换当前节点
  */
 export function replaceWith<R extends t.Node>(
   this: NodePath<t.Node | null>,
