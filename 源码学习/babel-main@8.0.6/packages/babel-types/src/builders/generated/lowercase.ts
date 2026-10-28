@@ -244,6 +244,8 @@ export function blockStatement(
   // 返回节点。
   return node;
 }
+
+
 export function breakStatement(
   label: t.Identifier | null = null,
 ): t.BreakStatement {
@@ -970,34 +972,66 @@ export function updateExpression(
   validate(defs.prefix, node, "prefix", prefix);
   return node;
 }
+
+/**
+ * 构造变量声明语句 AST 节点工厂函数 —— 用于创建变量声明语句，如 `let a = 1;`或多个变量声明 `let a = 1, b = 2;`。
+ */
 export function variableDeclaration(
+  // 变量声明方式
   kind: "var" | "let" | "const" | "using" | "await using",
+  // 一条声明可含多个 declarator（let a = 1, b = 2）
   declarations: t.VariableDeclarator[],
 ): t.VariableDeclaration {
+  // 构建基础 AST 结构
   const node: t.VariableDeclaration = {
     type: "VariableDeclaration",
     kind,
     declarations,
   };
+
+  // 获取 VariableDeclaration 预定义的字段校验规则
   const defs = NODE_FIELDS.VariableDeclaration;
   validate(defs.kind, node, "kind", kind);
   validate(defs.declarations, node, "declarations", declarations, 1);
+
+  // 返回节点。
   return node;
 }
+
+/**
+ * 构造变量声明中的「一条绑定」：a = 1 里的 a = 1。
+ */
 export function variableDeclarator(
+  // 绑定目标四选一 —— 这里就是「LVal」的实际含义：
+  //   Identifier     a = 1
+  //   ArrayPattern   [a, b] = arr
+  //   ObjectPattern  { a, b: c } = obj
+  //   VoidPattern    void = expr（discard binding 提案：只求值、不绑定）
+  //                  VoidPattern 定义在 definitions/experimental.ts，
+  //                  aliases: ["Pattern","PatternLike","FunctionParameter"]
   id: t.Identifier | t.ArrayPattern | t.ObjectPattern | t.VoidPattern,
+  // 初值可省略：let a;  → init 归一化成 null
   init: t.Expression | null = null,
 ): t.VariableDeclarator {
+  // 构建基础 AST 结构
   const node: t.VariableDeclarator = {
     type: "VariableDeclarator",
     id,
     init,
   };
+
+  
+  // 获取 VariableDeclarator 预定义的字段校验规则
   const defs = NODE_FIELDS.VariableDeclarator;
   validate(defs.id, node, "id", id, 1);
   validate(defs.init, node, "init", init, 1);
+
+  // 返回节点。
   return node;
 }
+
+
+
 export function whileStatement(
   test: t.Expression,
   body: t.Statement,

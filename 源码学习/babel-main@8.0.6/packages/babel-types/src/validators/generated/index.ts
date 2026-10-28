@@ -258,6 +258,10 @@ export function isForStatement<Opts extends Options<t.ForStatement>>(
 ): boolean {
   return isType<t.ForStatement>("ForStatement", node, opts);
 }
+
+/**
+ * 类型守卫：验证指定节点是否为函数声明(FunctionDeclaration)节点
+ */
 export function isFunctionDeclaration(
   node: t.Node | null | undefined,
 ): node is t.FunctionDeclaration;
@@ -272,6 +276,8 @@ export function isFunctionDeclaration<
 >(node: t.Node | null | undefined, opts?: Opts | null): boolean {
   return isType<t.FunctionDeclaration>("FunctionDeclaration", node, opts);
 }
+
+
 export function isFunctionExpression(
   node: t.Node | null | undefined,
 ): node is t.FunctionExpression;
@@ -4019,6 +4025,10 @@ export function isForXStatement<Opts extends Options<t.ForXStatement>>(
 
   return opts == null || shallowEqual(node, opts);
 }
+
+/**
+ * 类型判断工具：判断节点是不是属于「函数类节点」,支持额外属性匹配（opts）
+ */
 export function isFunction(node: t.Node | null | undefined): node is t.Function;
 export function isFunction<Opts extends Options<t.Function>>(
   node: t.Node | null | undefined,
@@ -4028,22 +4038,27 @@ export function isFunction<Opts extends Options<t.Function>>(
   node: t.Node | null | undefined,
   opts?: Opts | null,
 ): boolean {
+  // 空节点直接 false
   if (!node) return false;
 
+  // ✅ 匹配这6种type，它们共同属于Function别名
   switch (node.type) {
-    case "FunctionDeclaration":
-    case "FunctionExpression":
-    case "ObjectMethod":
-    case "ArrowFunctionExpression":
-    case "ClassMethod":
-    case "ClassPrivateMethod":
-      break;
+    case "FunctionDeclaration":      // function fn(){} 函数声明
+    case "FunctionExpression":      // const fn = function(){} 函数表达式
+    case "ObjectMethod":            // { foo() {} } 对象方法（就是前面学的ObjectMethod）
+    case "ArrowFunctionExpression":  // ()=>{} 箭头函数
+    case "ClassMethod":             // class A { foo(){} } 类普通方法
+    case "ClassPrivateMethod":      // class A { #foo(){} } 类私有方法
+      break; // 命中，进入后面opts校验
     default:
       return false;
   }
 
+  // opts不传 → 直接true；传了就浅对比节点属性是否全部匹配opts
   return opts == null || shallowEqual(node, opts);
 }
+
+
 export function isFunctionParent(
   node: t.Node | null | undefined,
 ): node is t.FunctionParent;
@@ -4542,6 +4557,10 @@ export function isImportOrExportDeclaration<
 
   return opts == null || shallowEqual(node, opts);
 }
+
+/**
+ * 类型判断工具：判断节点是不是属于ExportDeclaration 这一类导出声明,支持额外属性匹配（opts）
+ */
 export function isExportDeclaration(
   node: t.Node | null | undefined,
 ): node is t.ExportDeclaration;
@@ -4555,10 +4574,11 @@ export function isExportDeclaration<Opts extends Options<t.ExportDeclaration>>(
 ): boolean {
   if (!node) return false;
 
+  // ✅ 匹配这3种type
   switch (node.type) {
-    case "ExportAllDeclaration":
-    case "ExportDefaultDeclaration":
-    case "ExportNamedDeclaration":
+    case "ExportAllDeclaration":        // export * from "mod"
+    case "ExportDefaultDeclaration":    // export default xxx
+    case "ExportNamedDeclaration":      // export { a, b } / export const a = 1
       break;
     default:
       return false;
@@ -4566,6 +4586,8 @@ export function isExportDeclaration<Opts extends Options<t.ExportDeclaration>>(
 
   return opts == null || shallowEqual(node, opts);
 }
+
+
 export function isModuleSpecifier(
   node: t.Node | null | undefined,
 ): node is t.ModuleSpecifier;
