@@ -308,23 +308,34 @@ export function catchClause(
   validate(defs.body, node, "body", body, 1);
   return node;
 }
+
+
+// 构造三元表达式 test ? consequent : alternate。
 export function conditionalExpression(
-  test: t.Expression,
-  consequent: t.Expression,
-  alternate: t.Expression,
+  test: t.Expression, // 判断条件
+  consequent: t.Expression, // 为真分支
+  alternate: t.Expression, // 为假分支
 ): t.ConditionalExpression {
+  // 直接构造一个 AST 节点对象
   const node: t.ConditionalExpression = {
     type: "ConditionalExpression",
     test,
     consequent,
     alternate,
   };
+
+  // 验证节点字段: test、consequent 和 alternate
   const defs = NODE_FIELDS.ConditionalExpression;
   validate(defs.test, node, "test", test, 1);
   validate(defs.consequent, node, "consequent", consequent, 1);
   validate(defs.alternate, node, "alternate", alternate, 1);
+
+  // 返回构造的 AST 节点对象
   return node;
 }
+
+
+
 export function continueStatement(
   label: t.Identifier | null = null,
 ): t.ContinueStatement {
@@ -938,23 +949,36 @@ export function tryStatement(
   validate(defs.finalizer, node, "finalizer", finalizer, 1);
   return node;
 }
+
+/**
+ * 构造一元表达式 AST 节点工厂函数 —— 用于创建一元表达式，如 `!a`、`+b` 等。
+ */
 export function unaryExpression(
+  // 八种一元运算符。有意思的是 "throw"
   operator: "void" | "throw" | "delete" | "!" | "+" | "-" | "~" | "typeof",
+  // 操作数：必填表达式，运算符后的内容
   argument: t.Expression,
   prefix: boolean = true,
 ): t.UnaryExpression {
+  // 组装一元表达式基础AST结构
   const node: t.UnaryExpression = {
     type: "UnaryExpression",
     operator,
     argument,
     prefix,
   };
+
+  // 获取 UnaryExpression 预定义的字段校验规则
   const defs = NODE_FIELDS.UnaryExpression;
   validate(defs.operator, node, "operator", operator);
   validate(defs.argument, node, "argument", argument, 1);
   validate(defs.prefix, node, "prefix", prefix);
+
+  // 返回节点。
   return node;
 }
+
+
 export function updateExpression(
   operator: "++" | "--",
   argument: t.Identifier | t.MemberExpression,
