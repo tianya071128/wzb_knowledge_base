@@ -112,6 +112,11 @@ const nav: DefaultTheme.NavItem[] = [
             link: '/java/generics/home.html',
             activeMatch: '/java/generics/',
           },
+          {
+            text: 'IO',
+            link: '/java/io/home.html',
+            activeMatch: '/java/io/',
+          },
         ],
       },
     ],

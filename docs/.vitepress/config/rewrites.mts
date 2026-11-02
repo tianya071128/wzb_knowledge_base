@@ -402,5 +402,9 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/05_泛型/03_编写泛型.md': 'java/generics/implementation.md',
   '05_java/01_语法/05_泛型/04_类型擦除.md': 'java/generics/type-erasure.md',
   '05_java/01_语法/05_泛型/05_通配符extends和super.md': 'java/generics/wildcards.md',
+  '05_java/01_语法/06_IO/01_IO基础介绍.md': 'java/io/home.md',
+  '05_java/01_语法/06_IO/02_File对象.md': 'java/io/file.md',
+  '05_java/01_语法/06_IO/03_Path对象.md': 'java/io/path.md',
+  '05_java/01_语法/06_IO/04_Files工具类.md': 'java/io/files.md',
 };
 export default rewrites;

@@ -1770,6 +1770,35 @@ const sidebar: DefaultTheme.Sidebar = {
       ],
     },
   ],
+  '/java/io/': [
+    {
+      base: '/java/io/',
+      items: [
+        {
+          text: 'IO 基础介绍',
+          link: 'home',
+        },
+      ],
+    },
+    {
+      text: '文件操作',
+      base: '/java/io/',
+      items: [
+        {
+          text: 'File：文件操作',
+          link: 'file',
+        },
+        {
+          text: 'Path：路径操作',
+          link: 'path',
+        },
+        {
+          text: 'Files：文件工具类',
+          link: 'files',
+        },
+      ],
+    },
+  ],
   '/git/': [
     {
       base: '/git/',
