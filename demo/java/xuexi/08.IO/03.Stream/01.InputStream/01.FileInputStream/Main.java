@@ -18,7 +18,7 @@ public class Main {
     /**
      * 创建输入流
      */
-    InputStream inputStream = new FileInputStream("../../02.文件/10.test/demo.txt");
+    InputStream inputStream = new FileInputStream("../../../02.文件/10.test/demo.txt");
 
     /**
      * 读取字节: read

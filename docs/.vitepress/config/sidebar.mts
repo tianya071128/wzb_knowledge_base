@@ -1798,6 +1798,38 @@ const sidebar: DefaultTheme.Sidebar = {
         },
       ],
     },
+    {
+      text: '字节流',
+      base: '/java/io/',
+      items: [
+        {
+          text: 'InputStream：字节输入流',
+          link: 'input-stream',
+        },
+        {
+          text: 'OutputStream：字节输出流',
+          link: 'output-stream',
+        },
+        {
+          text: 'FilterInputStream：过滤输入流',
+          link: 'filter-input-stream',
+        },
+      ],
+    },
+    {
+      text: '字符流',
+      base: '/java/io/',
+      items: [
+        {
+          text: 'Reader：字符输入流',
+          link: 'reader',
+        },
+        {
+          text: 'Writer：字符输出流',
+          link: 'writer',
+        },
+      ],
+    },
   ],
   '/git/': [
     {

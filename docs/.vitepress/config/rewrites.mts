@@ -406,5 +406,10 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/06_IO/02_File对象.md': 'java/io/file.md',
   '05_java/01_语法/06_IO/03_Path对象.md': 'java/io/path.md',
   '05_java/01_语法/06_IO/04_Files工具类.md': 'java/io/files.md',
+  '05_java/01_语法/06_IO/05_InputStream.md': 'java/io/input-stream.md',
+  '05_java/01_语法/06_IO/06_OutputStream.md': 'java/io/output-stream.md',
+  '05_java/01_语法/06_IO/07_FilterInputStream.md': 'java/io/filter-input-stream.md',
+  '05_java/01_语法/06_IO/08_Reader.md': 'java/io/reader.md',
+  '05_java/01_语法/06_IO/09_Writer.md': 'java/io/writer.md',
 };
 export default rewrites;
