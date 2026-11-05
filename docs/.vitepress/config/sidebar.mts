@@ -1830,6 +1830,16 @@ const sidebar: DefaultTheme.Sidebar = {
         },
       ],
     },
+    {
+      text: '其他',
+      base: '/java/io/',
+      items: [
+        {
+          text: 'Zip：压缩文件操作',
+          link: 'zip',
+        },
+      ],
+    },
   ],
   '/git/': [
     {

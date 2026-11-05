@@ -411,5 +411,6 @@ const rewrites: Record<string, string> = {
   '05_java/01_语法/06_IO/07_FilterInputStream.md': 'java/io/filter-input-stream.md',
   '05_java/01_语法/06_IO/08_Reader.md': 'java/io/reader.md',
   '05_java/01_语法/06_IO/09_Writer.md': 'java/io/writer.md',
+  '05_java/01_语法/06_IO/10_Zip操作.md': 'java/io/zip.md',
 };
 export default rewrites;
